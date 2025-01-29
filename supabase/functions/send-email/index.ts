@@ -53,7 +53,7 @@ async function sendEmail(accessToken: string, to: string, subject: string, html:
         subject: subject,
         from: {
           name: "Sistema de Incidencias",
-          email: "notificaciones@prlconecta.es"
+          email: "whatsapp@prlconecta.es"
         },
         to: [
           {
