@@ -39,7 +39,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         reader.onloadend = () => {
           const base64String = reader.result as string;
           console.log("Base64 string length:", base64String.length);
-          resolve(base64String); // Enviamos el string completo sin modificar
+          resolve(base64String);
         };
         reader.onerror = (error) => {
           console.error("Error reading file:", error);
@@ -67,46 +67,29 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       const content = `
         <!DOCTYPE html>
         <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
-            .content { background-color: white; padding: 20px; border-radius: 5px; }
-            .image { max-width: 100%; height: auto; margin: 20px 0; border-radius: 5px; }
-            .label { font-weight: bold; color: #555; }
-            .status { 
-              display: inline-block;
-              padding: 5px 10px;
-              border-radius: 3px;
-              font-weight: bold;
-              background-color: #e9ecef;
-            }
-            .status.en-estudio { background-color: #fff3cd; color: #856404; }
-            .status.en-curso { background-color: #cce5ff; color: #004085; }
-            .status.cerrada { background-color: #d4edda; color: #155724; }
-            img { display: block; margin: 10px 0; max-width: 100%; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="color: #2563eb; margin: 0;">Actualización de Incidencia</h1>
+        <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px;">
+          <div style="max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #333;">Actualización de Incidencia #${issueDetails.id}</h2>
+            
+            <div style="margin: 20px 0;">
+              <p><strong>Estado:</strong> ${status}</p>
+              <p><strong>Descripción:</strong> ${issueDetails.message}</p>
+              ${actionPlan ? `<p><strong>Plan de Acción:</strong> ${actionPlan}</p>` : ''}
             </div>
-            <div class="content">
-              <p><span class="label">ID:</span> ${issueDetails.id}</p>
-              <p>
-                <span class="label">Estado:</span> 
-                <span class="status ${status}">${status}</span>
-              </p>
-              <p><span class="label">Descripción:</span> ${issueDetails.message}</p>
-              ${actionPlan ? `<p><span class="label">Plan de Acción:</span> ${actionPlan}</p>` : ''}
-              ${imageDataUrl ? `
-                <p><span class="label">Imagen de la incidencia:</span></p>
-                <img src="${imageDataUrl}" alt="Imagen de la incidencia" style="display: block; width: 100%; max-width: 500px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;" />
-              ` : ''}
-              <p><span class="label">Reportado por:</span> ${issueDetails.username}</p>
-              <p><span class="label">Fecha:</span> ${issueDetails.timestamp.toLocaleDateString()}</p>
+
+            ${imageDataUrl ? `
+              <div style="margin: 20px 0;">
+                <p><strong>Imagen adjunta:</strong></p>
+                <img src="${imageDataUrl}" 
+                     alt="Imagen de la incidencia" 
+                     style="display: block; width: 100%; max-width: 500px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;"
+                />
+              </div>
+            ` : ''}
+
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+              <p><strong>Reportado por:</strong> ${issueDetails.username}</p>
+              <p><strong>Fecha:</strong> ${issueDetails.timestamp.toLocaleDateString()}</p>
             </div>
           </div>
         </body>
