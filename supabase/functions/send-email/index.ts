@@ -18,7 +18,7 @@ serve(async (req) => {
     const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
     
     const data = await resend.emails.send({
-      from: 'Acme <onboarding@resend.dev>',
+      from: 'fgavedillo@gmail.com', // Using your Gmail address
       to: [to],
       subject: subject,
       html: content,
