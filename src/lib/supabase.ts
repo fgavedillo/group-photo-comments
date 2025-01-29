@@ -7,14 +7,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export const sendEmail = async (to: string, subject: string, content: string) => {
   try {
+    console.log("Attempting to send email via Supabase function:", { to, subject });
+    
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: { to, subject, content }
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase function error:", error);
+      throw error;
+    }
+
+    console.log("Email sent successfully:", data);
     return data;
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Error in sendEmail function:', error);
     throw error;
   }
 };
