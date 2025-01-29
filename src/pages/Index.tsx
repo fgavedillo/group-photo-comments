@@ -5,29 +5,59 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
+import { supabase } from "@/lib/supabase";
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
 
   const handleSendMessage = async (text: string, image?: File) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      username: "Usuario",
-      timestamp: new Date(),
-      message: text,
-    };
+    try {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        username: "Usuario",
+        timestamp: new Date(),
+        message: text,
+      };
 
-    if (image) {
-      newMessage.imageUrl = URL.createObjectURL(image);
+      if (image) {
+        newMessage.imageUrl = URL.createObjectURL(image);
+      }
+
+      // Intentar enviar el email
+      const { data, error } = await supabase.functions.invoke('send-email', {
+        body: { 
+          to: "fgavedillo@gmail.com",
+          subject: "Nuevo mensaje en el sistema",
+          content: `Se ha recibido un nuevo mensaje: ${text}`
+        }
+      });
+
+      if (error) {
+        console.error("Error al enviar el email:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo enviar la notificación por email.",
+          variant: "destructive"
+        });
+      } else {
+        console.log("Email enviado correctamente:", data);
+      }
+
+      setMessages((prev) => [...prev, newMessage]);
+      
+      toast({
+        title: "Mensaje enviado",
+        description: "Tu mensaje ha sido publicado exitosamente.",
+      });
+    } catch (error) {
+      console.error("Error al procesar el mensaje:", error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al enviar el mensaje.",
+        variant: "destructive"
+      });
     }
-
-    setMessages((prev) => [...prev, newMessage]);
-    
-    toast({
-      title: "Mensaje enviado",
-      description: "Tu mensaje ha sido publicado exitosamente.",
-    });
   };
 
   return (
