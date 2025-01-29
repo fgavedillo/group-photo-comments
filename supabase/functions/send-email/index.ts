@@ -43,7 +43,7 @@ serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error in send-email function:", error);
     return new Response(
       JSON.stringify({ 
         error: error.message || "Failed to send email",

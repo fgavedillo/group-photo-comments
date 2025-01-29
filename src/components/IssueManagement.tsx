@@ -27,34 +27,41 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [assignedEmail, setAssignedEmail] = useState("");
   const { toast } = useToast();
 
-  const handleStatusChange = (issueId: number, status: Issue['status']) => {
+  const handleStatusChange = async (issueId: number, status: Issue['status']) => {
     setIssues(prev => prev.map(issue => {
       if (issue.id === issueId) {
         return { ...issue, status };
       }
       return issue;
     }));
+
+    const issue = messages.find(m => m.id === issueId);
+    if (issue) {
+      await sendNotificationEmail(issue, status);
+    }
+
     toast({
       title: "Estado actualizado",
       description: `La incidencia ha sido marcada como ${status}`
     });
   };
 
-  const sendAssignmentEmail = async (email: string, issueDetails: any) => {
+  const sendNotificationEmail = async (issueDetails: any, status: Issue['status']) => {
     try {
-      const subject = `Nueva incidencia asignada #${issueDetails.id}`;
+      const subject = `Actualización de incidencia #${issueDetails.id}`;
       const content = `
-        Se te ha asignado una nueva incidencia:
-        
-        ID: ${issueDetails.id}
-        Descripción: ${issueDetails.message}
-        Reportado por: ${issueDetails.username}
-        Fecha: ${issueDetails.timestamp.toLocaleDateString()}
-        
-        Por favor, revisa la incidencia y toma las acciones necesarias.
+        <h1>Actualización de Incidencia</h1>
+        <p><strong>ID:</strong> ${issueDetails.id}</p>
+        <p><strong>Estado:</strong> ${status}</p>
+        <p><strong>Descripción:</strong> ${issueDetails.message}</p>
+        ${actionPlan ? `<p><strong>Plan de Acción:</strong> ${actionPlan}</p>` : ''}
+        ${issueDetails.imageUrl ? `<p><strong>Imagen de la incidencia:</strong></p>
+        <img src="${issueDetails.imageUrl}" alt="Imagen de la incidencia" style="max-width: 500px;" />` : ''}
+        <p><strong>Reportado por:</strong> ${issueDetails.username}</p>
+        <p><strong>Fecha:</strong> ${issueDetails.timestamp.toLocaleDateString()}</p>
       `;
 
-      await sendEmail(email, subject, content);
+      await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
       return true;
     } catch (error) {
       console.error('Error al enviar el correo:', error);
@@ -73,36 +80,37 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     }
 
     const issueToAssign = messages.find(m => m.id === issueId);
-    const emailSent = await sendAssignmentEmail(assignedEmail, issueToAssign);
-
-    if (emailSent) {
-      setIssues(prev => prev.map(issue => {
-        if (issue.id === issueId) {
-          return { ...issue, assignedEmail };
-        }
-        return issue;
-      }));
-      toast({
-        title: "Email asignado",
-        description: `La incidencia ha sido asignada a ${assignedEmail} y se ha enviado una notificación`
-      });
-      setAssignedEmail(""); // Limpiar el campo después de asignar
-    } else {
-      toast({
-        title: "Error",
-        description: "No se pudo enviar el correo de notificación",
-        variant: "destructive"
-      });
+    if (issueToAssign) {
+      await sendNotificationEmail(issueToAssign, "en-estudio");
     }
+
+    setIssues(prev => prev.map(issue => {
+      if (issue.id === issueId) {
+        return { ...issue, assignedEmail };
+      }
+      return issue;
+    }));
+    
+    toast({
+      title: "Email asignado",
+      description: `La incidencia ha sido asignada a ${assignedEmail}`
+    });
+    setAssignedEmail("");
   };
 
-  const handleAddActionPlan = (issueId: number) => {
+  const handleAddActionPlan = async (issueId: number) => {
     setIssues(prev => prev.map(issue => {
       if (issue.id === issueId) {
         return { ...issue, actionPlan, status: "en-curso" };
       }
       return issue;
     }));
+
+    const issue = messages.find(m => m.id === issueId);
+    if (issue) {
+      await sendNotificationEmail(issue, "en-curso");
+    }
+
     toast({
       title: "Plan de acción actualizado",
       description: "Se ha guardado el plan de acción correctamente."
