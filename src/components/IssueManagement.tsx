@@ -57,7 +57,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     try {
       console.log("Attempting to send notification email:", { issueDetails, status });
       
-      // Convert blob URL to base64 if image exists
       let imageDataUrl = '';
       if (issueDetails.imageUrl) {
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
@@ -86,6 +85,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             .status.en-estudio { background-color: #fff3cd; color: #856404; }
             .status.en-curso { background-color: #cce5ff; color: #004085; }
             .status.cerrada { background-color: #d4edda; color: #155724; }
+            img { display: block; margin: 10px 0; max-width: 100%; }
           </style>
         </head>
         <body>
@@ -103,9 +103,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               ${actionPlan ? `<p><span class="label">Plan de Acción:</span> ${actionPlan}</p>` : ''}
               ${imageDataUrl ? `
                 <p><span class="label">Imagen de la incidencia:</span></p>
-                <img src="${imageDataUrl}" 
-                     alt="Imagen de la incidencia" 
-                     style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;" />
+                <img src="${imageDataUrl}" alt="Imagen de la incidencia" style="display: block; width: 100%; max-width: 500px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;" />
               ` : ''}
               <p><span class="label">Reportado por:</span> ${issueDetails.username}</p>
               <p><span class="label">Fecha:</span> ${issueDetails.timestamp.toLocaleDateString()}</p>
