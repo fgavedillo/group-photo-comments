@@ -33,15 +33,42 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       const subject = `Actualización de incidencia #${issueDetails.id}`;
       const content = `
-        <h1>Actualización de Incidencia</h1>
-        <p><strong>ID:</strong> ${issueDetails.id}</p>
-        <p><strong>Estado:</strong> ${status}</p>
-        <p><strong>Descripción:</strong> ${issueDetails.message}</p>
-        ${actionPlan ? `<p><strong>Plan de Acción:</strong> ${actionPlan}</p>` : ''}
-        ${issueDetails.imageUrl ? `<p><strong>Imagen de la incidencia:</strong></p>
-        <img src="${issueDetails.imageUrl}" alt="Imagen de la incidencia" style="max-width: 500px;" />` : ''}
-        <p><strong>Reportado por:</strong> ${issueDetails.username}</p>
-        <p><strong>Fecha:</strong> ${issueDetails.timestamp.toLocaleDateString()}</p>
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+            .content { background-color: white; padding: 20px; border-radius: 5px; }
+            .image { max-width: 100%; height: auto; margin: 20px 0; border-radius: 5px; }
+            .label { font-weight: bold; color: #555; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1 style="color: #2563eb; margin: 0;">Actualización de Incidencia</h1>
+            </div>
+            <div class="content">
+              <p><span class="label">ID:</span> ${issueDetails.id}</p>
+              <p><span class="label">Estado:</span> ${status}</p>
+              <p><span class="label">Descripción:</span> ${issueDetails.message}</p>
+              ${actionPlan ? `<p><span class="label">Plan de Acción:</span> ${actionPlan}</p>` : ''}
+              ${issueDetails.imageUrl ? `
+                <div style="margin: 20px 0;">
+                  <p><span class="label">Imagen de la incidencia:</span></p>
+                  <img src="${issueDetails.imageUrl}" 
+                       alt="Imagen de la incidencia" 
+                       style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;" />
+                </div>
+              ` : ''}
+              <p><span class="label">Reportado por:</span> ${issueDetails.username}</p>
+              <p><span class="label">Fecha:</span> ${issueDetails.timestamp.toLocaleDateString()}</p>
+            </div>
+          </div>
+        </body>
+        </html>
       `;
 
       const emailResult = await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
