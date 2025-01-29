@@ -39,7 +39,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         <div className="mb-4 relative">
           <img 
             src={imagePreview} 
-            alt="Preview" 
+            alt="Vista previa" 
             className="w-32 h-32 object-cover rounded-lg"
           />
           <button
@@ -60,6 +60,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           type="button"
           onClick={() => fileInputRef.current?.click()}
           className="p-2 text-muted-foreground hover:text-primary transition-colors"
+          title="Añadir imagen"
         >
           <ImagePlus size={20} />
         </button>
@@ -84,6 +85,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           type="submit"
           disabled={!message.trim() && !selectedImage}
           className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
+          title="Enviar mensaje"
         >
           <Send size={20} />
         </button>
