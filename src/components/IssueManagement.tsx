@@ -27,9 +27,33 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [assignedEmail, setAssignedEmail] = useState("");
   const { toast } = useToast();
 
+  const convertBlobToBase64 = async (blobUrl: string): Promise<string> => {
+    try {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting blob to base64:', error);
+      return '';
+    }
+  };
+
   const sendNotificationEmail = async (issueDetails: any, status: Issue['status']) => {
     try {
       console.log("Attempting to send notification email:", { issueDetails, status });
+      
+      // Convert blob URL to base64 if image exists
+      let imageDataUrl = '';
+      if (issueDetails.imageUrl) {
+        imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
+        console.log("Image converted to base64");
+      }
       
       const subject = `Actualización de incidencia #${issueDetails.id}`;
       const content = `
@@ -55,10 +79,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               <p><span class="label">Estado:</span> ${status}</p>
               <p><span class="label">Descripción:</span> ${issueDetails.message}</p>
               ${actionPlan ? `<p><span class="label">Plan de Acción:</span> ${actionPlan}</p>` : ''}
-              ${issueDetails.imageUrl ? `
+              ${imageDataUrl ? `
                 <div style="margin: 20px 0;">
                   <p><span class="label">Imagen de la incidencia:</span></p>
-                  <img src="${issueDetails.imageUrl}" 
+                  <img src="${imageDataUrl}" 
                        alt="Imagen de la incidencia" 
                        style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;" />
                 </div>
