@@ -78,11 +78,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             </div>
 
             ${imageDataUrl ? `
-              <div style="margin: 20px 0;">
-                <p><strong>Imagen adjunta:</strong></p>
+              <div>
                 <img src="${imageDataUrl}" 
                      alt="Imagen de la incidencia" 
-                     style="display: block; width: 100%; max-width: 500px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;"
+                     style="max-width: 500px; width: 100%; height: auto;"
                 />
               </div>
             ` : ''}
