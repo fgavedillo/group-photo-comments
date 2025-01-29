@@ -16,9 +16,12 @@ async function getAccessToken(): Promise<string> {
   const clientSecret = Deno.env.get("SENDPULSE_CLIENT_SECRET");
   
   if (!clientId || !clientSecret) {
+    console.error("Missing credentials - Client ID:", !!clientId, "Secret:", !!clientSecret);
     throw new Error("SendPulse credentials not configured");
   }
 
+  console.log("Attempting to get SendPulse access token...");
+  
   const tokenResponse = await fetch("https://api.sendpulse.com/oauth/access_token", {
     method: "POST",
     headers: {
@@ -32,14 +35,19 @@ async function getAccessToken(): Promise<string> {
   });
 
   if (!tokenResponse.ok) {
+    const errorText = await tokenResponse.text();
+    console.error("Failed to get token:", errorText);
     throw new Error("Failed to get SendPulse access token");
   }
 
   const data: SendPulseTokenResponse = await tokenResponse.json();
+  console.log("Successfully obtained access token");
   return data.access_token;
 }
 
 async function sendEmail(accessToken: string, to: string, subject: string, html: string) {
+  console.log("Attempting to send email to:", to);
+  
   const response = await fetch("https://api.sendpulse.com/smtp/emails", {
     method: "POST",
     headers: {
@@ -71,13 +79,15 @@ async function sendEmail(accessToken: string, to: string, subject: string, html:
     throw new Error("Failed to send email");
   }
 
-  return await response.json();
+  const result = await response.json();
+  console.log("Email sent successfully:", result);
+  return result;
 }
 
-serve(async (req) => {
+serve(async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -89,8 +99,6 @@ serve(async (req) => {
     // Send email
     const result = await sendEmail(accessToken, to, subject, content);
 
-    console.log('Email sent successfully:', result);
-
     return new Response(
       JSON.stringify({ success: true, data: result }),
       { 
@@ -98,7 +106,7 @@ serve(async (req) => {
         status: 200 
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in send-email function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
