@@ -27,27 +27,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [assignedEmail, setAssignedEmail] = useState("");
   const { toast } = useToast();
 
-  const handleStatusChange = async (issueId: number, status: Issue['status']) => {
-    setIssues(prev => prev.map(issue => {
-      if (issue.id === issueId) {
-        return { ...issue, status };
-      }
-      return issue;
-    }));
-
-    const issue = messages.find(m => m.id === issueId);
-    if (issue) {
-      await sendNotificationEmail(issue, status);
-    }
-
-    toast({
-      title: "Estado actualizado",
-      description: `La incidencia ha sido marcada como ${status}`
-    });
-  };
-
   const sendNotificationEmail = async (issueDetails: any, status: Issue['status']) => {
     try {
+      console.log("Attempting to send notification email:", { issueDetails, status });
+      
       const subject = `Actualización de incidencia #${issueDetails.id}`;
       const content = `
         <h1>Actualización de Incidencia</h1>
@@ -61,12 +44,40 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         <p><strong>Fecha:</strong> ${issueDetails.timestamp.toLocaleDateString()}</p>
       `;
 
-      await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
+      const emailResult = await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
+      console.log("Email sending result:", emailResult);
       return true;
     } catch (error) {
       console.error('Error al enviar el correo:', error);
       return false;
     }
+  };
+
+  const handleStatusChange = async (issueId: number, status: Issue['status']) => {
+    setIssues(prev => prev.map(issue => {
+      if (issue.id === issueId) {
+        return { ...issue, status };
+      }
+      return issue;
+    }));
+
+    const issue = messages.find(m => m.id === issueId);
+    if (issue) {
+      const emailSent = await sendNotificationEmail(issue, status);
+      if (!emailSent) {
+        toast({
+          title: "Error",
+          description: "No se pudo enviar el correo de notificación",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
+    toast({
+      title: "Estado actualizado",
+      description: `La incidencia ha sido marcada como ${status}`
+    });
   };
 
   const handleAssignEmail = async (issueId: number) => {
@@ -81,7 +92,15 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
     const issueToAssign = messages.find(m => m.id === issueId);
     if (issueToAssign) {
-      await sendNotificationEmail(issueToAssign, "en-estudio");
+      const emailSent = await sendNotificationEmail(issueToAssign, "en-estudio");
+      if (!emailSent) {
+        toast({
+          title: "Error",
+          description: "No se pudo enviar el correo de notificación",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setIssues(prev => prev.map(issue => {
@@ -108,7 +127,15 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
     const issue = messages.find(m => m.id === issueId);
     if (issue) {
-      await sendNotificationEmail(issue, "en-curso");
+      const emailSent = await sendNotificationEmail(issue, "en-curso");
+      if (!emailSent) {
+        toast({
+          title: "Error",
+          description: "No se pudo enviar el correo de notificación",
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     toast({
