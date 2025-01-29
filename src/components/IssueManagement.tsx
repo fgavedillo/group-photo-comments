@@ -39,7 +39,21 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     });
   };
 
-  const handleAssignEmail = (issueId: number) => {
+  const sendAssignmentEmail = async (email: string, issueDetails: any) => {
+    try {
+      // Aquí simularemos el envío del correo mostrando la información en la consola
+      console.log('Enviando correo de asignación a:', email);
+      console.log('Detalles de la incidencia:', issueDetails);
+      
+      // En un entorno real, aquí iría la llamada a un servicio de correo
+      return true;
+    } catch (error) {
+      console.error('Error al enviar el correo:', error);
+      return false;
+    }
+  };
+
+  const handleAssignEmail = async (issueId: number) => {
     if (!assignedEmail.includes('@')) {
       toast({
         title: "Error",
@@ -49,16 +63,28 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       return;
     }
 
-    setIssues(prev => prev.map(issue => {
-      if (issue.id === issueId) {
-        return { ...issue, assignedEmail };
-      }
-      return issue;
-    }));
-    toast({
-      title: "Email asignado",
-      description: `La incidencia ha sido asignada a ${assignedEmail}`
-    });
+    const issueToAssign = messages.find(m => m.id === issueId);
+    const emailSent = await sendAssignmentEmail(assignedEmail, issueToAssign);
+
+    if (emailSent) {
+      setIssues(prev => prev.map(issue => {
+        if (issue.id === issueId) {
+          return { ...issue, assignedEmail };
+        }
+        return issue;
+      }));
+      toast({
+        title: "Email asignado",
+        description: `La incidencia ha sido asignada a ${assignedEmail} y se ha enviado una notificación`
+      });
+      setAssignedEmail(""); // Limpiar el campo después de asignar
+    } else {
+      toast({
+        title: "Error",
+        description: "No se pudo enviar el correo de notificación",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddActionPlan = (issueId: number) => {
