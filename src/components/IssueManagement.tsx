@@ -102,12 +102,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               <p><span class="label">Descripción:</span> ${issueDetails.message}</p>
               ${actionPlan ? `<p><span class="label">Plan de Acción:</span> ${actionPlan}</p>` : ''}
               ${imageDataUrl ? `
-                <div style="margin: 20px 0;">
-                  <p><span class="label">Imagen de la incidencia:</span></p>
-                  <img src="${imageDataUrl}" 
-                       alt="Imagen de la incidencia" 
-                       style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;" />
-                </div>
+                <p><span class="label">Imagen de la incidencia:</span></p>
+                <img src="${imageDataUrl}" 
+                     alt="Imagen de la incidencia" 
+                     style="max-width: 100%; height: auto; border-radius: 5px; border: 1px solid #ddd;" />
               ` : ''}
               <p><span class="label">Reportado por:</span> ${issueDetails.username}</p>
               <p><span class="label">Fecha:</span> ${issueDetails.timestamp.toLocaleDateString()}</p>
