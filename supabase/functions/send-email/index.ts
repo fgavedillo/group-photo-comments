@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { SendGridClient } from "https://deno.land/x/sendgrid@0.0.3/mod.ts"
+import { Resend } from "npm:resend@2.0.0"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,6 +7,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -14,25 +15,26 @@ serve(async (req) => {
   try {
     const { to, subject, content } = await req.json()
     
-    const sendGrid = new SendGridClient(Deno.env.get('SENDGRID_API_KEY'))
+    const resend = new Resend(Deno.env.get('RESEND_API_KEY'));
     
-    const msg = {
-      to,
-      from: 'noreply@yourdomain.com', // Actualiza esto con tu dominio verificado en SendGrid
-      subject,
-      text: content,
-    }
+    const data = await resend.emails.send({
+      from: 'Acme <onboarding@resend.dev>',
+      to: [to],
+      subject: subject,
+      html: content,
+    });
 
-    await sendGrid.send(msg)
+    console.log('Email sent successfully:', data);
 
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ success: true, data }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200 
       },
     )
   } catch (error) {
+    console.error('Error sending email:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       { 
