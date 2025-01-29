@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { sendEmail } from "@/lib/supabase";
 
 interface Issue {
   id: number;
@@ -41,11 +42,19 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const sendAssignmentEmail = async (email: string, issueDetails: any) => {
     try {
-      // Aquí simularemos el envío del correo mostrando la información en la consola
-      console.log('Enviando correo de asignación a:', email);
-      console.log('Detalles de la incidencia:', issueDetails);
-      
-      // En un entorno real, aquí iría la llamada a un servicio de correo
+      const subject = `Nueva incidencia asignada #${issueDetails.id}`;
+      const content = `
+        Se te ha asignado una nueva incidencia:
+        
+        ID: ${issueDetails.id}
+        Descripción: ${issueDetails.message}
+        Reportado por: ${issueDetails.username}
+        Fecha: ${issueDetails.timestamp.toLocaleDateString()}
+        
+        Por favor, revisa la incidencia y toma las acciones necesarias.
+      `;
+
+      await sendEmail(email, subject, content);
       return true;
     } catch (error) {
       console.error('Error al enviar el correo:', error);
