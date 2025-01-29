@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react";
 import { Canvas, Image as FabricImage } from "fabric";
-import { Button } from "@/components/ui/button";
 
 interface ImageCropperProps {
   imageUrl: string;
@@ -23,22 +22,27 @@ export const ImageCropper = ({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
     fabricRef.current = canvas;
 
     // Load the image
-    FabricImage.fromURL(imageUrl, (img) => {
-      // Scale image to fit canvas while maintaining aspect ratio
-      const scale = Math.min(
-        canvas.width! / img.width!,
-        canvas.height! / img.height!
-      ) * 0.8;
+    FabricImage.fromURL(
+      imageUrl,
+      {
+        callback: (img) => {
+          // Scale image to fit canvas while maintaining aspect ratio
+          const scale = Math.min(
+            canvas.width! / img.width!,
+            canvas.height! / img.height!
+          ) * 0.8;
 
-      img.scale(scale);
-      img.set({
-        left: (canvas.width! - img.width! * scale) / 2,
-        top: (canvas.height! - img.height! * scale) / 2,
-      });
+          img.scale(scale);
+          img.set({
+            left: (canvas.width! - img.width! * scale) / 2,
+            top: (canvas.height! - img.height! * scale) / 2,
+          });
 
-      canvas.add(img);
-      canvas.renderAll();
-    });
+          canvas.add(img);
+          canvas.renderAll();
+        }
+      }
+    );
 
     return () => {
       canvas.dispose();
@@ -48,10 +52,12 @@ export const ImageCropper = ({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
   const handleCrop = () => {
     if (!fabricRef.current) return;
 
-    // Get the canvas data as JPEG
+    // Get the canvas data as JPEG with proper options
     const croppedDataUrl = fabricRef.current.toDataURL({
       format: 'jpeg',
-      quality: 0.8
+      quality: 0.8,
+      multiplier: 1,
+      enableRetinaScaling: false
     });
 
     onCrop(croppedDataUrl);

@@ -63,11 +63,14 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       let imageDataUrl = '';
       if (croppedImageUrl) {
+        // Si tenemos una imagen recortada, la usamos directamente ya que ya está en formato base64
         imageDataUrl = croppedImageUrl;
+        console.log("Using cropped image, length:", imageDataUrl.length);
       } else if (issueDetails.imageUrl) {
+        // Si no hay imagen recortada pero hay una imagen original, la convertimos
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
+        console.log("Converted original image to base64, length:", imageDataUrl.length);
       }
-      console.log("Image prepared for email. Length:", imageDataUrl.length);
       
       const subject = `Actualización de incidencia #${issueDetails.id}`;
       const content = `
@@ -84,10 +87,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             </div>
 
             ${imageDataUrl ? `
-              <div>
+              <div style="margin: 20px 0;">
                 <img src="${imageDataUrl}" 
                      alt="Imagen de la incidencia" 
-                     style="max-width: 500px; width: 100%; height: auto;"
+                     style="display: block; max-width: 500px; width: 100%; height: auto; margin: 0 auto;"
                 />
               </div>
             ` : ''}
@@ -101,6 +104,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         </html>
       `;
 
+      console.log("Sending email with content length:", content.length);
       const emailResult = await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
       console.log("Email sending result:", emailResult);
       return true;
