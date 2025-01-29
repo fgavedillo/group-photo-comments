@@ -29,18 +29,22 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const convertBlobToBase64 = async (blobUrl: string): Promise<string> => {
     try {
+      console.log("Starting blob to base64 conversion for URL:", blobUrl);
       const response = await fetch(blobUrl);
       const blob = await response.blob();
+      console.log("Blob type:", blob.type);
       
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
-          // Asegurarnos de que solo enviamos la parte de datos del base64
-          const base64Data = base64String.split(',')[1];
-          resolve(`data:${blob.type};base64,${base64Data}`);
+          console.log("Base64 string length:", base64String.length);
+          resolve(base64String); // Enviamos el string completo sin modificar
         };
-        reader.onerror = reject;
+        reader.onerror = (error) => {
+          console.error("Error reading file:", error);
+          reject(error);
+        };
         reader.readAsDataURL(blob);
       });
     } catch (error) {
@@ -57,7 +61,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       let imageDataUrl = '';
       if (issueDetails.imageUrl) {
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
-        console.log("Image converted to base64:", imageDataUrl.substring(0, 100) + "...");
+        console.log("Image converted to base64. Length:", imageDataUrl.length);
       }
       
       const subject = `Actualización de incidencia #${issueDetails.id}`;
