@@ -17,7 +17,11 @@ serve(async (req: Request) => {
   try {
     const { to, subject, content } = await req.json();
     
-    console.log("Attempting to send email:", { to, subject, contentLength: content?.length });
+    console.log("Received email request:", { to, subject, contentLength: content?.length });
+
+    if (!to || !subject || !content) {
+      throw new Error("Missing required fields: to, subject, or content");
+    }
 
     const emailResponse = await resend.emails.send({
       from: "Lovable <onboarding@resend.dev>",
