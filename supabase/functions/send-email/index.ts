@@ -53,7 +53,7 @@ async function sendEmail(accessToken: string, to: string, subject: string, html:
         subject: subject,
         from: {
           name: "Sistema de Incidencias",
-          email: "fgavedillo@gmail.com"
+          email: "onboarding@resend.dev"
         },
         to: [
           {
