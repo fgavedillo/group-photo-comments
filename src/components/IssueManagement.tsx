@@ -34,7 +34,12 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          // Asegurarnos de que solo enviamos la parte de datos del base64
+          const base64Data = base64String.split(',')[1];
+          resolve(`data:${blob.type};base64,${base64Data}`);
+        };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
@@ -52,7 +57,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       let imageDataUrl = '';
       if (issueDetails.imageUrl) {
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
-        console.log("Image converted to base64");
+        console.log("Image converted to base64:", imageDataUrl.substring(0, 100) + "...");
       }
       
       const subject = `Actualización de incidencia #${issueDetails.id}`;
