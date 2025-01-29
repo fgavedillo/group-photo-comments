@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export const Auth = () => {
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState('fgavedillo@gmail.com');
+  const [email, setEmail] = useState('');
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
