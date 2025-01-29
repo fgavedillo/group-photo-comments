@@ -67,6 +67,16 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             .content { background-color: white; padding: 20px; border-radius: 5px; }
             .image { max-width: 100%; height: auto; margin: 20px 0; border-radius: 5px; }
             .label { font-weight: bold; color: #555; }
+            .status { 
+              display: inline-block;
+              padding: 5px 10px;
+              border-radius: 3px;
+              font-weight: bold;
+              background-color: #e9ecef;
+            }
+            .status.en-estudio { background-color: #fff3cd; color: #856404; }
+            .status.en-curso { background-color: #cce5ff; color: #004085; }
+            .status.cerrada { background-color: #d4edda; color: #155724; }
           </style>
         </head>
         <body>
@@ -76,7 +86,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             </div>
             <div class="content">
               <p><span class="label">ID:</span> ${issueDetails.id}</p>
-              <p><span class="label">Estado:</span> ${status}</p>
+              <p>
+                <span class="label">Estado:</span> 
+                <span class="status ${status}">${status}</span>
+              </p>
               <p><span class="label">Descripción:</span> ${issueDetails.message}</p>
               ${actionPlan ? `<p><span class="label">Plan de Acción:</span> ${actionPlan}</p>` : ''}
               ${imageDataUrl ? `
