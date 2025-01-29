@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Canvas, Image as FabricImage } from "fabric";
+import { Button } from "./ui/button";
 
 interface ImageCropperProps {
   imageUrl: string;
@@ -24,23 +25,21 @@ export const ImageCropper = ({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
     // Load the image
     FabricImage.fromURL(
       imageUrl,
-      {
-        callback: (img) => {
-          // Scale image to fit canvas while maintaining aspect ratio
-          const scale = Math.min(
-            canvas.width! / img.width!,
-            canvas.height! / img.height!
-          ) * 0.8;
+      (img) => {
+        // Scale image to fit canvas while maintaining aspect ratio
+        const scale = Math.min(
+          canvas.width! / img.width!,
+          canvas.height! / img.height!
+        ) * 0.8;
 
-          img.scale(scale);
-          img.set({
-            left: (canvas.width! - img.width! * scale) / 2,
-            top: (canvas.height! - img.height! * scale) / 2,
-          });
+        img.scale(scale);
+        img.set({
+          left: (canvas.width! - img.width! * scale) / 2,
+          top: (canvas.height! - img.height! * scale) / 2,
+        });
 
-          canvas.add(img);
-          canvas.renderAll();
-        }
+        canvas.add(img);
+        canvas.renderAll();
       }
     );
 
