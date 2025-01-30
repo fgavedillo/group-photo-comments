@@ -40,7 +40,7 @@ const Index = () => {
 
       setMessages(formattedMessages);
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('Error cargando mensajes:', error);
       toast({
         title: "Error",
         description: "No se pudieron cargar los mensajes",
@@ -51,8 +51,10 @@ const Index = () => {
 
   const handleSendMessage = async (text: string, image?: File) => {
     try {
-      // Get the current user
+      console.log("Iniciando envío de mensaje...");
+      
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("Usuario actual:", user);
       
       if (!user) {
         toast({
@@ -63,36 +65,51 @@ const Index = () => {
         return;
       }
 
-      // First create the issue
+      // Primero creamos la incidencia
+      console.log("Creando incidencia...");
       const { data: issueData, error: issueError } = await supabase
         .from('issues')
         .insert({
           message: text,
           username: "Usuario",
-          user_id: user.id
+          user_id: user.id,
+          timestamp: new Date().toISOString()
         })
         .select()
         .single();
 
-      if (issueError) throw issueError;
+      if (issueError) {
+        console.error("Error creando incidencia:", issueError);
+        throw issueError;
+      }
 
-      // If there's an image, upload it and create the image record
+      console.log("Incidencia creada:", issueData);
+
+      // Si hay una imagen, la subimos y creamos el registro
       if (image && issueData) {
-        const fileName = `${Date.now()}.${image.name.split('.').pop()}`;
+        console.log("Subiendo imagen...");
+        const fileName = `${Date.now()}-${user.id}.${image.name.split('.').pop()}`;
         
-        // Upload to storage
+        // Subir al almacenamiento
         const { error: uploadError } = await supabase.storage
           .from('issue-images')
           .upload(fileName, image);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Error subiendo imagen:", uploadError);
+          throw uploadError;
+        }
 
-        // Get the public URL
+        console.log("Imagen subida correctamente");
+
+        // Obtener la URL pública
         const { data: { publicUrl } } = supabase.storage
           .from('issue-images')
           .getPublicUrl(fileName);
 
-        // Create the image record
+        console.log("URL pública de la imagen:", publicUrl);
+
+        // Crear el registro de la imagen
         const { error: imageError } = await supabase
           .from('issue_images')
           .insert({
@@ -100,14 +117,19 @@ const Index = () => {
             image_url: publicUrl
           });
 
-        if (imageError) throw imageError;
+        if (imageError) {
+          console.error("Error creando registro de imagen:", imageError);
+          throw imageError;
+        }
+
+        console.log("Registro de imagen creado correctamente");
       }
 
       await loadMessages();
       
       toast({
         title: "Mensaje enviado",
-        description: "Tu mensaje ha sido publicado exitosamente.",
+        description: "Tu mensaje ha sido publicado exitosamente",
       });
 
       await sendEmail(
@@ -119,7 +141,7 @@ const Index = () => {
       console.error("Error al procesar el mensaje:", error);
       toast({
         title: "Error",
-        description: "Hubo un problema al enviar el mensaje.",
+        description: "Hubo un problema al enviar el mensaje",
         variant: "destructive"
       });
     }
