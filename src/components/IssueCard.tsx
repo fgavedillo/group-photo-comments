@@ -80,11 +80,11 @@ export const IssueCard = ({
 
   return (
     <>
-      <Card className="w-full">
-        <CardHeader className="relative p-2">
+      <Card className="w-full transition-all hover:shadow-md">
+        <CardHeader className="relative p-3">
           <div className="flex justify-between items-center">
             <div>
-              <CardTitle className="text-sm">#{index + 1}</CardTitle>
+              <CardTitle className="text-sm text-primary">#{index + 1}</CardTitle>
               <CardDescription className="text-xs">
                 {message.username}
               </CardDescription>
@@ -114,21 +114,21 @@ export const IssueCard = ({
           </div>
         </CardHeader>
         {message.imageUrl && (
-          <div className="p-2">
+          <div className="px-3 pb-3">
             <button
-              className="w-24 h-24 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
+              className="w-full h-32 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
               onClick={() => setIsImageModalOpen(true)}
             >
               <img
                 src={message.imageUrl}
-                alt="Miniatura de la incidencia"
+                alt="Imagen de la incidencia"
                 className="w-full h-full object-cover"
               />
             </button>
           </div>
         )}
         {isExpanded && (
-          <CardContent className="p-2 space-y-2">
+          <CardContent className="p-3 space-y-3 bg-gray-50/50">
             <div className="space-y-2">
               <Label htmlFor={`area-${message.id}`}>Área</Label>
               <Input
