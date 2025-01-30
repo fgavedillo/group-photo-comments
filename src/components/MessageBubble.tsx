@@ -21,20 +21,18 @@ export const MessageBubble = ({ id, username, timestamp, message, imageUrl, onDe
   const handleDelete = async () => {
     try {
       if (imageUrl) {
-        // Delete from issue_images table
         const { error: imageError } = await supabase
           .from('issue_images')
           .delete()
-          .eq('issue_id', id);
+          .eq('issue_id', parseInt(id));
 
         if (imageError) throw imageError;
       }
 
-      // Delete from issues table
       const { error: issueError } = await supabase
         .from('issues')
         .delete()
-        .eq('id', id);
+        .eq('id', parseInt(id));
 
       if (issueError) throw issueError;
 
