@@ -29,7 +29,7 @@ serve(async (req: Request) => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Lovable <onboarding@resend.dev>",
+      from: "Seguridad <notificaciones@tudominio.com>",
       to: [to],
       subject: subject,
       html: content,
