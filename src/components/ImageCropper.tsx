@@ -22,12 +22,12 @@ export const ImageCropper = ({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
     });
     fabricRef.current = canvas;
 
-    // Load the image with proper options object
+    // Cargar la imagen usando la API correcta de Fabric.js v6
     FabricImage.fromURL(imageUrl, {
       scaleX: 1,
       scaleY: 1,
     }).then((img) => {
-      // Scale image to fit canvas while maintaining aspect ratio
+      // Escalar la imagen para que quepa en el canvas manteniendo la proporción
       const scale = Math.min(
         canvas.width! / img.width!,
         canvas.height! / img.height!
@@ -51,7 +51,7 @@ export const ImageCropper = ({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
   const handleCrop = () => {
     if (!fabricRef.current) return;
 
-    // Get the canvas data as JPEG with proper options
+    // Obtener los datos del canvas como JPEG con las opciones adecuadas
     const croppedDataUrl = fabricRef.current.toDataURL({
       format: 'jpeg',
       quality: 0.8,
