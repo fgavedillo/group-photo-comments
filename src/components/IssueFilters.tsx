@@ -14,26 +14,5 @@ export const IssueFilters = ({
   onAreaFilterChange,
   onResponsableFilterChange
 }: IssueFiltersProps) => {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-      <div className="space-y-1">
-        <Label htmlFor="area-filter">Filtrar por Área</Label>
-        <Input
-          id="area-filter"
-          placeholder="Buscar por área..."
-          value={areaFilter}
-          onChange={(e) => onAreaFilterChange(e.target.value)}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="responsable-filter">Filtrar por Responsable</Label>
-        <Input
-          id="responsable-filter"
-          placeholder="Buscar por responsable..."
-          value={responsableFilter}
-          onChange={(e) => onResponsableFilterChange(e.target.value)}
-        />
-      </div>
-    </div>
-  );
+  return null; // Remove the filters from the UI but keep the component for future use if needed
 };
