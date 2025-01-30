@@ -10,8 +10,8 @@ import { SecurityImprovementForm } from "./SecurityImprovementForm";
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
-  const [securityImprovement, setSecurityImprovement] = useState("");
-  const [actionPlan, setActionPlan] = useState("");
+  const [securityImprovements, setSecurityImprovements] = useState<{[key: string]: string}>({});
+  const [actionPlans, setActionPlans] = useState<{[key: string]: string}>({});
   const [assignedEmail, setAssignedEmail] = useState("");
   const { toast } = useToast();
 
@@ -242,13 +242,27 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     });
   };
 
+  const handleSecurityImprovementChange = (issueId: number, value: string) => {
+    setSecurityImprovements(prev => ({
+      ...prev,
+      [issueId]: value
+    }));
+  };
+
+  const handleActionPlanChange = (issueId: number, value: string) => {
+    setActionPlans(prev => ({
+      ...prev,
+      [issueId]: value
+    }));
+  };
+
   const handleAddSecurityImprovement = async (issueId: number) => {
     try {
       const { error } = await supabase
         .from('issues')
         .update({
-          security_improvement: securityImprovement,
-          action_plan: actionPlan,
+          security_improvement: securityImprovements[issueId] || '',
+          action_plan: actionPlans[issueId] || '',
           status: "en-curso"
         })
         .eq('id', issueId);
@@ -293,10 +307,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             />
             
             <SecurityImprovementForm
-              securityImprovement={securityImprovement}
-              actionPlan={actionPlan}
-              onSecurityImprovementChange={setSecurityImprovement}
-              onActionPlanChange={setActionPlan}
+              securityImprovement={securityImprovements[message.id] || ''}
+              actionPlan={actionPlans[message.id] || ''}
+              onSecurityImprovementChange={(value) => handleSecurityImprovementChange(message.id, value)}
+              onActionPlanChange={(value) => handleActionPlanChange(message.id, value)}
               onSave={() => handleAddSecurityImprovement(message.id)}
             />
           </IssueCard>
