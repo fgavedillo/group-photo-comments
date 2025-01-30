@@ -15,8 +15,8 @@ export const IssueFilters = ({
   onResponsableFilterChange
 }: IssueFiltersProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-      <div className="space-y-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
+      <div className="space-y-1">
         <Label htmlFor="area-filter">Filtrar por Área</Label>
         <Input
           id="area-filter"
@@ -25,7 +25,7 @@ export const IssueFilters = ({
           onChange={(e) => onAreaFilterChange(e.target.value)}
         />
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         <Label htmlFor="responsable-filter">Filtrar por Responsable</Label>
         <Input
           id="responsable-filter"
