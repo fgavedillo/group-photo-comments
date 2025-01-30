@@ -134,14 +134,14 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto bg-white shadow-sm">
-      <header className="bg-white border-b border-gray-100 p-4">
+      <header className="bg-white border-b border-gray-100 p-2">
         <h1 className="text-lg font-semibold text-foreground">
           Sistema de Gestión de Incidencias
         </h1>
       </header>
 
       <Tabs defaultValue="chat" className="flex-1">
-        <TabsList className="w-full justify-start border-b px-4">
+        <TabsList className="w-full justify-start border-b">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
           <TabsTrigger value="kpis">KPIs</TabsTrigger>
@@ -152,11 +152,11 @@ const Index = () => {
           <MessageInput onSend={handleSendMessage} />
         </TabsContent>
         
-        <TabsContent value="issues">
+        <TabsContent value="issues" className="mt-0">
           <IssueManagement messages={messages} />
         </TabsContent>
         
-        <TabsContent value="kpis">
+        <TabsContent value="kpis" className="mt-0">
           <DashboardKPIs messages={messages} />
         </TabsContent>
       </Tabs>
