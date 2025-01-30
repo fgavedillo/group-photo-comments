@@ -105,7 +105,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{uniqueUsers}</div>
-          </Content>
+          </CardContent>
         </Card>
       </div>
 
@@ -131,10 +131,10 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
 
       {/* Lista de acciones filtradas */}
       <div className="grid grid-cols-1 gap-4">
-        {filteredMessages.map((message, index) => (
+        {filteredMessages.map((message) => (
           <Card key={message.id}>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
                     <h3 className="font-semibold mb-2">Situación a mejorar en seguridad</h3>
