@@ -149,8 +149,8 @@ const Index = () => {
           <TabsTrigger value="kpis">KPIs</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="chat" className="flex-1 flex flex-col">
-          <MessageList messages={messages} />
+        <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)]">
+          <MessageList messages={messages} onMessageDelete={loadMessages} />
           <MessageInput onSend={handleSendMessage} />
         </TabsContent>
         

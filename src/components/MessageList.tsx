@@ -10,18 +10,21 @@ export interface Message {
 
 interface MessageListProps {
   messages: Message[];
+  onMessageDelete: () => void;
 }
 
-export const MessageList = ({ messages }: MessageListProps) => {
+export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => {
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-secondary/50">
+    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#E8ECE4]">
       {messages.map((message) => (
         <MessageBubble
           key={message.id}
+          id={message.id}
           username={message.username}
           timestamp={message.timestamp}
           message={message.message}
           imageUrl={message.imageUrl}
+          onDelete={onMessageDelete}
         />
       ))}
     </div>

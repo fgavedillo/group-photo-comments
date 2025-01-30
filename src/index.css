@@ -25,7 +25,7 @@
 }
 
 .message-bubble {
-  @apply relative bg-white rounded-lg p-4 shadow-sm border border-gray-100;
+  @apply relative bg-white rounded-lg p-4 shadow-sm border border-gray-100 max-w-[85%] ml-auto;
   transition: transform 0.2s ease;
 }
 
@@ -34,7 +34,7 @@
 }
 
 .message-image {
-  @apply rounded-lg object-cover w-full max-h-96;
+  @apply rounded-lg object-cover;
   transition: transform 0.3s ease;
 }
 
