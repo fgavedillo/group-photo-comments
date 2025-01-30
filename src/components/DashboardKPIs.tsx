@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -14,6 +13,17 @@ import {
 
 interface KPIProps {
   messages: any[];
+}
+
+interface GroupedData {
+  date: string;
+  count: number;
+}
+
+interface Stats {
+  total: number;
+  withImages: number;
+  byStatus: { [key: string]: number };
 }
 
 export const DashboardKPIs = ({ messages }: KPIProps) => {
@@ -126,10 +136,10 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {groupedData.map((row) => (
+                  {groupedData.map((row: GroupedData) => (
                     <TableRow key={row.date}>
                       <TableCell>{row.date}</TableCell>
-                      <TableCell className="text-right">{row.count}</TableCell>
+                      <TableCell className="text-right">{row.count.toString()}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -167,7 +177,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
               {Object.entries(stats.byStatus).map(([status, count]) => (
                 <div key={status} className="flex justify-between">
                   <span className="text-sm">{status}</span>
-                  <span className="font-medium">{count}</span>
+                  <span className="font-medium">{count.toString()}</span>
                 </div>
               ))}
             </div>
