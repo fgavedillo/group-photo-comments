@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpIcon, ArrowDownIcon, BarChart3Icon, PieChartIcon, LineChartIcon } from "lucide-react";
 
@@ -61,7 +60,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
 
     const pieData = Object.entries(byStatus).map(([name, value]) => ({
       name,
-      value
+      value: value as number
     }));
 
     return {
@@ -150,15 +149,15 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
   const getStatusTrend = () => {
     if (groupedData.length < 2) return 0;
     const lastTwo = groupedData.slice(-2);
-    return lastTwo[1].count - lastTwo[0].count;
+    return (lastTwo[1]?.count || 0) - (lastTwo[0]?.count || 0);
   };
 
   const trend = getStatusTrend();
 
   return (
-    <div className="space-y-4 p-4">
+    <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-3">
-        <Card>
+        <Card className="bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Incidencias</CardTitle>
             <div className={`rounded-full p-2 ${trend >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
@@ -177,19 +176,19 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Con Imágenes</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.withImages}</div>
             <p className="text-xs text-muted-foreground">
-              {((stats.withImages / stats.total) * 100).toFixed(1)}% del total
+              {((stats.withImages / (stats.total || 1)) * 100).toFixed(1)}% del total
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Por Estado</CardTitle>
           </CardHeader>
@@ -205,7 +204,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </Card>
       </div>
 
-      <Card>
+      <Card className="bg-white">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Análisis de Incidencias</CardTitle>
@@ -250,7 +249,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
       </Card>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle>Distribución por Área</CardTitle>
           </CardHeader>
@@ -264,12 +263,12 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                       <div
                         className="h-full bg-primary"
                         style={{
-                          width: `${(count / stats.total) * 100}%`,
+                          width: `${((count as number) / (stats.total || 1)) * 100}%`,
                         }}
                       />
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {((count / stats.total) * 100).toFixed(1)}%
+                      {((count as number / (stats.total || 1)) * 100).toFixed(1)}%
                     </span>
                   </div>
                 </div>
@@ -278,7 +277,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-white">
           <CardHeader>
             <CardTitle>Estado de Incidencias</CardTitle>
           </CardHeader>
@@ -292,12 +291,12 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                       <div
                         className="h-full bg-primary"
                         style={{
-                          width: `${(count / stats.total) * 100}%`,
+                          width: `${((count as number) / (stats.total || 1)) * 100}%`,
                         }}
                       />
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {((count / stats.total) * 100).toFixed(1)}%
+                      {((count as number / (stats.total || 1)) * 100).toFixed(1)}%
                     </span>
                   </div>
                 </div>
