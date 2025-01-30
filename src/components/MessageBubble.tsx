@@ -1,9 +1,10 @@
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Trash2, Check, CheckCheck } from "lucide-react";
+import { Trash2, CheckCheck } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { ImageModal } from "./ImageModal";
 
 interface MessageBubbleProps {
   id: string;
@@ -16,6 +17,7 @@ interface MessageBubbleProps {
 
 export const MessageBubble = ({ id, username, timestamp, message, imageUrl, onDelete }: MessageBubbleProps) => {
   const [showDeleteButton, setShowDeleteButton] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -59,27 +61,35 @@ export const MessageBubble = ({ id, username, timestamp, message, imageUrl, onDe
         </div>
         
         {imageUrl && (
-          <div 
-            className="relative mb-3 animate-image-appear"
-            onMouseEnter={() => setShowDeleteButton(true)}
-            onMouseLeave={() => setShowDeleteButton(false)}
-          >
-            <img 
-              src={imageUrl} 
-              alt={`Compartido por ${username}`}
-              className="rounded-md max-h-64 w-auto"
-              loading="lazy"
+          <>
+            <div 
+              className="relative mb-3 animate-image-appear"
+              onMouseEnter={() => setShowDeleteButton(true)}
+              onMouseLeave={() => setShowDeleteButton(false)}
+            >
+              <img 
+                src={imageUrl} 
+                alt={`Compartido por ${username}`}
+                className="rounded-md max-h-64 w-auto cursor-pointer"
+                loading="lazy"
+                onDoubleClick={() => setIsImageModalOpen(true)}
+              />
+              {showDeleteButton && (
+                <button
+                  onClick={handleDelete}
+                  className="absolute top-2 right-2 p-2 bg-white/50 text-gray-700 rounded-full hover:bg-white/70 transition-colors"
+                  title="Eliminar mensaje"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </div>
+            <ImageModal
+              imageUrl={imageUrl}
+              isOpen={isImageModalOpen}
+              onClose={() => setIsImageModalOpen(false)}
             />
-            {showDeleteButton && (
-              <button
-                onClick={handleDelete}
-                className="absolute top-2 right-2 p-2 bg-white/50 text-gray-700 rounded-full hover:bg-white/70 transition-colors"
-                title="Eliminar mensaje"
-              >
-                <Trash2 size={16} />
-              </button>
-            )}
-          </div>
+          </>
         )}
         
         <p className="text-sm leading-relaxed text-foreground break-words">{message}</p>

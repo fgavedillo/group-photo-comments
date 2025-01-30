@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { ImageModal } from "./ImageModal";
 
 interface IssueCardProps {
   message: any;
@@ -28,6 +30,7 @@ export const IssueCard = ({
   children 
 }: IssueCardProps) => {
   const { toast } = useToast();
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
 
   const handleDelete = async () => {
     try {
@@ -80,11 +83,21 @@ export const IssueCard = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <img 
-          src={message.imageUrl} 
-          alt="Incidencia"
-          className="w-full h-48 object-cover rounded-md"
-        />
+        {message.imageUrl && (
+          <>
+            <img 
+              src={message.imageUrl} 
+              alt="Incidencia"
+              className="w-full h-48 object-cover rounded-md cursor-pointer"
+              onDoubleClick={() => setIsImageModalOpen(true)}
+            />
+            <ImageModal
+              imageUrl={message.imageUrl}
+              isOpen={isImageModalOpen}
+              onClose={() => setIsImageModalOpen(false)}
+            />
+          </>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
