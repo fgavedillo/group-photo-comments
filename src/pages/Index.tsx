@@ -141,22 +141,22 @@ const Index = () => {
       </header>
 
       <Tabs defaultValue="chat" className="flex-1">
-        <TabsList className="w-full justify-start border-b">
+        <TabsList className="w-full justify-start border-b rounded-none">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
           <TabsTrigger value="kpis">KPIs</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)]">
+        <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)] p-0 mt-0">
           <MessageList messages={messages} onMessageDelete={loadMessages} />
           <MessageInput onSend={handleSendMessage} />
         </TabsContent>
         
-        <TabsContent value="issues" className="mt-0">
+        <TabsContent value="issues" className="p-0 mt-0">
           <IssueManagement messages={messages} />
         </TabsContent>
         
-        <TabsContent value="kpis" className="mt-0">
+        <TabsContent value="kpis" className="p-0 mt-0">
           <DashboardKPIs messages={messages} />
         </TabsContent>
       </Tabs>

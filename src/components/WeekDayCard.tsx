@@ -34,8 +34,8 @@ export const WeekDayCard = ({
   onAssignedEmailChange,
 }: WeekDayCardProps) => {
   return (
-    <div className="border rounded-lg p-2 bg-white shadow-sm">
-      <div className="flex items-center justify-between mb-2 border-b pb-1">
+    <div className="border rounded-lg p-3 bg-white shadow-sm">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="font-semibold capitalize text-lg">{dayName}</h3>
           <p className="text-sm text-muted-foreground">{dayNumber}</p>
