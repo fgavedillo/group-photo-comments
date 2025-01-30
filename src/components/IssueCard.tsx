@@ -85,7 +85,6 @@ export const IssueCard = ({
           alt="Incidencia"
           className="w-full h-48 object-cover rounded-md"
         />
-        <p className="text-sm text-muted-foreground">{message.message}</p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
