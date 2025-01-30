@@ -23,6 +23,13 @@ serve(async (req: Request) => {
       throw new Error("Missing required fields: to, subject, or content");
     }
 
+    // Format date in Spanish timezone
+    const now = new Date().toLocaleString('es-ES', { 
+      timeZone: 'Europe/Madrid',
+      dateStyle: 'full',
+      timeStyle: 'short'
+    });
+
     const emailResponse = await resend.emails.send({
       from: "PRL Conecta <whatsapp@prlconecta.es>",
       to: [to],
@@ -32,7 +39,10 @@ serve(async (req: Request) => {
           <h1 style="color: #333;">${subject}</h1>
           <p style="color: #666; line-height: 1.6;">${content}</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
-          <p style="color: #999; font-size: 0.9em;">Este es un mensaje automático, por favor no responda a este correo.</p>
+          <p style="color: #999; font-size: 0.9em;">
+            Mensaje enviado el ${now}.<br/>
+            Este es un mensaje automático, por favor no responda a este correo.
+          </p>
         </div>
       `,
     });
