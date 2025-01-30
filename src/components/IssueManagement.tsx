@@ -44,7 +44,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   });
 
   return (
-    <div className="container mx-auto">
+    <div className="px-2">
       <IssueFilters
         areaFilter={areaFilter}
         responsableFilter={responsableFilter}

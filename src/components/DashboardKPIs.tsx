@@ -52,7 +52,8 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
     const total = messages.length;
     const withImages = messages.filter(m => m.imageUrl).length;
     const byStatus = messages.reduce((acc: { [key: string]: number }, message) => {
-      acc[message.status] = (acc[message.status] || 0) + 1;
+      const status = message.status || 'Sin estado';
+      acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {});
 
@@ -64,8 +65,8 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
   }, [messages]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-4">
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2 mb-2">
         <Select value={groupBy} onValueChange={(value: "day" | "week" | "month") => setGroupBy(value)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Agrupar por" />
@@ -88,34 +89,32 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </Select>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="mb-2">
+        <CardHeader className="pb-2">
           <CardTitle>Incidencias por {groupBy === 'day' ? 'día' : groupBy === 'week' ? 'semana' : 'mes'}</CardTitle>
         </CardHeader>
         <CardContent>
           {viewType === "chart" ? (
             <div className="h-[400px]">
-              <ChartContainer>
-                <ResponsiveContainer>
-                  <LineChart data={groupedData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date"
-                      angle={-45}
-                      textAnchor="end"
-                      height={70}
-                    />
-                    <YAxis />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey="count" 
-                      stroke="#8884d8" 
-                      name="Incidencias"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={groupedData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="date"
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                  />
+                  <YAxis />
+                  <Tooltip />
+                  <Line 
+                    type="monotone" 
+                    dataKey="count" 
+                    stroke="#8884d8" 
+                    name="Incidencias"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -140,9 +139,9 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm">Total Incidencias</CardTitle>
           </CardHeader>
           <CardContent>
@@ -151,7 +150,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </Card>
         
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm">Con Imágenes</CardTitle>
           </CardHeader>
           <CardContent>
@@ -160,11 +159,11 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle className="text-sm">Por Estado</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {Object.entries(stats.byStatus).map(([status, count]) => (
                 <div key={status} className="flex justify-between">
                   <span className="text-sm">{status}</span>
