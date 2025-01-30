@@ -1,34 +1,20 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { ArrowUpIcon, ArrowDownIcon, BarChart3Icon, PieChartIcon, LineChartIcon } from "lucide-react";
 
 interface KPIProps {
   messages: any[];
 }
 
-interface GroupedData {
-  date: string;
-  count: number;
-}
-
-interface Stats {
-  total: number;
-  withImages: number;
-  byStatus: { [key: string]: number };
-}
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export const DashboardKPIs = ({ messages }: KPIProps) => {
   const [groupBy, setGroupBy] = useState<"day" | "week" | "month">("day");
-  const [viewType, setViewType] = useState<"chart" | "table">("chart");
+  const [chartType, setChartType] = useState<"line" | "bar" | "pie">("line");
 
   const groupedData = useMemo(() => {
     const grouped = messages.reduce((acc: { [key: string]: number }, message) => {
@@ -67,117 +53,253 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
       return acc;
     }, {});
 
+    const byArea = messages.reduce((acc: { [key: string]: number }, message) => {
+      const area = message.area || 'Sin área';
+      acc[area] = (acc[area] || 0) + 1;
+      return acc;
+    }, {});
+
+    const pieData = Object.entries(byStatus).map(([name, value]) => ({
+      name,
+      value
+    }));
+
     return {
       total,
       withImages,
-      byStatus
+      byStatus,
+      byArea,
+      pieData
     };
   }, [messages]);
 
+  const renderChart = () => {
+    const height = 400;
+    
+    switch (chartType) {
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height={height}>
+            <LineChart data={groupedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date"
+                angle={-45}
+                textAnchor="end"
+                height={70}
+              />
+              <YAxis />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="count" 
+                stroke="#8884d8" 
+                name="Incidencias"
+                strokeWidth={2}
+                dot={{ strokeWidth: 2 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart data={groupedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis 
+                dataKey="date"
+                angle={-45}
+                textAnchor="end"
+                height={70}
+              />
+              <YAxis />
+              <Tooltip />
+              <Bar 
+                dataKey="count" 
+                fill="#8884d8" 
+                name="Incidencias"
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+      case 'pie':
+        return (
+          <ResponsiveContainer width="100%" height={height}>
+            <PieChart>
+              <Pie
+                data={stats.pieData}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                outerRadius={150}
+                fill="#8884d8"
+                dataKey="value"
+              >
+                {stats.pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+        );
+    }
+  };
+
+  const getStatusTrend = () => {
+    if (groupedData.length < 2) return 0;
+    const lastTwo = groupedData.slice(-2);
+    return lastTwo[1].count - lastTwo[0].count;
+  };
+
+  const trend = getStatusTrend();
+
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2 mb-2">
-        <Select value={groupBy} onValueChange={(value: "day" | "week" | "month") => setGroupBy(value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Agrupar por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="day">Por día</SelectItem>
-            <SelectItem value="week">Por semana</SelectItem>
-            <SelectItem value="month">Por mes</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={viewType} onValueChange={(value: "chart" | "table") => setViewType(value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Tipo de vista" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="chart">Gráfico</SelectItem>
-            <SelectItem value="table">Tabla</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Card className="mb-2">
-        <CardHeader className="pb-2">
-          <CardTitle>Incidencias por {groupBy === 'day' ? 'día' : groupBy === 'week' ? 'semana' : 'mes'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {viewType === "chart" ? (
-            <div className="h-[400px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={groupedData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis 
-                    dataKey="date"
-                    angle={-45}
-                    textAnchor="end"
-                    height={70}
-                  />
-                  <YAxis />
-                  <Tooltip />
-                  <Line 
-                    type="monotone" 
-                    dataKey="count" 
-                    stroke="#8884d8" 
-                    name="Incidencias"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Fecha</TableHead>
-                    <TableHead className="text-right">Incidencias</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {groupedData.map((row: GroupedData) => (
-                    <TableRow key={row.date}>
-                      <TableCell>{row.date}</TableCell>
-                      <TableCell className="text-right">{row.count.toString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+    <div className="space-y-4 p-4">
+      <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Total Incidencias</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Incidencias</CardTitle>
+            <div className={`rounded-full p-2 ${trend >= 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+              {trend >= 0 ? (
+                <ArrowUpIcon className="h-4 w-4 text-green-600" />
+              ) : (
+                <ArrowDownIcon className="h-4 w-4 text-red-600" />
+              )}
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.total}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Con Imágenes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.withImages}</div>
+            <p className="text-xs text-muted-foreground">
+              {Math.abs(trend)} {trend >= 0 ? 'más' : 'menos'} que el período anterior
+            </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Por Estado</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Con Imágenes</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-1">
+            <div className="text-2xl font-bold">{stats.withImages}</div>
+            <p className="text-xs text-muted-foreground">
+              {((stats.withImages / stats.total) * 100).toFixed(1)}% del total
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Por Estado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
               {Object.entries(stats.byStatus).map(([status, count]) => (
-                <div key={status} className="flex justify-between">
-                  <span className="text-sm">{status}</span>
-                  <span className="font-medium">{count.toString()}</span>
+                <Badge key={status} variant="secondary">
+                  {status}: {count}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Análisis de Incidencias</CardTitle>
+            <div className="flex gap-2">
+              <Select value={groupBy} onValueChange={(value: "day" | "week" | "month") => setGroupBy(value)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Agrupar por" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="day">Por día</SelectItem>
+                  <SelectItem value="week">Por semana</SelectItem>
+                  <SelectItem value="month">Por mes</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex gap-1 border rounded-md p-1">
+                <button
+                  onClick={() => setChartType("line")}
+                  className={`p-2 rounded ${chartType === "line" ? "bg-muted" : ""}`}
+                >
+                  <LineChartIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setChartType("bar")}
+                  className={`p-2 rounded ${chartType === "bar" ? "bg-muted" : ""}`}
+                >
+                  <BarChart3Icon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setChartType("pie")}
+                  className={`p-2 rounded ${chartType === "pie" ? "bg-muted" : ""}`}
+                >
+                  <PieChartIcon className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {renderChart()}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Distribución por Área</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Object.entries(stats.byArea).map(([area, count]) => (
+                <div key={area} className="flex items-center justify-between">
+                  <span>{area}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary"
+                        style={{
+                          width: `${(count / stats.total) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {((count / stats.total) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Estado de Incidencias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {Object.entries(stats.byStatus).map(([status, count]) => (
+                <div key={status} className="flex items-center justify-between">
+                  <span>{status}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-primary"
+                        style={{
+                          width: `${(count / stats.total) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {((count / stats.total) * 100).toFixed(1)}%
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
