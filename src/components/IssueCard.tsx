@@ -116,11 +116,12 @@ export const IssueCard = ({
         {message.imageUrl && (
           <div className="flex justify-center p-2">
             <Button
-              variant="ghost"
-              className="relative group"
+              variant="outline"
+              size="lg"
+              className="relative group h-20 w-20 rounded-lg border-2 border-primary/20 hover:border-primary/40 transition-colors"
               onClick={() => setIsImageModalOpen(true)}
             >
-              <Image className="w-8 h-8 text-primary transition-colors group-hover:text-primary-hover" />
+              <Image className="w-12 h-12 text-primary/60 group-hover:text-primary transition-colors" />
               <span className="sr-only">Ver imagen</span>
             </Button>
           </div>
