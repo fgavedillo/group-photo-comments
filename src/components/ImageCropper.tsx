@@ -22,26 +22,26 @@ export const ImageCropper = ({ imageUrl, onCrop, onCancel }: ImageCropperProps) 
     });
     fabricRef.current = canvas;
 
-    // Load the image
-    FabricImage.fromURL(
-      imageUrl,
-      (img) => {
-        // Scale image to fit canvas while maintaining aspect ratio
-        const scale = Math.min(
-          canvas.width! / img.width!,
-          canvas.height! / img.height!
-        ) * 0.8;
+    // Load the image with proper options object
+    FabricImage.fromURL(imageUrl, {
+      scaleX: 1,
+      scaleY: 1,
+    }).then((img) => {
+      // Scale image to fit canvas while maintaining aspect ratio
+      const scale = Math.min(
+        canvas.width! / img.width!,
+        canvas.height! / img.height!
+      ) * 0.8;
 
-        img.scale(scale);
-        img.set({
-          left: (canvas.width! - img.width! * scale) / 2,
-          top: (canvas.height! - img.height! * scale) / 2,
-        });
+      img.scale(scale);
+      img.set({
+        left: (canvas.width! - img.width! * scale) / 2,
+        top: (canvas.height! - img.height! * scale) / 2,
+      });
 
-        canvas.add(img);
-        canvas.renderAll();
-      }
-    );
+      canvas.add(img);
+      canvas.renderAll();
+    });
 
     return () => {
       canvas.dispose();
