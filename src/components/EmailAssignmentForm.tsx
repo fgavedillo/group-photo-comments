@@ -51,7 +51,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message }: E
         <Input
           type="email"
           placeholder="Correo electrónico"
-          value={assignedEmail}
+          defaultValue={assignedEmail}
           onChange={(e) => onEmailChange(e.target.value)}
         />
         <Button 
