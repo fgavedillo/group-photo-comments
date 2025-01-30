@@ -55,33 +55,35 @@ const Index = () => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        throw new Error("Usuario no autenticado");
+        toast({
+          title: "Error",
+          description: "Debes iniciar sesión para enviar mensajes",
+          variant: "destructive"
+        });
+        return;
       }
 
-      let imageUrl = '';
-      
-      // First create the issue to get the issue_id
+      // First create the issue
       const { data: issueData, error: issueError } = await supabase
         .from('issues')
         .insert({
           message: text,
           username: "Usuario",
-          user_id: user.id // Set the user_id explicitly
+          user_id: user.id
         })
         .select()
         .single();
 
       if (issueError) throw issueError;
 
-      if (image) {
+      // If there's an image, upload it and create the image record
+      if (image && issueData) {
         const fileName = `${Date.now()}.${image.name.split('.').pop()}`;
         
         // Upload to storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('issue-images')
-          .upload(fileName, image, {
-            upsert: false
-          });
+          .upload(fileName, image);
 
         if (uploadError) throw uploadError;
 
@@ -89,20 +91,16 @@ const Index = () => {
         const { data: { publicUrl } } = supabase.storage
           .from('issue-images')
           .getPublicUrl(fileName);
-          
-        imageUrl = publicUrl;
 
         // Create the image record
-        if (imageUrl) {
-          const { error: imageError } = await supabase
-            .from('issue_images')
-            .insert({
-              issue_id: issueData.id,
-              image_url: imageUrl
-            });
+        const { error: imageError } = await supabase
+          .from('issue_images')
+          .insert({
+            issue_id: issueData.id,
+            image_url: publicUrl
+          });
 
-          if (imageError) throw imageError;
-        }
+        if (imageError) throw imageError;
       }
 
       await loadMessages();
