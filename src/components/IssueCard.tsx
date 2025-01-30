@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -42,6 +42,7 @@ export const IssueCard = ({
   const { toast } = useToast();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleDelete = async () => {
     try {
@@ -80,38 +81,48 @@ export const IssueCard = ({
   return (
     <>
       <Card className="w-full">
-        <CardHeader className="relative">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-2 text-muted-foreground hover:text-destructive"
-            onClick={() => setShowDeleteDialog(true)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <CardTitle className="text-lg">Incidencia #{index + 1}</CardTitle>
-          <CardDescription>
-            Reportada por {message.username} el {message.timestamp.toLocaleDateString()}
-          </CardDescription>
+        <CardHeader className="relative p-2">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-sm">#{index + 1}</CardTitle>
+              <CardDescription className="text-xs">
+                {message.username}
+              </CardDescription>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {message.imageUrl && (
-            <>
-              <img 
-                src={message.imageUrl} 
-                alt="Incidencia"
-                className="w-full h-48 object-cover rounded-md cursor-pointer"
-                onDoubleClick={() => setIsImageModalOpen(true)}
-              />
-              <ImageModal
-                imageUrl={message.imageUrl}
-                isOpen={isImageModalOpen}
-                onClose={() => setIsImageModalOpen(false)}
-              />
-            </>
-          )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {message.imageUrl && (
+          <img 
+            src={message.imageUrl} 
+            alt="Incidencia"
+            className="w-full h-24 object-cover cursor-pointer"
+            onDoubleClick={() => setIsImageModalOpen(true)}
+          />
+        )}
+        {isExpanded && (
+          <CardContent className="p-2 space-y-2">
             <div className="space-y-2">
               <Label htmlFor={`area-${message.id}`}>Área</Label>
               <Input
@@ -119,6 +130,7 @@ export const IssueCard = ({
                 placeholder="Área responsable"
                 defaultValue={message.area || ''}
                 onChange={(e) => onAreaChange(message.id, e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
             <div className="space-y-2">
@@ -128,30 +140,35 @@ export const IssueCard = ({
                 placeholder="Persona responsable"
                 defaultValue={message.responsable || ''}
                 onChange={(e) => onResponsableChange(message.id, e.target.value)}
+                className="h-8 text-sm"
               />
             </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Estado de la Incidencia</Label>
-            <Select
-              value={message.status}
-              onValueChange={(value) => onStatusChange(message.id, value as Issue['status'])}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un estado" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en-estudio">En Estudio</SelectItem>
-                <SelectItem value="en-curso">En Curso</SelectItem>
-                <SelectItem value="cerrada">Cerrada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {children}
-        </CardContent>
+            <div className="space-y-2">
+              <Label>Estado</Label>
+              <Select
+                value={message.status}
+                onValueChange={(value) => onStatusChange(message.id, value as Issue['status'])}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder="Selecciona un estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en-estudio">En Estudio</SelectItem>
+                  <SelectItem value="en-curso">En Curso</SelectItem>
+                  <SelectItem value="cerrada">Cerrada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {children}
+          </CardContent>
+        )}
       </Card>
+
+      <ImageModal
+        imageUrl={message.imageUrl}
+        isOpen={isImageModalOpen}
+        onClose={() => setIsImageModalOpen(false)}
+      />
 
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
