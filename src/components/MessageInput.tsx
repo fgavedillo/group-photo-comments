@@ -55,11 +55,11 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         </div>
       )}
       
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-4 py-2">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="p-2 text-muted-foreground hover:text-primary transition-colors"
+          className="p-2 text-primary hover:text-primary-hover transition-colors"
           title="Añadir imagen"
         >
           <ImagePlus size={20} />
@@ -78,7 +78,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Escribe un mensaje..."
-          className="flex-1 px-4 py-2 rounded-full bg-secondary text-sm focus:outline-none focus:ring-1 focus:ring-primary/20"
+          className="flex-1 px-4 py-2 bg-transparent text-sm focus:outline-none"
         />
         
         <button
