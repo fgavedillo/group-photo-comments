@@ -43,7 +43,7 @@ export const IssueCard = ({
             <Input
               id={`area-${message.id}`}
               placeholder="Área responsable"
-              value={message.area || ''}
+              defaultValue={message.area || ''}
               onChange={(e) => onAreaChange(message.id, e.target.value)}
             />
           </div>
@@ -52,7 +52,7 @@ export const IssueCard = ({
             <Input
               id={`responsable-${message.id}`}
               placeholder="Persona responsable"
-              value={message.responsable || ''}
+              defaultValue={message.responsable || ''}
               onChange={(e) => onResponsableChange(message.id, e.target.value)}
             />
           </div>
