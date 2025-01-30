@@ -24,7 +24,7 @@ serve(async (req: Request) => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Seguridad <whatsapp@prlconecta.es>",
+      from: "PRL Conecta <whatsapp@prlconecta.es>",
       to: [to],
       subject: subject,
       html: `
