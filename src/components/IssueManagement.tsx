@@ -44,7 +44,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   });
 
   return (
-    <div className="container mx-auto py-2">
+    <div className="container mx-auto">
       <IssueFilters
         areaFilter={areaFilter}
         responsableFilter={responsableFilter}
@@ -52,7 +52,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         onResponsableFilterChange={setResponsableFilter}
       />
       
-      <div className="flex flex-col gap-4 mt-4">
+      <div className="flex flex-col gap-2 mt-2">
         {weekDays.map((day) => (
           <WeekDayCard
             key={day.dayNumber}

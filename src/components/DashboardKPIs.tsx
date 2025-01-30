@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, Tooltip } from 'recharts';
+import { ChartContainer } from "@/components/ui/chart";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Table,
@@ -20,7 +20,6 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
   const [groupBy, setGroupBy] = useState<"day" | "week" | "month">("day");
   const [viewType, setViewType] = useState<"chart" | "table">("chart");
 
-  // Agrupar mensajes por fecha
   const groupedData = useMemo(() => {
     const grouped = messages.reduce((acc: { [key: string]: number }, message) => {
       const date = new Date(message.timestamp);
@@ -49,7 +48,6 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
     })).sort((a, b) => a.date.localeCompare(b.date));
   }, [messages, groupBy]);
 
-  // Estadísticas adicionales
   const stats = useMemo(() => {
     const total = messages.length;
     const withImages = messages.filter(m => m.imageUrl).length;
@@ -66,8 +64,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
   }, [messages]);
 
   return (
-    <div className="p-4 space-y-6">
-      {/* Controles */}
+    <div className="space-y-4">
       <div className="flex flex-wrap gap-4">
         <Select value={groupBy} onValueChange={(value: "day" | "week" | "month") => setGroupBy(value)}>
           <SelectTrigger className="w-[180px]">
@@ -91,7 +88,6 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </Select>
       </div>
 
-      {/* Gráfico principal */}
       <Card>
         <CardHeader>
           <CardTitle>Incidencias por {groupBy === 'day' ? 'día' : groupBy === 'week' ? 'semana' : 'mes'}</CardTitle>
@@ -99,7 +95,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         <CardContent>
           {viewType === "chart" ? (
             <div className="h-[400px]">
-              <ChartContainer config={{}}>
+              <ChartContainer>
                 <ResponsiveContainer>
                   <LineChart data={groupedData}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -144,7 +140,6 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         </CardContent>
       </Card>
 
-      {/* Resumen de estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
