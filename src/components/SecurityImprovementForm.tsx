@@ -33,6 +33,7 @@ export const SecurityImprovementForm = ({
           placeholder="Describe el plan de acción..."
           value={actionPlan}
           onChange={(e) => onActionPlanChange(e.target.value)}
+          className="bg-[#F2FCE2]"
         />
       </div>
 
