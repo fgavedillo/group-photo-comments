@@ -51,44 +51,58 @@ const Index = () => {
 
   const handleSendMessage = async (text: string, image?: File) => {
     try {
-      let imageUrl = '';
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
       
-      if (image) {
-        const fileName = `${Date.now()}.${image.name.split('.').pop()}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('issue-images')
-          .upload(fileName, image);
-
-        if (uploadError) throw uploadError;
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('issue-images')
-          .getPublicUrl(fileName);
-          
-        imageUrl = publicUrl;
+      if (!user) {
+        throw new Error("Usuario no autenticado");
       }
 
+      let imageUrl = '';
+      
+      // First create the issue to get the issue_id
       const { data: issueData, error: issueError } = await supabase
         .from('issues')
         .insert({
           message: text,
           username: "Usuario",
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: user.id // Set the user_id explicitly
         })
         .select()
         .single();
 
       if (issueError) throw issueError;
 
-      if (imageUrl) {
-        const { error: imageError } = await supabase
-          .from('issue_images')
-          .insert({
-            issue_id: issueData.id,
-            image_url: imageUrl
+      if (image) {
+        const fileName = `${Date.now()}.${image.name.split('.').pop()}`;
+        
+        // Upload to storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('issue-images')
+          .upload(fileName, image, {
+            upsert: false
           });
 
-        if (imageError) throw imageError;
+        if (uploadError) throw uploadError;
+
+        // Get the public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('issue-images')
+          .getPublicUrl(fileName);
+          
+        imageUrl = publicUrl;
+
+        // Create the image record
+        if (imageUrl) {
+          const { error: imageError } = await supabase
+            .from('issue_images')
+            .insert({
+              issue_id: issueData.id,
+              image_url: imageUrl
+            });
+
+          if (imageError) throw imageError;
+        }
       }
 
       await loadMessages();
