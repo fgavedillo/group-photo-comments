@@ -23,11 +23,23 @@ serve(async (req: Request) => {
       throw new Error("Missing required fields: to, subject, or content");
     }
 
+    // Extract base64 image from content if it exists
+    let attachments = [];
+    const imageMatch = content.match(/src="data:image\/[^;]+;base64,([^"]+)"/);
+    if (imageMatch && imageMatch[1]) {
+      attachments.push({
+        filename: 'incidencia.jpg',
+        content: imageMatch[1],
+      });
+      console.log("Added image attachment");
+    }
+
     const emailResponse = await resend.emails.send({
       from: "Lovable <onboarding@resend.dev>",
       to: [to],
       subject: subject,
       html: content,
+      attachments: attachments,
     });
 
     console.log("Email sent successfully:", emailResponse);

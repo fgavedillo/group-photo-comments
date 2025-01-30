@@ -63,11 +63,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       let imageDataUrl = '';
       if (croppedImageUrl) {
-        // Si tenemos una imagen recortada, la usamos directamente ya que ya está en formato base64
         imageDataUrl = croppedImageUrl;
         console.log("Using cropped image, length:", imageDataUrl.length);
       } else if (issueDetails.imageUrl) {
-        // Si no hay imagen recortada pero hay una imagen original, la convertimos
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
         console.log("Converted original image to base64, length:", imageDataUrl.length);
       }
@@ -193,8 +191,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     }));
     
     toast({
-      title: "Email asignado",
-      description: `La incidencia ha sido asignada a ${assignedEmail}`
+      title: "Correo enviado",
+      description: `Se ha enviado el correo a ${assignedEmail}`
     });
     setAssignedEmail("");
   };
@@ -283,7 +281,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               </div>
 
               <div className="space-y-2">
-                <h4 className="font-medium">Asignar Responsable</h4>
+                <h4 className="font-medium">Enviar Notificación</h4>
                 <div className="flex space-x-2">
                   <Input
                     type="email"
@@ -292,7 +290,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
                     onChange={(e) => setAssignedEmail(e.target.value)}
                   />
                   <Button onClick={() => handleAssignEmail(message.id)}>
-                    Asignar
+                    Enviar Correo
                   </Button>
                 </div>
               </div>
