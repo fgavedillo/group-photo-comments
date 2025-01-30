@@ -57,12 +57,17 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         onResponsableFilterChange={setResponsableFilter}
       />
       
-      <div className="grid grid-cols-7 gap-2 mt-4">
+      <div className="flex flex-col gap-4 mt-4">
         {weekDays.map((day) => (
-          <div key={day.dayNumber} className="flex flex-col">
-            <div className="text-center mb-2">
-              <div className="font-semibold capitalize">{day.dayName}</div>
-              <div className="text-sm text-muted-foreground">{day.dayNumber}</div>
+          <div key={day.dayNumber} className="border rounded-lg p-4 bg-white shadow-sm">
+            <div className="flex items-center justify-between mb-4 border-b pb-2">
+              <div>
+                <h3 className="font-semibold capitalize text-lg">{day.dayName}</h3>
+                <p className="text-sm text-muted-foreground">{day.dayNumber}</p>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {day.messages.length} incidencia{day.messages.length !== 1 ? 's' : ''}
+              </div>
             </div>
             <div className="space-y-2">
               {day.messages.map((message, index) => (
