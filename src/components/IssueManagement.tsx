@@ -132,7 +132,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64String = reader.result as string;
-          // Remove the data URL prefix to get just the base64 content
           const base64Content = base64String.split(',')[1];
           resolve(base64Content);
         };
@@ -167,8 +166,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
                 <p><strong>Estado actual:</strong> ${status}</p>
                 <p><strong>Descripción de la situación:</strong> ${issueDetails.message}</p>
-                ${securityImprovement ? `<p><strong>Situación a mejorar en seguridad:</strong> ${securityImprovement}</p>` : ''}
-                ${actionPlan ? `<p><strong>Plan de acción propuesto:</strong> ${actionPlan}</p>` : ''}
+                ${securityImprovements[issueDetails.id] ? `<p><strong>Situación a mejorar en seguridad:</strong> ${securityImprovements[issueDetails.id]}</p>` : ''}
+                ${actionPlans[issueDetails.id] ? `<p><strong>Plan de acción propuesto:</strong> ${actionPlans[issueDetails.id]}</p>` : ''}
               </div>
             </div>
 
@@ -184,7 +183,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
       const emailResult = await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
       
-      // Si hay una imagen, enviar un segundo correo con la imagen adjunta
       if (imageBase64) {
         const imageContent = `
           <!DOCTYPE html>

@@ -17,7 +17,7 @@ export const SecurityImprovementForm = ({
   onSave
 }: SecurityImprovementFormProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-4">
       <div className="space-y-2">
         <h4 className="font-medium">Situación a Mejorar en Seguridad</h4>
         <Textarea
@@ -25,9 +25,6 @@ export const SecurityImprovementForm = ({
           value={securityImprovement}
           onChange={(e) => onSecurityImprovementChange(e.target.value)}
         />
-        <Button onClick={onSave} className="w-full">
-          Guardar Situación
-        </Button>
       </div>
 
       <div className="space-y-2">
@@ -37,10 +34,11 @@ export const SecurityImprovementForm = ({
           value={actionPlan}
           onChange={(e) => onActionPlanChange(e.target.value)}
         />
-        <Button onClick={onSave} className="w-full">
-          Guardar Plan
-        </Button>
       </div>
+
+      <Button onClick={onSave} className="w-full">
+        Guardar Cambios
+      </Button>
     </div>
   );
 };
