@@ -1,25 +1,11 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendEmail } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
-import { Database } from "@/integrations/supabase/types";
-
-type Issue = {
-  id: number;
-  imageUrl: string;
-  timestamp: Date;
-  username: string;
-  description: string;
-  securityImprovement?: string;
-  actionPlan?: string;
-  status: "en-estudio" | "en-curso" | "cerrada";
-  assignedEmail?: string;
-}
+import { Issue } from "@/types/issue";
+import { IssueCard } from "./IssueCard";
+import { EmailAssignmentForm } from "./EmailAssignmentForm";
+import { SecurityImprovementForm } from "./SecurityImprovementForm";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -69,29 +55,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         description: "No se pudieron cargar las incidencias",
         variant: "destructive"
       });
-    }
-  };
-
-  const uploadImage = async (imageUrl: string): Promise<string> => {
-    try {
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const fileName = `${Date.now()}.${blob.type.split('/')[1]}`;
-      
-      const { data, error } = await supabase.storage
-        .from('issue-images')
-        .upload(fileName, blob);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('issue-images')
-        .getPublicUrl(fileName);
-
-      return publicUrl;
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
     }
   };
 
@@ -162,22 +125,13 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const convertBlobToBase64 = async (blobUrl: string): Promise<string> => {
     try {
-      console.log("Starting blob to base64 conversion for URL:", blobUrl);
       const response = await fetch(blobUrl);
       const blob = await response.blob();
-      console.log("Blob type:", blob.type);
       
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64String = reader.result as string;
-          console.log("Base64 string length:", base64String.length);
-          resolve(base64String);
-        };
-        reader.onerror = (error) => {
-          console.error("Error reading file:", error);
-          reject(error);
-        };
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
     } catch (error) {
@@ -188,12 +142,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const sendNotificationEmail = async (issueDetails: any, status: Issue['status']) => {
     try {
-      console.log("Attempting to send notification email:", { issueDetails, status });
-      
       let imageDataUrl = '';
       if (issueDetails.imageUrl) {
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
-        console.log("Converted image to base64, length:", imageDataUrl.length);
       }
       
       const subject = `Nueva acción de seguridad asignada - Incidencia #${issueDetails.id}`;
@@ -236,9 +187,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         </html>
       `;
 
-      console.log("Sending email with content length:", content.length);
       const emailResult = await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
-      console.log("Email sending result:", emailResult);
       return true;
     } catch (error) {
       console.error('Error al enviar el correo:', error);
@@ -279,6 +228,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         .from('issues')
         .update({
           security_improvement: securityImprovement,
+          action_plan: actionPlan,
           status: "en-curso"
         })
         .eq('id', issueId);
@@ -294,13 +244,13 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       toast({
         title: "Situación actualizada",
-        description: "Se ha guardado la situación a mejorar correctamente."
+        description: "Se han guardado los cambios correctamente."
       });
     } catch (error) {
       console.error('Error adding security improvement:', error);
       toast({
         title: "Error",
-        description: "No se pudo guardar la situación a mejorar",
+        description: "No se pudieron guardar los cambios",
         variant: "destructive"
       });
     }
@@ -310,83 +260,26 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     <div className="p-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {messages.filter(m => m.imageUrl).map((message, index) => (
-          <Card key={message.id} className="w-full">
-            <CardHeader>
-              <CardTitle className="text-lg">Incidencia #{index + 1}</CardTitle>
-              <CardDescription>
-                Reportada por {message.username} el {message.timestamp.toLocaleDateString()}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <img 
-                src={message.imageUrl} 
-                alt="Incidencia"
-                className="w-full h-48 object-cover rounded-md"
-              />
-              <p className="text-sm text-muted-foreground">{message.message}</p>
-              
-              <div className="space-y-2">
-                <h4 className="font-medium">Estado de la Incidencia</h4>
-                <Select onValueChange={(value) => handleStatusChange(message.id, value as Issue['status'])}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar estado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en-estudio">En Estudio</SelectItem>
-                    <SelectItem value="en-curso">En Curso</SelectItem>
-                    <SelectItem value="cerrada">Cerrada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <h4 className="font-medium">Enviar Notificación</h4>
-                <div className="flex space-x-2">
-                  <Input
-                    type="email"
-                    placeholder="Correo electrónico"
-                    value={assignedEmail}
-                    onChange={(e) => setAssignedEmail(e.target.value)}
-                  />
-                  <Button onClick={() => handleAssignEmail(message.id)}>
-                    Enviar Correo
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <h4 className="font-medium">Situación a Mejorar en Seguridad</h4>
-                  <Textarea
-                    placeholder="Describe la situación a mejorar..."
-                    value={securityImprovement}
-                    onChange={(e) => setSecurityImprovement(e.target.value)}
-                  />
-                  <Button 
-                    onClick={() => handleAddSecurityImprovement(message.id)}
-                    className="w-full"
-                  >
-                    Guardar Situación
-                  </Button>
-                </div>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium">Plan de Acción</h4>
-                  <Textarea
-                    placeholder="Describe el plan de acción..."
-                    value={actionPlan}
-                    onChange={(e) => setActionPlan(e.target.value)}
-                  />
-                  <Button 
-                    onClick={() => handleAddSecurityImprovement(message.id)}
-                    className="w-full"
-                  >
-                    Guardar Plan
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <IssueCard
+            key={message.id}
+            message={message}
+            index={index}
+            onStatusChange={handleStatusChange}
+          >
+            <EmailAssignmentForm
+              assignedEmail={assignedEmail}
+              onEmailChange={setAssignedEmail}
+              onAssign={() => handleAssignEmail(message.id)}
+            />
+            
+            <SecurityImprovementForm
+              securityImprovement={securityImprovement}
+              actionPlan={actionPlan}
+              onSecurityImprovementChange={setSecurityImprovement}
+              onActionPlanChange={setActionPlan}
+              onSave={() => handleAddSecurityImprovement(message.id)}
+            />
+          </IssueCard>
         ))}
       </div>
     </div>
