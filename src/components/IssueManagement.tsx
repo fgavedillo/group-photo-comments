@@ -11,7 +11,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const {
     securityImprovements,
     actionPlans,
-    assignedEmail,
     handleStatusChange,
     handleAreaChange,
     handleResponsableChange,
@@ -54,6 +53,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               <EmailAssignmentForm
                 assignedEmail={message.assigned_email || ''}
                 onEmailChange={(value) => handleAssignedEmailChange(message.id, value)}
+                message={message.message}
               />
               
               <SecurityImprovementForm

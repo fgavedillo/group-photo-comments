@@ -15,14 +15,9 @@ serve(async (req: Request) => {
   }
 
   try {
-    const { to, subject, content, attachments } = await req.json();
+    const { to, subject, content } = await req.json();
     
-    console.log("Received email request:", { 
-      to, 
-      subject, 
-      contentLength: content?.length,
-      hasAttachments: !!attachments?.length 
-    });
+    console.log("Received email request:", { to, subject, contentLength: content?.length });
 
     if (!to || !subject || !content) {
       throw new Error("Missing required fields: to, subject, or content");
@@ -32,35 +27,32 @@ serve(async (req: Request) => {
       from: "Seguridad <whatsapp@prlconecta.es>",
       to: [to],
       subject: subject,
-      html: content,
-      attachments: attachments || [],
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="color: #333;">${subject}</h1>
+          <p style="color: #666; line-height: 1.6;">${content}</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="color: #999; font-size: 0.9em;">Este es un mensaje automático, por favor no responda a este correo.</p>
+        </div>
+      `,
     });
 
     console.log("Email sent successfully:", emailResponse);
 
-    return new Response(
-      JSON.stringify(emailResponse),
-      { 
-        headers: { 
-          "Content-Type": "application/json",
-          ...corsHeaders
-        },
-        status: 200 
-      }
-    );
+    return new Response(JSON.stringify(emailResponse), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        ...corsHeaders
+      },
+    });
   } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(
-      JSON.stringify({ 
-        error: error.message || "Failed to send email",
-        details: error
-      }),
-      { 
-        headers: { 
-          "Content-Type": "application/json",
-          ...corsHeaders
-        },
-        status: 500
+      JSON.stringify({ error: error.message }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
   }
