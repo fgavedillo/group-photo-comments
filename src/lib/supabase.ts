@@ -5,12 +5,19 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const sendEmail = async (to: string, subject: string, content: string) => {
+interface Attachment {
+  filename: string;
+  content: string;
+  encoding: string;
+  type: string;
+}
+
+export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[]) => {
   try {
     console.log("Attempting to send email via Supabase function:", { to, subject });
     
     const { data, error } = await supabase.functions.invoke('send-email', {
-      body: { to, subject, content }
+      body: { to, subject, content, attachments }
     });
 
     if (error) {

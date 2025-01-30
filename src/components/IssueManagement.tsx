@@ -130,7 +130,12 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          // Remove the data URL prefix to get just the base64 content
+          const base64Content = base64String.split(',')[1];
+          resolve(base64Content);
+        };
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
@@ -142,9 +147,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const sendNotificationEmail = async (issueDetails: any, status: Issue['status']) => {
     try {
-      let imageDataUrl = '';
+      let imageBase64 = '';
       if (issueDetails.imageUrl) {
-        imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
+        imageBase64 = await convertBlobToBase64(issueDetails.imageUrl);
       }
       
       const subject = `Nueva acción de seguridad asignada - Incidencia #${issueDetails.id}`;
@@ -167,16 +172,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               </div>
             </div>
 
-            ${imageDataUrl ? `
-              <div style="margin: 20px 0;">
-                <p><strong>Imagen de referencia:</strong></p>
-                <img src="${imageDataUrl}" 
-                     alt="Imagen de la situación" 
-                     style="display: block; max-width: 500px; width: 100%; height: auto; margin: 0 auto;"
-                />
-              </div>
-            ` : ''}
-
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
               <p><strong>Reportado por:</strong> ${issueDetails.username}</p>
               <p><strong>Fecha:</strong> ${issueDetails.timestamp.toLocaleDateString()}</p>
@@ -188,6 +183,31 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       `;
 
       const emailResult = await sendEmail(assignedEmail || "fgavedillo@gmail.com", subject, content);
+      
+      // Si hay una imagen, enviar un segundo correo con la imagen adjunta
+      if (imageBase64) {
+        const imageContent = `
+          <!DOCTYPE html>
+          <html>
+          <body>
+            <p>Imagen adjunta de la incidencia #${issueDetails.id}</p>
+          </body>
+          </html>
+        `;
+        
+        await sendEmail(
+          assignedEmail || "fgavedillo@gmail.com",
+          `Imagen de la incidencia #${issueDetails.id}`,
+          imageContent,
+          [{
+            filename: `incidencia-${issueDetails.id}.jpg`,
+            content: imageBase64,
+            encoding: 'base64',
+            type: 'image/jpeg'
+          }]
+        );
+      }
+
       return true;
     } catch (error) {
       console.error('Error al enviar el correo:', error);
