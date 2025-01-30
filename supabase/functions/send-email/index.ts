@@ -48,7 +48,7 @@ serve(async (req: Request) => {
         status: 200 
       }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(
       JSON.stringify({ 
