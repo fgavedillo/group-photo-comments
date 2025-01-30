@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, ChevronDown, ChevronUp, Image } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -114,12 +114,16 @@ export const IssueCard = ({
           </div>
         </CardHeader>
         {message.imageUrl && (
-          <img 
-            src={message.imageUrl} 
-            alt="Incidencia"
-            className="w-full h-24 object-cover cursor-pointer"
-            onDoubleClick={() => setIsImageModalOpen(true)}
-          />
+          <div className="flex justify-center p-2">
+            <Button
+              variant="ghost"
+              className="relative group"
+              onClick={() => setIsImageModalOpen(true)}
+            >
+              <Image className="w-8 h-8 text-primary transition-colors group-hover:text-primary-hover" />
+              <span className="sr-only">Ver imagen</span>
+            </Button>
+          </div>
         )}
         {isExpanded && (
           <CardContent className="p-2 space-y-2">
