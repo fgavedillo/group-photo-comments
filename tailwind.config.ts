@@ -64,6 +64,9 @@ export default {
       backgroundImage: {
         'whatsapp-pattern': "url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAABsSURBVEhL7Y1BCoAwDAT7Qf9U/YB/9kRo2R0jiGlEPAQcSJYwm80PaZLRGeS9MxvGEw5+C18/8IWml3v0OHqvPs9hP1DOY4yK/KBYQJFzjP2gWECRc4z9oFhAkXOM/aBYQJFzjP2gWECRc4z9oADnNpkd0Vx55G4YAAAAAElFTkSuQmCC')",
       },
+      backgroundColor: {
+        'whatsapp-bg': '#F2FCE2', // Fondo verde suave de WhatsApp
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

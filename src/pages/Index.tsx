@@ -53,14 +53,15 @@ const Index = () => {
     try {
       console.log("Iniciando envío de mensaje...");
       
-      // Crear la incidencia
+      // Crear la incidencia con estado inicial
       console.log("Creando incidencia...");
       const { data: issueData, error: issueError } = await supabase
         .from('issues')
         .insert({
           message: text,
           username: "Usuario",
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          status: "en-estudio" // Establecemos el estado automáticamente
         })
         .select()
         .single();
@@ -77,7 +78,6 @@ const Index = () => {
         console.log("Subiendo imagen...");
         const fileName = `${Date.now()}-anon.${image.name.split('.').pop()}`;
         
-        // Subir al almacenamiento
         const { error: uploadError } = await supabase.storage
           .from('issue-images')
           .upload(fileName, image);
@@ -89,14 +89,12 @@ const Index = () => {
 
         console.log("Imagen subida correctamente");
 
-        // Obtener la URL pública
         const { data: { publicUrl } } = supabase.storage
           .from('issue-images')
           .getPublicUrl(fileName);
 
         console.log("URL pública de la imagen:", publicUrl);
 
-        // Crear el registro de la imagen
         const { error: imageError } = await supabase
           .from('issue_images')
           .insert({
