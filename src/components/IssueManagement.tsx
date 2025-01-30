@@ -30,11 +30,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const filteredMessages = filterIssues(messages);
 
-  const handleMessageDelete = async (messageId: string) => {
-    const updatedMessages = messages.filter(m => m.id !== messageId);
-    return updatedMessages;
-  };
-
   return (
     <div className="p-4 space-y-4">
       <IssueFilters
@@ -53,7 +48,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             onStatusChange={handleStatusChange}
             onAreaChange={handleAreaChange}
             onResponsableChange={handleResponsableChange}
-            onDelete={() => handleMessageDelete(message.id)}
+            onDelete={loadIssues}
           >
             <div className="space-y-4">
               <EmailAssignmentForm
