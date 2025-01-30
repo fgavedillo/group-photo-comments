@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 interface SecurityImprovementFormProps {
@@ -15,7 +14,6 @@ export const SecurityImprovementForm = ({
   actionPlan,
   onSecurityImprovementChange,
   onActionPlanChange,
-  onSave,
   message
 }: SecurityImprovementFormProps) => {
   return (
@@ -38,10 +36,6 @@ export const SecurityImprovementForm = ({
           className="bg-[#F2FCE2]"
         />
       </div>
-
-      <Button onClick={onSave} className="w-full">
-        Guardar Cambios
-      </Button>
     </div>
   );
 };
