@@ -52,7 +52,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         onResponsableFilterChange={setResponsableFilter}
       />
       
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 mt-0">
         {weekDays.map((day) => (
           <WeekDayCard
             key={day.dayNumber}
