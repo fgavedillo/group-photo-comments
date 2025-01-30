@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendEmail } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Issue {
   id: number;
@@ -26,6 +27,135 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [actionPlan, setActionPlan] = useState("");
   const [assignedEmail, setAssignedEmail] = useState("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    loadIssues();
+  }, []);
+
+  const loadIssues = async () => {
+    try {
+      const { data: issuesData, error: issuesError } = await supabase
+        .from('issues')
+        .select(`
+          *,
+          issue_images (
+            image_url
+          )
+        `)
+        .order('timestamp', { ascending: false });
+
+      if (issuesError) throw issuesError;
+
+      const formattedIssues = issuesData.map(issue => ({
+        id: issue.id,
+        imageUrl: issue.issue_images?.[0]?.image_url || '',
+        timestamp: new Date(issue.timestamp),
+        username: issue.username,
+        description: issue.message,
+        securityImprovement: issue.security_improvement,
+        actionPlan: issue.action_plan,
+        status: issue.status,
+        assignedEmail: issue.assigned_email
+      }));
+
+      setIssues(formattedIssues);
+    } catch (error) {
+      console.error('Error loading issues:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las incidencias",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const uploadImage = async (imageUrl: string): Promise<string> => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const fileName = `${Date.now()}.${blob.type.split('/')[1]}`;
+      
+      const { data, error } = await supabase.storage
+        .from('issue-images')
+        .upload(fileName, blob);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('issue-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  const handleStatusChange = async (issueId: number, status: Issue['status']) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ status })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      const issue = messages.find(m => m.id === issueId);
+      if (issue) {
+        await handleEmailSend(issueId, status);
+      }
+
+      await loadIssues();
+    } catch (error) {
+      console.error('Error updating status:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el estado",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAssignEmail = async (issueId: number) => {
+    if (!assignedEmail.includes('@')) {
+      toast({
+        title: "Error",
+        description: "Por favor, introduce un correo electrónico válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ assigned_email: assignedEmail })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      const issueToAssign = messages.find(m => m.id === issueId);
+      if (issueToAssign) {
+        await sendNotificationEmail(issueToAssign, "en-estudio");
+      }
+
+      await loadIssues();
+      setAssignedEmail("");
+      
+      toast({
+        title: "Correo enviado",
+        description: `Se ha enviado la notificación a ${assignedEmail}`
+      });
+    } catch (error) {
+      console.error('Error assigning email:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo asignar el correo electrónico",
+        variant: "destructive"
+      });
+    }
+  };
 
   const convertBlobToBase64 = async (blobUrl: string): Promise<string> => {
     try {
@@ -113,13 +243,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     }
   };
 
-  const handleStatusChange = async (issueId: number, status: Issue['status']) => {
-    const issue = messages.find(m => m.id === issueId);
-    if (issue) {
-      await handleEmailSend(issueId, status);
-    }
-  };
-
   const handleEmailSend = async (issueId: number, status: Issue['status']) => {
     setIssues(prev => prev.map(issue => {
       if (issue.id === issueId) {
@@ -147,68 +270,37 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     });
   };
 
-  const handleAssignEmail = async (issueId: number) => {
-    if (!assignedEmail.includes('@')) {
+  const handleAddSecurityImprovement = async (issueId: number) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          security_improvement: securityImprovement,
+          status: "en-curso"
+        })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      const issue = messages.find(m => m.id === issueId);
+      if (issue) {
+        await sendNotificationEmail(issue, "en-curso");
+      }
+
+      await loadIssues();
+      
+      toast({
+        title: "Situación actualizada",
+        description: "Se ha guardado la situación a mejorar correctamente."
+      });
+    } catch (error) {
+      console.error('Error adding security improvement:', error);
       toast({
         title: "Error",
-        description: "Por favor, introduce un correo electrónico válido",
+        description: "No se pudo guardar la situación a mejorar",
         variant: "destructive"
       });
-      return;
     }
-
-    const issueToAssign = messages.find(m => m.id === issueId);
-    if (issueToAssign) {
-      const emailSent = await sendNotificationEmail(issueToAssign, "en-estudio");
-      if (!emailSent) {
-        toast({
-          title: "Error",
-          description: "No se pudo enviar el correo de notificación",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    setIssues(prev => prev.map(issue => {
-      if (issue.id === issueId) {
-        return { ...issue, assignedEmail };
-      }
-      return issue;
-    }));
-    
-    toast({
-      title: "Correo enviado",
-      description: `Se ha enviado la notificación a ${assignedEmail}`
-    });
-    setAssignedEmail("");
-  };
-
-  const handleAddSecurityImprovement = async (issueId: number) => {
-    setIssues(prev => prev.map(issue => {
-      if (issue.id === issueId) {
-        return { ...issue, securityImprovement, status: "en-curso" };
-      }
-      return issue;
-    }));
-
-    const issue = messages.find(m => m.id === issueId);
-    if (issue) {
-      const emailSent = await sendNotificationEmail(issue, "en-curso");
-      if (!emailSent) {
-        toast({
-          title: "Error",
-          description: "No se pudo enviar el correo de notificación",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
-    toast({
-      title: "Situación actualizada",
-      description: "Se ha guardado la situación a mejorar correctamente."
-    });
   };
 
   return (

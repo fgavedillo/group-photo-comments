@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList, type Message } from "@/components/MessageList";
 import { useToast } from "@/hooks/use-toast";
@@ -12,28 +12,38 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
 
-  // Función para probar el envío de correo
-  const testEmail = async () => {
-    try {
-      await sendEmail(
-        "fgavedillo@gmail.com",
-        "Prueba de envío de correo",
-        `
-        <h1>Prueba de envío de correo</h1>
-        <p>Este es un correo de prueba enviado desde la aplicación.</p>
-        <p>Fecha y hora: ${new Date().toLocaleString()}</p>
-        `
-      );
+  useEffect(() => {
+    loadMessages();
+  }, []);
 
-      toast({
-        title: "Correo enviado",
-        description: "El correo de prueba ha sido enviado exitosamente.",
-      });
+  const loadMessages = async () => {
+    try {
+      const { data: issuesData, error: issuesError } = await supabase
+        .from('issues')
+        .select(`
+          *,
+          issue_images (
+            image_url
+          )
+        `)
+        .order('timestamp', { ascending: true });
+
+      if (issuesError) throw issuesError;
+
+      const formattedMessages = issuesData.map(issue => ({
+        id: issue.id.toString(),
+        username: issue.username,
+        timestamp: new Date(issue.timestamp),
+        message: issue.message,
+        imageUrl: issue.issue_images?.[0]?.image_url || undefined
+      }));
+
+      setMessages(formattedMessages);
     } catch (error) {
-      console.error("Error al enviar el correo de prueba:", error);
+      console.error('Error loading messages:', error);
       toast({
         title: "Error",
-        description: "No se pudo enviar el correo de prueba. Revisa la consola para más detalles.",
+        description: "No se pudieron cargar los mensajes",
         variant: "destructive"
       });
     }
@@ -41,25 +51,53 @@ const Index = () => {
 
   const handleSendMessage = async (text: string, image?: File) => {
     try {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        username: "Usuario",
-        timestamp: new Date(),
-        message: text,
-      };
-
+      let imageUrl = '';
+      
       if (image) {
-        newMessage.imageUrl = URL.createObjectURL(image);
+        const fileName = `${Date.now()}.${image.name.split('.').pop()}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('issue-images')
+          .upload(fileName, image);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('issue-images')
+          .getPublicUrl(fileName);
+          
+        imageUrl = publicUrl;
       }
 
-      setMessages((prev) => [...prev, newMessage]);
+      const { data: issueData, error: issueError } = await supabase
+        .from('issues')
+        .insert({
+          message: text,
+          username: "Usuario",
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select()
+        .single();
+
+      if (issueError) throw issueError;
+
+      if (imageUrl) {
+        const { error: imageError } = await supabase
+          .from('issue_images')
+          .insert({
+            issue_id: issueData.id,
+            image_url: imageUrl
+          });
+
+        if (imageError) throw imageError;
+      }
+
+      await loadMessages();
       
       toast({
         title: "Mensaje enviado",
         description: "Tu mensaje ha sido publicado exitosamente.",
       });
 
-      // Enviar notificación por email
       await sendEmail(
         "fgavedillo@gmail.com",
         "Nuevo mensaje en el sistema",
@@ -81,12 +119,6 @@ const Index = () => {
         <h1 className="text-lg font-semibold text-center text-foreground">
           Sistema de Gestión de Incidencias
         </h1>
-        <button
-          onClick={testEmail}
-          className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-        >
-          Enviar correo de prueba
-        </button>
       </header>
 
       <Tabs defaultValue="chat" className="flex-1">
