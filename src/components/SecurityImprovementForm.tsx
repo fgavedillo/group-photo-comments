@@ -7,6 +7,7 @@ interface SecurityImprovementFormProps {
   onSecurityImprovementChange: (value: string) => void;
   onActionPlanChange: (value: string) => void;
   onSave: () => void;
+  message: string;
 }
 
 export const SecurityImprovementForm = ({
@@ -14,7 +15,8 @@ export const SecurityImprovementForm = ({
   actionPlan,
   onSecurityImprovementChange,
   onActionPlanChange,
-  onSave
+  onSave,
+  message
 }: SecurityImprovementFormProps) => {
   return (
     <div className="space-y-4">
@@ -22,7 +24,7 @@ export const SecurityImprovementForm = ({
         <h4 className="font-medium">Situación a Mejorar en Seguridad</h4>
         <Textarea
           placeholder="Describe la situación a mejorar..."
-          value={securityImprovement}
+          value={securityImprovement || message}
           onChange={(e) => onSecurityImprovementChange(e.target.value)}
         />
       </div>

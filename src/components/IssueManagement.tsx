@@ -63,6 +63,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
                 onSecurityImprovementChange={(value) => handleSecurityImprovementChange(message.id, value)}
                 onActionPlanChange={(value) => handleActionPlanChange(message.id, value)}
                 onSave={() => handleAddSecurityImprovement(message.id)}
+                message={message.message}
               />
             </div>
           </IssueCard>
