@@ -7,14 +7,32 @@ import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
 import { supabase } from "@/lib/supabase";
 import { sendEmail } from "@/lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Auth } from "@/components/Auth";
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [showAuth, setShowAuth] = useState(false);
+  const [user, setUser] = useState(null);
   const { toast } = useToast();
 
   useEffect(() => {
     loadMessages();
+    checkUser();
+
+    // Suscribirse a cambios en la autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+      setShowAuth(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const checkUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    setUser(user);
+  };
 
   const loadMessages = async () => {
     try {
@@ -50,6 +68,11 @@ const Index = () => {
   };
 
   const handleSendMessage = async (text: string, image?: File) => {
+    if (!user) {
+      setShowAuth(true);
+      return;
+    }
+
     try {
       console.log("Iniciando envío de mensaje...");
       
@@ -147,12 +170,31 @@ const Index = () => {
     }
   };
 
+  if (showAuth) {
+    return <Auth />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto bg-white shadow-sm">
-      <header className="bg-white border-b border-gray-100 p-4">
-        <h1 className="text-lg font-semibold text-center text-foreground">
+      <header className="bg-white border-b border-gray-100 p-4 flex justify-between items-center">
+        <h1 className="text-lg font-semibold text-foreground">
           Sistema de Gestión de Incidencias
         </h1>
+        {user ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">{user.email}</span>
+            <Button 
+              variant="outline" 
+              onClick={() => supabase.auth.signOut()}
+            >
+              Cerrar Sesión
+            </Button>
+          </div>
+        ) : (
+          <Button onClick={() => setShowAuth(true)}>
+            Iniciar Sesión
+          </Button>
+        )}
       </header>
 
       <Tabs defaultValue="chat" className="flex-1">
