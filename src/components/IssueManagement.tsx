@@ -3,6 +3,7 @@ import { useIssueActions } from "@/hooks/useIssueActions";
 import { useIssueFilters } from "@/hooks/useIssueFilters";
 import { IssueCard } from "./IssueCard";
 import { SecurityImprovementForm } from "./SecurityImprovementForm";
+import { EmailAssignmentForm } from "./EmailAssignmentForm";
 import { IssueFilters } from "./IssueFilters";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
@@ -10,12 +11,14 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const {
     securityImprovements,
     actionPlans,
+    assignedEmail,
     handleStatusChange,
     handleAreaChange,
     handleResponsableChange,
     handleSecurityImprovementChange,
     handleActionPlanChange,
-    handleAddSecurityImprovement
+    handleAddSecurityImprovement,
+    handleAssignedEmailChange
   } = useIssueActions(loadIssues);
 
   const {
@@ -47,13 +50,20 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             onAreaChange={handleAreaChange}
             onResponsableChange={handleResponsableChange}
           >
-            <SecurityImprovementForm
-              securityImprovement={securityImprovements[message.id] || ''}
-              actionPlan={actionPlans[message.id] || ''}
-              onSecurityImprovementChange={(value) => handleSecurityImprovementChange(message.id, value)}
-              onActionPlanChange={(value) => handleActionPlanChange(message.id, value)}
-              onSave={() => handleAddSecurityImprovement(message.id)}
-            />
+            <div className="space-y-4">
+              <EmailAssignmentForm
+                assignedEmail={message.assigned_email || ''}
+                onEmailChange={(value) => handleAssignedEmailChange(message.id, value)}
+              />
+              
+              <SecurityImprovementForm
+                securityImprovement={securityImprovements[message.id] || ''}
+                actionPlan={actionPlans[message.id] || ''}
+                onSecurityImprovementChange={(value) => handleSecurityImprovementChange(message.id, value)}
+                onActionPlanChange={(value) => handleActionPlanChange(message.id, value)}
+                onSave={() => handleAddSecurityImprovement(message.id)}
+              />
+            </div>
           </IssueCard>
         ))}
       </div>
