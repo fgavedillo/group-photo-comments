@@ -6,7 +6,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendEmail } from "@/lib/supabase";
-import { ImageCropper } from "./ImageCropper";
 
 interface Issue {
   id: number;
@@ -26,9 +25,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [securityImprovement, setSecurityImprovement] = useState("");
   const [actionPlan, setActionPlan] = useState("");
   const [assignedEmail, setAssignedEmail] = useState("");
-  const [showCropper, setShowCropper] = useState(false);
-  const [currentImageUrl, setCurrentImageUrl] = useState("");
-  const [currentIssueId, setCurrentIssueId] = useState<number | null>(null);
   const { toast } = useToast();
 
   const convertBlobToBase64 = async (blobUrl: string): Promise<string> => {
@@ -57,17 +53,14 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     }
   };
 
-  const sendNotificationEmail = async (issueDetails: any, status: Issue['status'], croppedImageUrl?: string) => {
+  const sendNotificationEmail = async (issueDetails: any, status: Issue['status']) => {
     try {
       console.log("Attempting to send notification email:", { issueDetails, status });
       
       let imageDataUrl = '';
-      if (croppedImageUrl) {
-        imageDataUrl = croppedImageUrl;
-        console.log("Using cropped image, length:", imageDataUrl.length);
-      } else if (issueDetails.imageUrl) {
+      if (issueDetails.imageUrl) {
         imageDataUrl = await convertBlobToBase64(issueDetails.imageUrl);
-        console.log("Converted original image to base64, length:", imageDataUrl.length);
+        console.log("Converted image to base64, length:", imageDataUrl.length);
       }
       
       const subject = `Nueva acción de seguridad asignada - Incidencia #${issueDetails.id}`;
@@ -121,17 +114,13 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   };
 
   const handleStatusChange = async (issueId: number, status: Issue['status']) => {
-    setCurrentIssueId(issueId);
     const issue = messages.find(m => m.id === issueId);
-    if (issue?.imageUrl) {
-      setCurrentImageUrl(issue.imageUrl);
-      setShowCropper(true);
-    } else {
+    if (issue) {
       await handleEmailSend(issueId, status);
     }
   };
 
-  const handleEmailSend = async (issueId: number, status: Issue['status'], croppedImage?: string) => {
+  const handleEmailSend = async (issueId: number, status: Issue['status']) => {
     setIssues(prev => prev.map(issue => {
       if (issue.id === issueId) {
         return { ...issue, status };
@@ -141,7 +130,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
     const issue = messages.find(m => m.id === issueId);
     if (issue) {
-      const emailSent = await sendNotificationEmail(issue, status, croppedImage);
+      const emailSent = await sendNotificationEmail(issue, status);
       if (!emailSent) {
         toast({
           title: "Error",
@@ -156,16 +145,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       title: "Estado actualizado",
       description: `La incidencia ha sido marcada como ${status}`
     });
-  };
-
-  const handleCropComplete = async (croppedImage: string) => {
-    if (currentIssueId === null) return;
-    
-    const issue = messages.find(m => m.id === currentIssueId);
-    if (!issue) return;
-
-    setShowCropper(false);
-    await handleEmailSend(currentIssueId, "en-estudio", croppedImage);
   };
 
   const handleAssignEmail = async (issueId: number) => {
@@ -234,13 +213,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   return (
     <div className="p-4 space-y-4">
-      {showCropper && (
-        <ImageCropper
-          imageUrl={currentImageUrl}
-          onCrop={handleCropComplete}
-          onCancel={() => setShowCropper(false)}
-        />
-      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {messages.filter(m => m.imageUrl).map((message, index) => (
           <Card key={message.id} className="w-full">
