@@ -7,8 +7,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { sendEmail } from "@/lib/supabase";
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
 
-interface Issue {
+type Issue = {
   id: number;
   imageUrl: string;
   timestamp: Date;
@@ -46,16 +47,18 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
       if (issuesError) throw issuesError;
 
+      if (!issuesData) return;
+
       const formattedIssues = issuesData.map(issue => ({
         id: issue.id,
         imageUrl: issue.issue_images?.[0]?.image_url || '',
-        timestamp: new Date(issue.timestamp),
+        timestamp: new Date(issue.timestamp || ''),
         username: issue.username,
         description: issue.message,
-        securityImprovement: issue.security_improvement,
-        actionPlan: issue.action_plan,
-        status: issue.status,
-        assignedEmail: issue.assigned_email
+        securityImprovement: issue.security_improvement || undefined,
+        actionPlan: issue.action_plan || undefined,
+        status: (issue.status as Issue['status']) || 'en-estudio',
+        assignedEmail: issue.assigned_email || undefined
       }));
 
       setIssues(formattedIssues);
