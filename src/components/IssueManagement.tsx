@@ -6,6 +6,7 @@ import { Issue } from "@/types/issue";
 import { IssueCard } from "./IssueCard";
 import { EmailAssignmentForm } from "./EmailAssignmentForm";
 import { SecurityImprovementForm } from "./SecurityImprovementForm";
+import { IssueFilters } from "./IssueFilters";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -13,6 +14,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [securityImprovements, setSecurityImprovements] = useState<{[key: string]: string}>({});
   const [actionPlans, setActionPlans] = useState<{[key: string]: string}>({});
   const [assignedEmail, setAssignedEmail] = useState("");
+  const [areaFilter, setAreaFilter] = useState("");
+  const [responsableFilter, setResponsableFilter] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -44,7 +47,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         securityImprovement: issue.security_improvement || undefined,
         actionPlan: issue.action_plan || undefined,
         status: (issue.status as Issue['status']) || 'en-estudio',
-        assignedEmail: issue.assigned_email || undefined
+        assignedEmail: issue.assigned_email || undefined,
+        area: issue.area || undefined,
+        responsable: issue.responsable || undefined
       }));
 
       setIssues(formattedIssues);
@@ -53,6 +58,46 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       toast({
         title: "Error",
         description: "No se pudieron cargar las incidencias",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAreaChange = async (issueId: number, area: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ area })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      await loadIssues();
+    } catch (error) {
+      console.error('Error updating area:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el área",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleResponsableChange = async (issueId: number, responsable: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ responsable })
+        .eq('id', issueId);
+
+      if (error) throw error;
+
+      await loadIssues();
+    } catch (error) {
+      console.error('Error updating responsable:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el responsable",
         variant: "destructive"
       });
     }
@@ -288,15 +333,30 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     }
   };
 
+  const filteredMessages = messages.filter(m => {
+    const areaMatch = !areaFilter || (m.area && m.area.toLowerCase().includes(areaFilter.toLowerCase()));
+    const responsableMatch = !responsableFilter || (m.responsable && m.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
+    return areaMatch && responsableMatch && m.imageUrl;
+  });
+
   return (
     <div className="p-4 space-y-4">
+      <IssueFilters
+        areaFilter={areaFilter}
+        responsableFilter={responsableFilter}
+        onAreaFilterChange={setAreaFilter}
+        onResponsableFilterChange={setResponsableFilter}
+      />
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {messages.filter(m => m.imageUrl).map((message, index) => (
+        {filteredMessages.map((message, index) => (
           <IssueCard
             key={message.id}
             message={message}
             index={index}
             onStatusChange={handleStatusChange}
+            onAreaChange={handleAreaChange}
+            onResponsableChange={handleResponsableChange}
           >
             <EmailAssignmentForm
               assignedEmail={assignedEmail}

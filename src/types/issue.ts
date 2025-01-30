@@ -8,4 +8,6 @@ export type Issue = {
   actionPlan?: string;
   status: "en-estudio" | "en-curso" | "cerrada";
   assignedEmail?: string;
+  area?: string;
+  responsable?: string;
 }

@@ -41,9 +41,11 @@ export type Database = {
       issues: {
         Row: {
           action_plan: string | null
+          area: string | null
           assigned_email: string | null
           id: number
           message: string
+          responsable: string | null
           security_improvement: string | null
           status: string | null
           timestamp: string | null
@@ -52,9 +54,11 @@ export type Database = {
         }
         Insert: {
           action_plan?: string | null
+          area?: string | null
           assigned_email?: string | null
           id?: number
           message: string
+          responsable?: string | null
           security_improvement?: string | null
           status?: string | null
           timestamp?: string | null
@@ -63,9 +67,11 @@ export type Database = {
         }
         Update: {
           action_plan?: string | null
+          area?: string | null
           assigned_email?: string | null
           id?: number
           message?: string
+          responsable?: string | null
           security_improvement?: string | null
           status?: string | null
           timestamp?: string | null
