@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendEmail } from "@/lib/supabase";
+import { useState, useEffect } from "react";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -12,9 +13,19 @@ interface EmailAssignmentFormProps {
 
 export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message }: EmailAssignmentFormProps) => {
   const { toast } = useToast();
+  const [email, setEmail] = useState(assignedEmail);
+
+  useEffect(() => {
+    setEmail(assignedEmail);
+  }, [assignedEmail]);
+
+  const handleEmailChange = (newEmail: string) => {
+    setEmail(newEmail);
+    onEmailChange(newEmail);
+  };
 
   const handleSendEmail = async () => {
-    if (!assignedEmail) {
+    if (!email) {
       toast({
         title: "Error",
         description: "Por favor, ingrese un correo electrónico",
@@ -25,7 +36,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message }: E
 
     try {
       await sendEmail(
-        assignedEmail,
+        email,
         "Nueva incidencia asignada",
         `Se le ha asignado una nueva incidencia: ${message}`
       );
@@ -51,8 +62,8 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message }: E
         <Input
           type="email"
           placeholder="Correo electrónico"
-          defaultValue={assignedEmail}
-          onChange={(e) => onEmailChange(e.target.value)}
+          value={email}
+          onChange={(e) => handleEmailChange(e.target.value)}
         />
         <Button 
           variant="outline" 
