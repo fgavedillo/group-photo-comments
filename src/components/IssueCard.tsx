@@ -60,16 +60,11 @@ export const IssueCard = ({
 
         <div className="space-y-2">
           <h4 className="font-medium">Estado de la Incidencia</h4>
-          <Select onValueChange={(value) => onStatusChange(message.id, value as Issue['status'])}>
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en-estudio">En Estudio</SelectItem>
-              <SelectItem value="en-curso">En Curso</SelectItem>
-              <SelectItem value="cerrada">Cerrada</SelectItem>
-            </SelectContent>
-          </Select>
+          <p className="text-sm text-muted-foreground">
+            {message.status === 'en-estudio' ? 'En Estudio' : 
+             message.status === 'en-curso' ? 'En Curso' : 
+             message.status === 'cerrada' ? 'Cerrada' : 'Desconocido'}
+          </p>
         </div>
 
         {children}

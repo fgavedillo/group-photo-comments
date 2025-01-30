@@ -2,7 +2,6 @@ import { useIssues } from "@/hooks/useIssues";
 import { useIssueActions } from "@/hooks/useIssueActions";
 import { useIssueFilters } from "@/hooks/useIssueFilters";
 import { IssueCard } from "./IssueCard";
-import { EmailAssignmentForm } from "./EmailAssignmentForm";
 import { SecurityImprovementForm } from "./SecurityImprovementForm";
 import { IssueFilters } from "./IssueFilters";
 
@@ -11,12 +10,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const {
     securityImprovements,
     actionPlans,
-    assignedEmail,
-    setAssignedEmail,
     handleStatusChange,
     handleAreaChange,
     handleResponsableChange,
-    handleAssignEmail,
     handleSecurityImprovementChange,
     handleActionPlanChange,
     handleAddSecurityImprovement
@@ -51,12 +47,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             onAreaChange={handleAreaChange}
             onResponsableChange={handleResponsableChange}
           >
-            <EmailAssignmentForm
-              assignedEmail={assignedEmail}
-              onEmailChange={setAssignedEmail}
-              onAssign={() => handleAssignEmail(message.id)}
-            />
-            
             <SecurityImprovementForm
               securityImprovement={securityImprovements[message.id] || ''}
               actionPlan={actionPlans[message.id] || ''}
