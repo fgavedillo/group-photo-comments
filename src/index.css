@@ -19,7 +19,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-['Inter'];
+    @apply bg-whatsapp-bg text-foreground font-['Inter'];
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }

@@ -73,7 +73,7 @@ export const MessageBubble = ({ id, username, timestamp, message, imageUrl, onDe
             {showDeleteButton && (
               <button
                 onClick={handleDelete}
-                className="absolute top-2 right-2 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 transition-colors"
+                className="absolute top-2 right-2 p-2 bg-white/50 text-gray-700 rounded-full hover:bg-white/70 transition-colors"
                 title="Eliminar mensaje"
               >
                 <Trash2 size={16} />
