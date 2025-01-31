@@ -52,7 +52,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
 
     const groupedData: ChartData[] = Object.entries(grouped).map(([date, count]) => ({
       date,
-      count
+      count: Number(count)
     }));
 
     // Calcular estadísticas
@@ -72,13 +72,13 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
 
     const pieData: PieData[] = Object.entries(byStatus).map(([name, value]) => ({
       name,
-      value
+      value: Number(value)
     }));
 
     // Calcular tendencia
     const lastTwo = groupedData.slice(-2);
     const trend = lastTwo.length < 2 ? 0 : 
-      lastTwo[1].count - lastTwo[0].count;
+      Number(lastTwo[1].count) - Number(lastTwo[0].count);
 
     return {
       groupedData,
@@ -114,7 +114,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
           value={Object.keys(stats.byStatus).length}
           badges={Object.entries(stats.byStatus).map(([status, count]) => ({
             label: status,
-            count
+            count: Number(count)
           }))}
         />
       </div>
@@ -150,7 +150,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 <DistributionBar
                   key={area}
                   label={area}
-                  value={count}
+                  value={Number(count)}
                   total={stats.total}
                 />
               ))}
@@ -168,7 +168,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 <DistributionBar
                   key={status}
                   label={status}
-                  value={count}
+                  value={Number(count)}
                   total={stats.total}
                 />
               ))}

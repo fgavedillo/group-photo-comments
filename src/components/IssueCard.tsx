@@ -100,6 +100,10 @@ export const IssueCard = ({
     }
   };
 
+  if (!message) {
+    return null;
+  }
+
   return (
     <>
       <Dialog>
