@@ -1,3 +1,8 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList, type Message } from "@/components/MessageList";
@@ -53,15 +58,13 @@ const Index = () => {
     try {
       console.log("Iniciando envío de mensaje...");
       
-      // Crear la incidencia con estado inicial
-      console.log("Creando incidencia...");
       const { data: issueData, error: issueError } = await supabase
         .from('issues')
         .insert({
           message: text,
           username: "Usuario",
           timestamp: new Date().toISOString(),
-          status: "en-estudio" // Establecemos el estado automáticamente
+          status: "en-estudio"
         })
         .select()
         .single();
@@ -73,7 +76,6 @@ const Index = () => {
 
       console.log("Incidencia creada:", issueData);
 
-      // Si hay una imagen, la subimos y creamos el registro
       if (image && issueData) {
         console.log("Subiendo imagen...");
         const fileName = `${Date.now()}-anon.${image.name.split('.').pop()}`;
@@ -138,16 +140,17 @@ const Index = () => {
         <h1 className="text-lg font-semibold text-foreground">
           Sistema de Gestión de Incidencias
         </h1>
-        <Tabs defaultValue="chat" className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none bg-white">
+      </header>
+
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+        <div className="sticky top-[4.5rem] bg-white z-40 border-b">
+          <TabsList className="w-full justify-start rounded-none">
             <TabsTrigger value="chat">Chat</TabsTrigger>
             <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
             <TabsTrigger value="kpis">Indicadores</TabsTrigger>
           </TabsList>
-        </Tabs>
-      </header>
-
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+        </div>
+        
         <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)] p-0 mt-0">
           <MessageList messages={messages} onMessageDelete={loadMessages} />
           <MessageInput onSend={handleSendMessage} />
