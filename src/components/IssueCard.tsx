@@ -62,11 +62,11 @@ export const IssueCard = ({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'cerrada':
-        return 'bg-green-50 border-green-200';
+        return 'bg-green-100 border-green-300 shadow-[0_0_0_1px] shadow-green-300/50';
       case 'en-curso':
-        return 'bg-yellow-50 border-yellow-200';
+        return 'bg-yellow-100 border-yellow-300 shadow-[0_0_0_1px] shadow-yellow-300/50';
       default:
-        return 'bg-white border-gray-100';
+        return 'bg-white border-gray-200';
     }
   };
 
