@@ -1,6 +1,4 @@
 import { IssueCard } from "./IssueCard";
-import { EmailAssignmentForm } from "./EmailAssignmentForm";
-import { SecurityImprovementForm } from "./SecurityImprovementForm";
 import { cn } from "@/lib/utils";
 
 interface WeekDayCardProps {
@@ -49,7 +47,7 @@ export const WeekDayCard = ({
       </div>
       <div className="p-4">
         {messages.length > 0 ? (
-          <div className="grid gap-3">
+          <div className="flex gap-4 overflow-x-auto pb-2">
             {messages.map((message, index) => (
               <IssueCard
                 key={message.id}

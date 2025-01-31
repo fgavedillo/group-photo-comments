@@ -134,19 +134,20 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col max-w-4xl mx-auto bg-white shadow-sm">
-      <header className="bg-white border-b border-gray-100 p-2">
+      <header className="bg-white border-b border-gray-100 p-2 sticky top-0 z-50">
         <h1 className="text-lg font-semibold text-foreground">
           Sistema de Gestión de Incidencias
         </h1>
+        <Tabs defaultValue="chat" className="w-full">
+          <TabsList className="w-full justify-start border-b rounded-none bg-white">
+            <TabsTrigger value="chat">Chat</TabsTrigger>
+            <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
+            <TabsTrigger value="kpis">Indicadores</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </header>
 
       <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-        <TabsList className="w-full justify-start border-b rounded-none">
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
-          <TabsTrigger value="kpis">Indicadores</TabsTrigger>
-        </TabsList>
-        
         <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)] p-0 mt-0">
           <MessageList messages={messages} onMessageDelete={loadMessages} />
           <MessageInput onSend={handleSendMessage} />

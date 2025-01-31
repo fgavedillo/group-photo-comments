@@ -55,6 +55,10 @@ export const IssueCard = ({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  if (!message) {
+    return null;
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'cerrada':
@@ -100,15 +104,11 @@ export const IssueCard = ({
     }
   };
 
-  if (!message) {
-    return null;
-  }
-
   return (
     <>
       <Dialog>
         <DialogTrigger asChild>
-          <Card className={cn("w-full transition-all hover:shadow-md cursor-pointer", getStatusColor(message.status))}>
+          <Card className={cn("w-[200px] transition-all hover:shadow-md cursor-pointer flex-shrink-0", getStatusColor(message.status))}>
             <CardHeader className="relative p-3">
               <div className="flex justify-between items-center">
                 <div>
@@ -133,7 +133,7 @@ export const IssueCard = ({
             {message.imageUrl && (
               <div className="px-3 pb-3">
                 <button
-                  className="w-full h-32 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
+                  className="w-full h-24 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsImageModalOpen(true);
