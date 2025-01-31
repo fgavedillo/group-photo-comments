@@ -140,7 +140,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }: { name: string; percent: number }): string => 
+                label={({ name, percent }: { name: string; percent: number }): React.ReactNode => 
                   `${name} (${(percent * 100).toFixed(0)}%)`
                 }
                 outerRadius={150}
