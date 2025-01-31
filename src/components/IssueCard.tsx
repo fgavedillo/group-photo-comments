@@ -4,11 +4,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { ImageModal } from "./ImageModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +29,12 @@ interface IssueCardProps {
   onAreaChange: (issueId: number, area: string) => void;
   onResponsableChange: (issueId: number, responsable: string) => void;
   onDelete: () => void;
-  children: React.ReactNode;
+  securityImprovements: { [key: string]: string };
+  actionPlans: { [key: string]: string };
+  onSecurityImprovementChange: (issueId: number, value: string) => void;
+  onActionPlanChange: (issueId: number, value: string) => void;
+  onAddSecurityImprovement: (issueId: number) => void;
+  onAssignedEmailChange: (issueId: number, value: string) => void;
 }
 
 export const IssueCard = ({ 
@@ -37,12 +44,27 @@ export const IssueCard = ({
   onAreaChange,
   onResponsableChange,
   onDelete,
-  children 
+  securityImprovements,
+  actionPlans,
+  onSecurityImprovementChange,
+  onActionPlanChange,
+  onAddSecurityImprovement,
+  onAssignedEmailChange
 }: IssueCardProps) => {
   const { toast } = useToast();
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'cerrada':
+        return 'bg-green-50 border-green-200';
+      case 'en-curso':
+        return 'bg-yellow-50 border-yellow-200';
+      default:
+        return 'bg-white border-gray-100';
+    }
+  };
 
   const handleDelete = async () => {
     try {
@@ -80,74 +102,75 @@ export const IssueCard = ({
 
   return (
     <>
-      <Card className="w-full transition-all hover:shadow-md">
-        <CardHeader className="relative p-3">
-          <div className="flex justify-between items-center">
-            <div>
-              <CardTitle className="text-sm text-primary">#{index + 1}</CardTitle>
-              <CardDescription className="text-xs">
-                {message.username}
-              </CardDescription>
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                onClick={() => setShowDeleteDialog(true)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        {message.imageUrl && (
-          <div className="px-3 pb-3">
-            <button
-              className="w-full h-32 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
-              onClick={() => setIsImageModalOpen(true)}
-            >
-              <img
-                src={message.imageUrl}
-                alt="Imagen de la incidencia"
-                className="w-full h-full object-cover"
-              />
-            </button>
-          </div>
-        )}
-        {isExpanded && (
-          <CardContent className="p-3 space-y-3 bg-gray-50/50">
-            <div className="space-y-2">
-              <Label htmlFor={`area-${message.id}`}>Área</Label>
-              <Input
-                id={`area-${message.id}`}
-                placeholder="Área responsable"
-                defaultValue={message.area || ''}
-                onChange={(e) => onAreaChange(message.id, e.target.value)}
-                className="h-8 text-sm"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`responsable-${message.id}`}>Responsable</Label>
-              <Input
-                id={`responsable-${message.id}`}
-                placeholder="Persona responsable"
-                defaultValue={message.responsable || ''}
-                onChange={(e) => onResponsableChange(message.id, e.target.value)}
-                className="h-8 text-sm"
-              />
+      <Dialog>
+        <DialogTrigger asChild>
+          <Card className={cn("w-full transition-all hover:shadow-md cursor-pointer", getStatusColor(message.status))}>
+            <CardHeader className="relative p-3">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-sm text-primary">#{index + 1}</CardTitle>
+                  <CardDescription className="text-xs">
+                    {message.username}
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowDeleteDialog(true);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            {message.imageUrl && (
+              <div className="px-3 pb-3">
+                <button
+                  className="w-full h-32 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsImageModalOpen(true);
+                  }}
+                >
+                  <img
+                    src={message.imageUrl}
+                    alt="Imagen de la incidencia"
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              </div>
+            )}
+          </Card>
+        </DialogTrigger>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Editar Incidencia #{index + 1}</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor={`area-${message.id}`}>Área</Label>
+                <Input
+                  id={`area-${message.id}`}
+                  placeholder="Área responsable"
+                  defaultValue={message.area || ''}
+                  onChange={(e) => onAreaChange(message.id, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`responsable-${message.id}`}>Responsable</Label>
+                <Input
+                  id={`responsable-${message.id}`}
+                  placeholder="Persona responsable"
+                  defaultValue={message.responsable || ''}
+                  onChange={(e) => onResponsableChange(message.id, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Estado</Label>
@@ -165,10 +188,44 @@ export const IssueCard = ({
                 </SelectContent>
               </Select>
             </div>
-            {children}
-          </CardContent>
-        )}
-      </Card>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Email Asignado</Label>
+                <Input
+                  placeholder="Email del responsable"
+                  defaultValue={message.assigned_email || ''}
+                  onChange={(e) => onAssignedEmailChange(message.id, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Mejora de Seguridad</Label>
+                <Input
+                  placeholder="Describe la mejora de seguridad"
+                  value={securityImprovements[message.id] || ''}
+                  onChange={(e) => onSecurityImprovementChange(message.id, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Plan de Acción</Label>
+                <Input
+                  placeholder="Describe el plan de acción"
+                  value={actionPlans[message.id] || ''}
+                  onChange={(e) => onActionPlanChange(message.id, e.target.value)}
+                  className="h-8 text-sm"
+                />
+              </div>
+              <Button 
+                onClick={() => onAddSecurityImprovement(message.id)}
+                className="w-full"
+              >
+                Guardar Mejora de Seguridad
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <ImageModal
         imageUrl={message.imageUrl}

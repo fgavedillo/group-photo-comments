@@ -1,6 +1,7 @@
 import { IssueCard } from "./IssueCard";
 import { EmailAssignmentForm } from "./EmailAssignmentForm";
 import { SecurityImprovementForm } from "./SecurityImprovementForm";
+import { cn } from "@/lib/utils";
 
 interface WeekDayCardProps {
   dayName: string;
@@ -34,7 +35,7 @@ export const WeekDayCard = ({
   onAssignedEmailChange,
 }: WeekDayCardProps) => {
   return (
-    <div className="flex-shrink-0 w-[300px] bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+    <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-4">
       <div className="bg-primary/5 px-4 py-3 border-b border-gray-100">
         <div className="flex items-center justify-between">
           <div>
@@ -46,9 +47,9 @@ export const WeekDayCard = ({
           </div>
         </div>
       </div>
-      <div className="h-[calc(100vh-16rem)] overflow-y-auto">
+      <div className="p-4">
         {messages.length > 0 ? (
-          <div className="grid gap-3 p-4">
+          <div className="grid gap-3">
             {messages.map((message, index) => (
               <IssueCard
                 key={message.id}
@@ -58,24 +59,13 @@ export const WeekDayCard = ({
                 onAreaChange={onAreaChange}
                 onResponsableChange={onResponsableChange}
                 onDelete={onDelete}
-              >
-                <div className="space-y-3">
-                  <EmailAssignmentForm
-                    assignedEmail={message.assigned_email || ''}
-                    onEmailChange={(value) => onAssignedEmailChange(message.id, value)}
-                    message={message.message}
-                  />
-                  
-                  <SecurityImprovementForm
-                    securityImprovement={securityImprovements[message.id] || ''}
-                    actionPlan={actionPlans[message.id] || ''}
-                    onSecurityImprovementChange={(value) => onSecurityImprovementChange(message.id, value)}
-                    onActionPlanChange={(value) => onActionPlanChange(message.id, value)}
-                    onSave={() => onAddSecurityImprovement(message.id)}
-                    message={message.message}
-                  />
-                </div>
-              </IssueCard>
+                securityImprovements={securityImprovements}
+                actionPlans={actionPlans}
+                onSecurityImprovementChange={onSecurityImprovementChange}
+                onActionPlanChange={onActionPlanChange}
+                onAddSecurityImprovement={onAddSecurityImprovement}
+                onAssignedEmailChange={onAssignedEmailChange}
+              />
             ))}
           </div>
         ) : (
