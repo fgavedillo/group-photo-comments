@@ -70,6 +70,17 @@ export const IssueCard = ({
     }
   };
 
+  const getBorderColor = (status: string) => {
+    switch (status) {
+      case 'cerrada':
+        return 'border-green-500';
+      case 'en-curso':
+        return 'border-yellow-500';
+      default:
+        return 'border-primary/20 hover:border-primary/40';
+    }
+  };
+
   const handleDelete = async () => {
     try {
       if (message.imageUrl) {
@@ -135,9 +146,7 @@ export const IssueCard = ({
                 <button
                   className={cn(
                     "w-full h-24 rounded-lg overflow-hidden border-2 transition-colors focus:outline-none",
-                    message.status === 'cerrada' ? 'border-green-500' : 
-                    message.status === 'en-curso' ? 'border-yellow-500' : 
-                    'border-primary/20 hover:border-primary/40'
+                    getBorderColor(message.status)
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
