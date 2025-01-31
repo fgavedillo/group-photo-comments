@@ -144,7 +144,7 @@ const Index = () => {
         <TabsList className="w-full justify-start border-b rounded-none">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
-          <TabsTrigger value="kpis">KPIs</TabsTrigger>
+          <TabsTrigger value="kpis">Indicadores</TabsTrigger>
         </TabsList>
         
         <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)] p-0 mt-0">

@@ -140,8 +140,8 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={(entry: { name: string; percent: number }): string => 
-                  `${entry.name} (${(entry.percent * 100).toFixed(0)}%)`
+                label={({ name, percent }: { name: string; percent: number }) => 
+                  `${name} (${(percent * 100).toFixed(0)}%)`
                 }
                 outerRadius={150}
                 fill="#8884d8"
@@ -238,18 +238,21 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 <button
                   onClick={() => setChartType("line")}
                   className={`p-2 rounded ${chartType === "line" ? "bg-muted" : ""}`}
+                  title="Gráfico de líneas"
                 >
                   <LineChartIcon className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setChartType("bar")}
                   className={`p-2 rounded ${chartType === "bar" ? "bg-muted" : ""}`}
+                  title="Gráfico de barras"
                 >
                   <BarChart3Icon className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setChartType("pie")}
                   className={`p-2 rounded ${chartType === "pie" ? "bg-muted" : ""}`}
+                  title="Gráfico circular"
                 >
                   <PieChartIcon className="h-4 w-4" />
                 </button>
