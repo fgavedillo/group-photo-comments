@@ -9,6 +9,11 @@ interface KPIProps {
   messages: any[];
 }
 
+interface GroupedData {
+  date: string;
+  count: number;
+}
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export const DashboardKPIs = ({ messages }: KPIProps) => {
@@ -40,7 +45,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
     return Object.entries(grouped).map(([date, count]) => ({
       date,
       count
-    })).sort((a, b) => a.date.localeCompare(b.date));
+    })) as GroupedData[];
   }, [messages, groupBy]);
 
   const stats = useMemo(() => {
@@ -149,7 +154,9 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
   const getStatusTrend = () => {
     if (groupedData.length < 2) return 0;
     const lastTwo = groupedData.slice(-2);
-    return (lastTwo[1]?.count || 0) - (lastTwo[0]?.count || 0);
+    const lastValue = lastTwo[1]?.count ?? 0;
+    const previousValue = lastTwo[0]?.count ?? 0;
+    return lastValue - previousValue;
   };
 
   const trend = getStatusTrend();
