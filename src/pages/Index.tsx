@@ -140,7 +140,7 @@ const Index = () => {
         </h1>
       </header>
 
-      <Tabs defaultValue="chat" className="flex-1">
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
         <TabsList className="w-full justify-start border-b rounded-none">
           <TabsTrigger value="chat">Chat</TabsTrigger>
           <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
@@ -152,11 +152,11 @@ const Index = () => {
           <MessageInput onSend={handleSendMessage} />
         </TabsContent>
         
-        <TabsContent value="issues" className="p-0 mt-0">
+        <TabsContent value="issues" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
           <IssueManagement messages={messages} />
         </TabsContent>
         
-        <TabsContent value="kpis" className="p-0 mt-0">
+        <TabsContent value="kpis" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
           <DashboardKPIs messages={messages} />
         </TabsContent>
       </Tabs>

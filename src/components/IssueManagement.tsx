@@ -44,15 +44,17 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   });
 
   return (
-    <div className="space-y-4 px-4 py-6 bg-white/50 rounded-lg shadow-sm">
-      <IssueFilters
-        areaFilter={areaFilter}
-        responsableFilter={responsableFilter}
-        onAreaFilterChange={setAreaFilter}
-        onResponsableFilterChange={setResponsableFilter}
-      />
+    <div className="h-full bg-white/50 rounded-lg shadow-sm">
+      <div className="p-4">
+        <IssueFilters
+          areaFilter={areaFilter}
+          responsableFilter={responsableFilter}
+          onAreaFilterChange={setAreaFilter}
+          onResponsableFilterChange={setResponsableFilter}
+        />
+      </div>
       
-      <div className="flex overflow-x-auto gap-4 pb-4">
+      <div className="flex overflow-x-auto gap-4 px-4 pb-4">
         {weekDays.map((day) => (
           <WeekDayCard
             key={day.dayNumber}
