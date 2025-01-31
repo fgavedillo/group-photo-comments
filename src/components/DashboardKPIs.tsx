@@ -9,13 +9,27 @@ interface KPIProps {
   messages: any[];
 }
 
+interface GroupedData {
+  [key: string]: number;
+}
+
+interface ChartData {
+  date: string;
+  count: number;
+}
+
+interface PieData {
+  name: string;
+  value: number;
+}
+
 export const DashboardKPIs = ({ messages }: KPIProps) => {
   const [groupBy, setGroupBy] = useState<"day" | "week" | "month">("day");
   const [chartType, setChartType] = useState<"line" | "bar" | "pie">("line");
 
   const { groupedData, stats, trend } = useMemo(() => {
     // Agrupar datos por fecha
-    const grouped = messages.reduce((acc: { [key: string]: number }, message) => {
+    const grouped = messages.reduce((acc: GroupedData, message) => {
       const date = new Date(message.timestamp);
       let key = '';
       
@@ -36,7 +50,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
       return acc;
     }, {});
 
-    const groupedData = Object.entries(grouped).map(([date, count]) => ({
+    const groupedData: ChartData[] = Object.entries(grouped).map(([date, count]) => ({
       date,
       count
     }));
@@ -44,27 +58,27 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
     // Calcular estadísticas
     const total = messages.length;
     const withImages = messages.filter(m => m.imageUrl).length;
-    const byStatus = messages.reduce((acc: { [key: string]: number }, message) => {
+    const byStatus = messages.reduce((acc: GroupedData, message) => {
       const status = message.status || 'Sin estado';
       acc[status] = (acc[status] || 0) + 1;
       return acc;
     }, {});
 
-    const byArea = messages.reduce((acc: { [key: string]: number }, message) => {
+    const byArea = messages.reduce((acc: GroupedData, message) => {
       const area = message.area || 'Sin área';
       acc[area] = (acc[area] || 0) + 1;
       return acc;
     }, {});
 
-    const pieData = Object.entries(byStatus).map(([name, value]) => ({
+    const pieData: PieData[] = Object.entries(byStatus).map(([name, value]) => ({
       name,
-      value: value as number
+      value
     }));
 
     // Calcular tendencia
     const lastTwo = groupedData.slice(-2);
     const trend = lastTwo.length < 2 ? 0 : 
-      (lastTwo[1]?.count ?? 0) - (lastTwo[0]?.count ?? 0);
+      lastTwo[1].count - lastTwo[0].count;
 
     return {
       groupedData,
@@ -100,7 +114,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
           value={Object.keys(stats.byStatus).length}
           badges={Object.entries(stats.byStatus).map(([status, count]) => ({
             label: status,
-            count: count as number
+            count
           }))}
         />
       </div>
@@ -136,7 +150,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 <DistributionBar
                   key={area}
                   label={area}
-                  value={count as number}
+                  value={count}
                   total={stats.total}
                 />
               ))}
@@ -154,7 +168,7 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
                 <DistributionBar
                   key={status}
                   label={status}
-                  value={count as number}
+                  value={count}
                   total={stats.total}
                 />
               ))}
