@@ -133,7 +133,12 @@ export const IssueCard = ({
             {message.imageUrl && (
               <div className="px-3 pb-3">
                 <button
-                  className="w-full h-24 rounded-lg overflow-hidden border-2 border-primary/20 hover:border-primary/40 transition-colors focus:outline-none"
+                  className={cn(
+                    "w-full h-24 rounded-lg overflow-hidden border-2 transition-colors focus:outline-none",
+                    message.status === 'cerrada' ? 'border-green-500' : 
+                    message.status === 'en-curso' ? 'border-yellow-500' : 
+                    'border-primary/20 hover:border-primary/40'
+                  )}
                   onClick={(e) => {
                     e.stopPropagation();
                     setIsImageModalOpen(true);
@@ -185,7 +190,7 @@ export const IssueCard = ({
                 <SelectTrigger className="h-8 text-sm">
                   <SelectValue placeholder="Selecciona un estado" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-white">
                   <SelectItem value="en-estudio">En Estudio</SelectItem>
                   <SelectItem value="en-curso">En Curso</SelectItem>
                   <SelectItem value="cerrada">Cerrada</SelectItem>
