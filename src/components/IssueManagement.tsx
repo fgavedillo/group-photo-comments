@@ -117,6 +117,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
               <SelectItem value="en-estudio">En estudio</SelectItem>
               <SelectItem value="en-curso">En curso</SelectItem>
               <SelectItem value="cerrada">Cerrada</SelectItem>
+              <SelectItem value="denegado">Denegado</SelectItem>
             </SelectContent>
           </Select>
         </div>

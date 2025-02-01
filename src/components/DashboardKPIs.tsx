@@ -25,7 +25,7 @@ interface PieData {
 
 export const DashboardKPIs = ({ messages }: KPIProps) => {
   const [groupBy, setGroupBy] = useState<"day" | "week" | "month">("day");
-  const [chartType, setChartType] = useState<"line" | "bar" | "pie">("line");
+  const [chartType, setChartType] = useState<"line" | "bar" | "pie">("pie");
 
   const { groupedData, stats, trend } = useMemo(() => {
     // Agrupar datos por fecha
@@ -71,7 +71,10 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
     }, {});
 
     const pieData: PieData[] = Object.entries(byStatus).map(([name, value]) => ({
-      name,
+      name: name === 'en-estudio' ? 'En estudio' :
+            name === 'en-curso' ? 'En curso' :
+            name === 'cerrada' ? 'Cerrada' :
+            name === 'denegado' ? 'Denegada' : name,
       value: Number(value)
     }));
 
@@ -104,25 +107,28 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
         />
 
         <StatCard
-          title="Con Imágenes"
-          value={stats.withImages}
-          subtitle={`${((stats.withImages / (stats.total || 1)) * 100).toFixed(1)}% del total`}
+          title="Estado de Incidencias"
+          value={Object.keys(stats.byStatus).length}
+          badges={Object.entries(stats.byStatus).map(([status, count]) => ({
+            label: status === 'en-estudio' ? 'En estudio' :
+                   status === 'en-curso' ? 'En curso' :
+                   status === 'cerrada' ? 'Cerrada' :
+                   status === 'denegado' ? 'Denegada' : status,
+            count: Number(count)
+          }))}
         />
 
         <StatCard
-          title="Por Estado"
-          value={Object.keys(stats.byStatus).length}
-          badges={Object.entries(stats.byStatus).map(([status, count]) => ({
-            label: status,
-            count: Number(count)
-          }))}
+          title="Con Imágenes"
+          value={stats.withImages}
+          subtitle={`${((stats.withImages / (stats.total || 1)) * 100).toFixed(1)}% del total`}
         />
       </div>
 
       <Card className="bg-white">
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Análisis de Incidencias</CardTitle>
+            <CardTitle>Estado de Incidencias</CardTitle>
             <ChartControls
               groupBy={groupBy}
               chartType={chartType}
@@ -167,7 +173,10 @@ export const DashboardKPIs = ({ messages }: KPIProps) => {
               {Object.entries(stats.byStatus).map(([status, count]) => (
                 <DistributionBar
                   key={status}
-                  label={status}
+                  label={status === 'en-estudio' ? 'En estudio' :
+                         status === 'en-curso' ? 'En curso' :
+                         status === 'cerrada' ? 'Cerrada' :
+                         status === 'denegado' ? 'Denegada' : status}
                   value={Number(count)}
                   total={stats.total}
                 />

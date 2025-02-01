@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -39,7 +39,7 @@ interface IssueCardProps {
   onAssignedEmailChange: (issueId: number, value: string) => void;
 }
 
-export const IssueCard = ({
+const IssueCard = ({
   message,
   index,
   onStatusChange,
@@ -55,6 +55,7 @@ export const IssueCard = ({
 }: IssueCardProps) => {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isImageExpanded, setIsImageExpanded] = useState(false);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -210,27 +211,39 @@ export const IssueCard = ({
         </div>
 
         {message.imageUrl && (
-          <Dialog>
-            <DialogTrigger asChild>
-              <div className="cursor-pointer">
-                <img
-                  src={message.imageUrl}
-                  alt="Issue"
-                  className="w-full h-48 object-cover rounded-md"
-                />
-              </div>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle>Imagen de la incidencia</DialogTitle>
-              </DialogHeader>
-              <img
-                src={message.imageUrl}
-                alt="Issue full size"
-                className="w-full h-auto"
-              />
-            </DialogContent>
-          </Dialog>
+          <div className="space-y-2">
+            <Button 
+              variant="ghost" 
+              className="w-full flex justify-between items-center"
+              onClick={() => setIsImageExpanded(!isImageExpanded)}
+            >
+              <span>Ver imagen</span>
+              {isImageExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+            {isImageExpanded && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <div className="cursor-pointer">
+                    <img
+                      src={message.imageUrl}
+                      alt="Issue"
+                      className="w-full h-48 object-cover rounded-md"
+                    />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>Imagen de la incidencia</DialogTitle>
+                  </DialogHeader>
+                  <img
+                    src={message.imageUrl}
+                    alt="Issue full size"
+                    className="w-full h-auto"
+                  />
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
