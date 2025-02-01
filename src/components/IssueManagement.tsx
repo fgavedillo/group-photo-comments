@@ -31,7 +31,11 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   } = useIssueFilters();
 
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
-  const filteredMessages = filterIssues(messages);
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  const filteredMessages = filterIssues(messages).filter(message => 
+    statusFilter === 'all' || message.status === statusFilter
+  );
   
   const getGroupedDates = () => {
     const startDate = startOfWeek(new Date(), { locale: es });
@@ -91,23 +95,31 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
-      <div className="p-4 flex justify-between items-center">
-        <IssueFilters
-          areaFilter={areaFilter}
-          responsableFilter={responsableFilter}
-          onAreaFilterChange={setAreaFilter}
-          onResponsableFilterChange={setResponsableFilter}
-        />
-        <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Agrupar por" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="day">Por día</SelectItem>
-            <SelectItem value="week">Por semana</SelectItem>
-            <SelectItem value="month">Por mes</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="sticky top-0 z-10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-4 border-b">
+        <div className="flex justify-between items-center gap-4">
+          <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Agrupar por" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="day">Por día</SelectItem>
+              <SelectItem value="week">Por semana</SelectItem>
+              <SelectItem value="month">Por mes</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filtrar por estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos los estados</SelectItem>
+              <SelectItem value="en-estudio">En estudio</SelectItem>
+              <SelectItem value="en-curso">En curso</SelectItem>
+              <SelectItem value="cerrada">Cerrada</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       
       <div className="px-4 pb-4 space-y-4">
