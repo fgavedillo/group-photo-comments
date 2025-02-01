@@ -95,8 +95,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
-      <div className="sticky top-0 z-50 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 p-4 border-b">
-        <div className="flex justify-between items-center gap-4">
+      <div className="sticky top-0 z-50 bg-white border-b">
+        <div className="flex justify-between items-center gap-4 p-4">
           <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Agrupar por" />
