@@ -1,4 +1,4 @@
-import { IssueCard } from "./IssueCard";
+import IssueCard from "./IssueCard";
 import { cn } from "@/lib/utils";
 
 interface WeekDayCardProps {
