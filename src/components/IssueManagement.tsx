@@ -4,7 +4,7 @@ import { useIssueActions } from "@/hooks/useIssueActions";
 import { useIssueFilters } from "@/hooks/useIssueFilters";
 import { IssueFilters } from "./IssueFilters";
 import { WeekDayCard } from "./WeekDayCard";
-import { format, startOfWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameWeek, isSameMonth } from "date-fns";
+import { format, startOfWeek, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameWeek, isSameMonth, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -22,7 +22,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     handleAssignedEmailChange
   } = useIssueActions(async () => {
     await loadIssues();
-    // Forzar la actualización de los filtros al recargar las incidencias
     const currentMessages = filterIssues(messages);
     setFilteredMessages(currentMessages);
   });
@@ -41,29 +40,44 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   
   const handleFilterChange = (status: string) => {
     setStatusFilter(status);
-    const filtered = filterIssues(messages).filter(message => 
+    const filtered = messages.filter(message => 
       status === 'all' || message.status === status
+    );
+    setFilteredMessages(filtered);
+  };
+
+  const handleGroupByChange = (value: 'day' | 'week' | 'month') => {
+    setGroupBy(value);
+    // Mantener los filtros actuales al cambiar el agrupamiento
+    const filtered = messages.filter(message => 
+      statusFilter === 'all' || message.status === statusFilter
     );
     setFilteredMessages(filtered);
   };
   
   const getGroupedDates = () => {
+    if (!filteredMessages.length) return [];
+    
     const startDate = startOfWeek(new Date(), { locale: es });
     
     if (groupBy === 'day') {
       return [...Array(7)].map((_, index) => {
         const date = addDays(startDate, index);
+        const dayMessages = filteredMessages.filter(message => {
+          const messageDate = new Date(message.timestamp);
+          return format(messageDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+        });
+        
         return {
           date,
           dayName: format(date, 'EEEE', { locale: es }),
           dayNumber: format(date, 'd'),
-          messages: filteredMessages.filter(message => 
-            format(new Date(message.timestamp), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-          )
+          messages: dayMessages
         };
       });
     } else if (groupBy === 'week') {
       const weeks = new Map();
+      
       filteredMessages.forEach(message => {
         const messageDate = new Date(message.timestamp);
         const weekStart = startOfWeek(messageDate, { locale: es });
@@ -72,16 +86,18 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         if (!weeks.has(weekKey)) {
           weeks.set(weekKey, {
             date: weekStart,
-            dayName: `Semana del ${format(weekStart, 'd', { locale: es })}`,
+            dayName: `Semana del ${format(weekStart, 'd MMMM', { locale: es })}`,
             dayNumber: format(weekStart, 'w'),
             messages: []
           });
         }
         weeks.get(weekKey).messages.push(message);
       });
+      
       return Array.from(weeks.values());
     } else {
       const months = new Map();
+      
       filteredMessages.forEach(message => {
         const messageDate = new Date(message.timestamp);
         const monthStart = startOfMonth(messageDate);
@@ -97,6 +113,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         }
         months.get(monthKey).messages.push(message);
       });
+      
       return Array.from(months.values());
     }
   };
@@ -107,7 +124,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
       <div className="sticky top-0 z-50 bg-white border-b">
         <div className="flex justify-between items-center gap-4 p-4">
-          <Select value={groupBy} onValueChange={(value: 'day' | 'week' | 'month') => setGroupBy(value)}>
+          <Select value={groupBy} onValueChange={handleGroupByChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Agrupar por" />
             </SelectTrigger>
