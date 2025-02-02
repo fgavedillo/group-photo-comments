@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ImageModal } from "./ImageModal";
 
 interface IssueCardProps {
   message: any;
@@ -85,6 +86,7 @@ const IssueCard = ({
       });
 
       onDelete();
+      setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error('Error deleting issue:', error);
       toast({
@@ -95,18 +97,22 @@ const IssueCard = ({
     }
   };
 
+  const handleStatusChangeLocal = (value: string) => {
+    onStatusChange(message.id, value);
+  };
+
   const IssueForm = () => (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label>Estado</Label>
         <Select
           value={message.status}
-          onValueChange={(value) => onStatusChange(message.id, value)}
+          onValueChange={handleStatusChangeLocal}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar estado" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white">
             <SelectItem value="en-estudio">En estudio</SelectItem>
             <SelectItem value="en-curso">En curso</SelectItem>
             <SelectItem value="cerrada">Cerrada</SelectItem>
@@ -124,7 +130,7 @@ const IssueCard = ({
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar área" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white">
             <SelectItem value="produccion">Producción</SelectItem>
             <SelectItem value="calidad">Calidad</SelectItem>
             <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
@@ -142,7 +148,7 @@ const IssueCard = ({
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar responsable" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white">
             <SelectItem value="juan">Juan Pérez</SelectItem>
             <SelectItem value="maria">María García</SelectItem>
             <SelectItem value="pedro">Pedro López</SelectItem>
@@ -183,7 +189,7 @@ const IssueCard = ({
   );
 
   return (
-    <Card className={cn("w-[350px] flex-shrink-0 relative", getStatusColor(message.status))}>
+    <Card className={cn("w-[350px] flex-shrink-0 relative border", getStatusColor(message.status))}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -199,7 +205,7 @@ const IssueCard = ({
                   <Pencil className="h-4 w-4" />
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+              <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-white">
                 <DialogHeader>
                   <DialogTitle>Editar incidencia</DialogTitle>
                 </DialogHeader>
@@ -231,27 +237,21 @@ const IssueCard = ({
       <CardContent>
         {message.imageUrl && (
           <div className="mb-4">
-            <Dialog open={isImageModalOpen} onOpenChange={setIsImageModalOpen}>
-              <DialogTrigger asChild>
-                <div className="cursor-pointer">
-                  <img
-                    src={message.imageUrl}
-                    alt="Issue"
-                    className="w-full h-48 object-cover rounded-md"
-                  />
-                </div>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl">
-                <DialogHeader>
-                  <DialogTitle>Imagen de la incidencia</DialogTitle>
-                </DialogHeader>
-                <img
-                  src={message.imageUrl}
-                  alt="Issue full size"
-                  className="w-full h-auto"
-                />
-              </DialogContent>
-            </Dialog>
+            <div 
+              className="cursor-pointer" 
+              onClick={() => setIsImageModalOpen(true)}
+            >
+              <img
+                src={message.imageUrl}
+                alt="Issue"
+                className="w-full h-48 object-cover rounded-md"
+              />
+            </div>
+            <ImageModal
+              imageUrl={message.imageUrl}
+              isOpen={isImageModalOpen}
+              onClose={() => setIsImageModalOpen(false)}
+            />
           </div>
         )}
         <div className="text-sm text-muted-foreground">

@@ -112,7 +112,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="all">Todos los estados</SelectItem>
               <SelectItem value="en-estudio">En estudio</SelectItem>
               <SelectItem value="en-curso">En curso</SelectItem>
