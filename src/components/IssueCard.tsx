@@ -57,6 +57,17 @@ const IssueCard = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  // Estado local para el formulario
+  const [formState, setFormState] = useState({
+    status: message.status,
+    area: message.area || "",
+    responsable: message.responsable || "",
+    assigned_email: message.assigned_email || "",
+    security_improvement: message.security_improvement || "",
+    action_plan: message.action_plan || ""
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,8 +108,47 @@ const IssueCard = ({
     }
   };
 
-  const handleStatusChangeLocal = (value: string) => {
-    onStatusChange(message.id, value);
+  const handleFormSubmit = async () => {
+    setIsUpdating(true);
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({
+          status: formState.status,
+          area: formState.area,
+          responsable: formState.responsable,
+          assigned_email: formState.assigned_email,
+          security_improvement: formState.security_improvement,
+          action_plan: formState.action_plan
+        })
+        .eq('id', message.id);
+
+      if (error) throw error;
+
+      // Actualizar el estado global
+      onStatusChange(message.id, formState.status);
+      onAreaChange(message.id, formState.area);
+      onResponsableChange(message.id, formState.responsable);
+      onAssignedEmailChange(message.id, formState.assigned_email);
+      onSecurityImprovementChange(message.id, formState.security_improvement);
+      onActionPlanChange(message.id, formState.action_plan);
+
+      toast({
+        title: "Cambios guardados",
+        description: "Los cambios se han guardado correctamente",
+      });
+
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating issue:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron guardar los cambios",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const IssueForm = () => (
@@ -106,8 +156,8 @@ const IssueCard = ({
       <div className="space-y-2">
         <Label>Estado</Label>
         <Select
-          value={message.status}
-          onValueChange={handleStatusChangeLocal}
+          value={formState.status}
+          onValueChange={(value) => setFormState(prev => ({ ...prev, status: value }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar estado" />
@@ -124,8 +174,8 @@ const IssueCard = ({
       <div className="space-y-2">
         <Label>Área</Label>
         <Select
-          value={message.area || ""}
-          onValueChange={(value) => onAreaChange(message.id, value)}
+          value={formState.area}
+          onValueChange={(value) => setFormState(prev => ({ ...prev, area: value }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar área" />
@@ -142,8 +192,8 @@ const IssueCard = ({
       <div className="space-y-2">
         <Label>Responsable</Label>
         <Select
-          value={message.responsable || ""}
-          onValueChange={(value) => onResponsableChange(message.id, value)}
+          value={formState.responsable}
+          onValueChange={(value) => setFormState(prev => ({ ...prev, responsable: value }))}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar responsable" />
@@ -160,8 +210,8 @@ const IssueCard = ({
         <Label>Email asignado</Label>
         <Input
           type="email"
-          value={message.assigned_email || ""}
-          onChange={(e) => onAssignedEmailChange(message.id, e.target.value)}
+          value={formState.assigned_email}
+          onChange={(e) => setFormState(prev => ({ ...prev, assigned_email: e.target.value }))}
           placeholder="ejemplo@email.com"
         />
       </div>
@@ -169,8 +219,8 @@ const IssueCard = ({
       <div className="space-y-2">
         <Label>Mejora de seguridad</Label>
         <Textarea
-          value={message.security_improvement || ""}
-          onChange={(e) => onSecurityImprovementChange(message.id, e.target.value)}
+          value={formState.security_improvement}
+          onChange={(e) => setFormState(prev => ({ ...prev, security_improvement: e.target.value }))}
           placeholder="Describe la mejora de seguridad..."
           className="min-h-[100px] resize-y"
         />
@@ -179,11 +229,20 @@ const IssueCard = ({
       <div className="space-y-2">
         <Label>Plan de acción</Label>
         <Textarea
-          value={message.action_plan || ""}
-          onChange={(e) => onActionPlanChange(message.id, e.target.value)}
+          value={formState.action_plan}
+          onChange={(e) => setFormState(prev => ({ ...prev, action_plan: e.target.value }))}
           placeholder="Describe el plan de acción..."
           className="min-h-[100px] resize-y"
         />
+      </div>
+
+      <div className="flex justify-end space-x-2 pt-4">
+        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+          Cancelar
+        </Button>
+        <Button onClick={handleFormSubmit} disabled={isUpdating}>
+          {isUpdating ? "Guardando..." : "Guardar cambios"}
+        </Button>
       </div>
     </div>
   );
