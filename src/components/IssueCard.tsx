@@ -59,7 +59,6 @@ const IssueCard = ({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Estado local para el formulario
   const [formState, setFormState] = useState({
     status: message.status,
     area: message.area || "",
@@ -191,19 +190,12 @@ const IssueCard = ({
 
       <div className="space-y-2">
         <Label>Responsable</Label>
-        <Select
+        <Input
+          type="text"
           value={formState.responsable}
-          onValueChange={(value) => setFormState(prev => ({ ...prev, responsable: value }))}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccionar responsable" />
-          </SelectTrigger>
-          <SelectContent className="bg-white">
-            <SelectItem value="juan">Juan Pérez</SelectItem>
-            <SelectItem value="maria">María García</SelectItem>
-            <SelectItem value="pedro">Pedro López</SelectItem>
-          </SelectContent>
-        </Select>
+          onChange={(e) => setFormState(prev => ({ ...prev, responsable: e.target.value }))}
+          placeholder="Nombre del responsable"
+        />
       </div>
 
       <div className="space-y-2">
@@ -303,7 +295,7 @@ const IssueCard = ({
               <img
                 src={message.imageUrl}
                 alt="Issue"
-                className="w-full h-48 object-cover rounded-md"
+                className="w-full h-32 object-cover rounded-md"
               />
             </div>
             <ImageModal

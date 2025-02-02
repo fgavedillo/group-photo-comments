@@ -20,7 +20,12 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     handleActionPlanChange,
     handleAddSecurityImprovement,
     handleAssignedEmailChange
-  } = useIssueActions(loadIssues);
+  } = useIssueActions(() => {
+    loadIssues();
+    // Forzar la actualización de los filtros al recargar las incidencias
+    const currentMessages = filterIssues(messages);
+    setFilteredMessages(currentMessages);
+  });
 
   const {
     areaFilter,
@@ -32,10 +37,15 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [filteredMessages, setFilteredMessages] = useState(messages);
   
-  const filteredMessages = filterIssues(messages).filter(message => 
-    statusFilter === 'all' || message.status === statusFilter
-  );
+  const handleFilterChange = (status: string) => {
+    setStatusFilter(status);
+    const filtered = filterIssues(messages).filter(message => 
+      status === 'all' || message.status === status
+    );
+    setFilteredMessages(filtered);
+  };
   
   const getGroupedDates = () => {
     const startDate = startOfWeek(new Date(), { locale: es });
@@ -101,14 +111,14 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Agrupar por" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               <SelectItem value="day">Por día</SelectItem>
               <SelectItem value="week">Por semana</SelectItem>
               <SelectItem value="month">Por mes</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={statusFilter} onValueChange={handleFilterChange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filtrar por estado" />
             </SelectTrigger>
