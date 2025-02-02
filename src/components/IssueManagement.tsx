@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useIssues } from "@/hooks/useIssues";
 import { useIssueActions } from "@/hooks/useIssueActions";
 import { useIssueFilters } from "@/hooks/useIssueFilters";
@@ -37,6 +37,14 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [filteredMessages, setFilteredMessages] = useState(messages);
+
+  // Effect to update filtered messages when messages prop changes
+  useEffect(() => {
+    const filtered = messages.filter(message => 
+      statusFilter === 'all' || message.status === statusFilter
+    );
+    setFilteredMessages(filtered);
+  }, [messages, statusFilter]);
   
   const handleFilterChange = (status: string) => {
     setStatusFilter(status);
@@ -48,7 +56,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const handleGroupByChange = (value: 'day' | 'week' | 'month') => {
     setGroupBy(value);
-    // Mantener los filtros actuales al cambiar el agrupamiento
+    // Maintain current filters when changing grouping
     const filtered = messages.filter(message => 
       statusFilter === 'all' || message.status === statusFilter
     );
@@ -58,7 +66,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const getGroupedDates = () => {
     if (!filteredMessages.length) return [];
     
-    const startDate = startOfWeek(new Date(), { locale: es });
+    const today = new Date();
+    const startDate = startOfWeek(today, { locale: es });
     
     if (groupBy === 'day') {
       return [...Array(7)].map((_, index) => {
@@ -94,7 +103,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         weeks.get(weekKey).messages.push(message);
       });
       
-      return Array.from(weeks.values());
+      return Array.from(weeks.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
     } else {
       const months = new Map();
       
@@ -114,7 +123,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         months.get(monthKey).messages.push(message);
       });
       
-      return Array.from(months.values());
+      return Array.from(months.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
     }
   };
 
