@@ -20,8 +20,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     handleActionPlanChange,
     handleAddSecurityImprovement,
     handleAssignedEmailChange
-  } = useIssueActions(() => {
-    loadIssues();
+  } = useIssueActions(async () => {
+    await loadIssues();
     // Forzar la actualización de los filtros al recargar las incidencias
     const currentMessages = filterIssues(messages);
     setFilteredMessages(currentMessages);
