@@ -1,4 +1,4 @@
-import { format, startOfWeek, addDays, startOfMonth, eachDayOfInterval, parseISO } from "date-fns";
+import { format, startOfWeek, addDays, startOfMonth, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week' | 'month') => {
@@ -16,12 +16,15 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
   if (groupBy === 'day') {
     return [...Array(7)].map((_, index) => {
       const date = addDays(startDate, index);
+      const dayStart = startOfDay(date);
+      const dayEnd = endOfDay(date);
+
       const dayMessages = filteredMessages.filter(message => {
         if (!message?.timestamp) return false;
         const messageDate = new Date(message.timestamp);
-        const isSameDay = format(messageDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
-        console.log(`Message date: ${format(messageDate, 'yyyy-MM-dd')}, Compare date: ${format(date, 'yyyy-MM-dd')}, Match: ${isSameDay}`);
-        return isSameDay;
+        const isInDay = isWithinInterval(messageDate, { start: dayStart, end: dayEnd });
+        console.log(`Message date: ${format(messageDate, 'yyyy-MM-dd')}, Day: ${format(date, 'yyyy-MM-dd')}, Match: ${isInDay}`);
+        return isInDay;
       });
 
       return {

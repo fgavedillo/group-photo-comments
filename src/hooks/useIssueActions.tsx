@@ -10,6 +10,7 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
 
   const handleStatusChange = async (issueId: number, status: Issue['status']) => {
     try {
+      console.log('Updating status:', { issueId, status });
       const { error } = await supabase
         .from('issues')
         .update({ status })
@@ -28,66 +29,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
       toast({
         title: "Error",
         description: "No se pudo actualizar el estado",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAreaChange = async (issueId: number, area: string) => {
-    try {
-      const { error } = await supabase
-        .from('issues')
-        .update({ area })
-        .eq('id', issueId);
-
-      if (error) throw error;
-
-      await loadIssues();
-    } catch (error) {
-      console.error('Error updating area:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el área",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleResponsableChange = async (issueId: number, responsable: string) => {
-    try {
-      const { error } = await supabase
-        .from('issues')
-        .update({ responsable })
-        .eq('id', issueId);
-
-      if (error) throw error;
-
-      await loadIssues();
-    } catch (error) {
-      console.error('Error updating responsable:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el responsable",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleAssignedEmailChange = async (issueId: number, email: string) => {
-    try {
-      const { error } = await supabase
-        .from('issues')
-        .update({ assigned_email: email })
-        .eq('id', issueId);
-
-      if (error) throw error;
-
-      await loadIssues();
-    } catch (error) {
-      console.error('Error updating email:', error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el correo",
         variant: "destructive"
       });
     }
@@ -140,11 +81,62 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     securityImprovements,
     actionPlans,
     handleStatusChange,
-    handleAreaChange,
-    handleResponsableChange,
+    handleAreaChange: async (issueId: number, area: string) => {
+      try {
+        const { error } = await supabase
+          .from('issues')
+          .update({ area })
+          .eq('id', issueId);
+
+        if (error) throw error;
+        await loadIssues();
+      } catch (error) {
+        console.error('Error updating area:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar el área",
+          variant: "destructive"
+        });
+      }
+    },
+    handleResponsableChange: async (issueId: number, responsable: string) => {
+      try {
+        const { error } = await supabase
+          .from('issues')
+          .update({ responsable })
+          .eq('id', issueId);
+
+        if (error) throw error;
+        await loadIssues();
+      } catch (error) {
+        console.error('Error updating responsable:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar el responsable",
+          variant: "destructive"
+        });
+      }
+    },
     handleSecurityImprovementChange,
     handleActionPlanChange,
     handleAddSecurityImprovement,
-    handleAssignedEmailChange
+    handleAssignedEmailChange: async (issueId: number, email: string) => {
+      try {
+        const { error } = await supabase
+          .from('issues')
+          .update({ assigned_email: email })
+          .eq('id', issueId);
+
+        if (error) throw error;
+        await loadIssues();
+      } catch (error) {
+        console.error('Error updating email:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo actualizar el correo",
+          variant: "destructive"
+        });
+      }
+    }
   };
 };

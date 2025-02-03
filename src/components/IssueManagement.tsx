@@ -30,12 +30,16 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       return;
     }
 
+    console.log('Current status filter:', statusFilter);
+    console.log('All messages:', messages);
+
     const filtered = messages.filter(message => {
       if (!message) return false;
       
-      const statusMatch = statusFilter === 'all' || message.status === statusFilter;
-      console.log(`Message ${message.id} - Status: ${message.status}, Filter: ${statusFilter}, Match: ${statusMatch}`);
+      const status = message.status || 'en-estudio'; // Default status if undefined
+      const statusMatch = statusFilter === 'all' || status === statusFilter;
       
+      console.log(`Message ${message.id} - Status: ${status}, Filter: ${statusFilter}, Match: ${statusMatch}`);
       return statusMatch;
     });
 
