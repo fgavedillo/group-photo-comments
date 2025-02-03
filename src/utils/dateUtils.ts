@@ -1,11 +1,17 @@
-import { format, startOfWeek, addDays, startOfMonth, eachDayOfInterval } from "date-fns";
+import { format, startOfWeek, addDays, startOfMonth, eachDayOfInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week' | 'month') => {
-  if (!filteredMessages.length) return [];
+  if (!filteredMessages || !Array.isArray(filteredMessages) || filteredMessages.length === 0) {
+    console.log('No messages to group');
+    return [];
+  }
 
   const today = new Date();
   const startDate = startOfWeek(today, { locale: es });
+
+  console.log('Grouping messages by:', groupBy);
+  console.log('Number of messages:', filteredMessages.length);
 
   if (groupBy === 'day') {
     return [...Array(7)].map((_, index) => {
@@ -13,7 +19,9 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
       const dayMessages = filteredMessages.filter(message => {
         if (!message?.timestamp) return false;
         const messageDate = new Date(message.timestamp);
-        return format(messageDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+        const isSameDay = format(messageDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
+        console.log(`Message date: ${format(messageDate, 'yyyy-MM-dd')}, Compare date: ${format(date, 'yyyy-MM-dd')}, Match: ${isSameDay}`);
+        return isSameDay;
       });
 
       return {

@@ -21,19 +21,25 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [filteredMessages, setFilteredMessages] = useState<any[]>(messages);
+  const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
 
   useEffect(() => {
-    if (!messages) return;
-    
+    if (!messages || !Array.isArray(messages)) {
+      console.log('No messages or invalid messages format');
+      setFilteredMessages([]);
+      return;
+    }
+
     const filtered = messages.filter(message => {
       if (!message) return false;
-      return statusFilter === 'all' || message.status === statusFilter;
+      
+      const statusMatch = statusFilter === 'all' || message.status === statusFilter;
+      console.log(`Message ${message.id} - Status: ${message.status}, Filter: ${statusFilter}, Match: ${statusMatch}`);
+      
+      return statusMatch;
     });
-    
+
     console.log('Filtered messages:', filtered);
-    console.log('Status filter:', statusFilter);
-    
     setFilteredMessages(filtered);
   }, [messages, statusFilter]);
 
@@ -43,10 +49,12 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   };
 
   const handleGroupByChange = (value: 'day' | 'week' | 'month') => {
+    console.log('Setting group by to:', value);
     setGroupBy(value);
   };
 
   const groupedDates = getGroupedDates(filteredMessages, groupBy);
+  console.log('Grouped dates:', groupedDates);
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
