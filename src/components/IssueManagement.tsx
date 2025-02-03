@@ -36,39 +36,31 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [filteredMessages, setFilteredMessages] = useState(messages);
+  const [filteredMessages, setFilteredMessages] = useState<any[]>(messages);
 
-  // Effect to update filtered messages when messages prop changes
+  // Effect to update filtered messages when messages prop or filters change
   useEffect(() => {
-    const filtered = messages.filter(message => 
-      statusFilter === 'all' || message.status === statusFilter
-    );
+    const filtered = messages.filter(message => {
+      const statusMatch = statusFilter === 'all' || message.status === statusFilter;
+      return statusMatch;
+    });
     setFilteredMessages(filtered);
   }, [messages, statusFilter]);
-  
+
   const handleFilterChange = (status: string) => {
     setStatusFilter(status);
-    const filtered = messages.filter(message => 
-      status === 'all' || message.status === status
-    );
-    setFilteredMessages(filtered);
   };
 
   const handleGroupByChange = (value: 'day' | 'week' | 'month') => {
     setGroupBy(value);
-    // Maintain current filters when changing grouping
-    const filtered = messages.filter(message => 
-      statusFilter === 'all' || message.status === statusFilter
-    );
-    setFilteredMessages(filtered);
   };
-  
+
   const getGroupedDates = () => {
     if (!filteredMessages.length) return [];
-    
+
     const today = new Date();
     const startDate = startOfWeek(today, { locale: es });
-    
+
     if (groupBy === 'day') {
       return [...Array(7)].map((_, index) => {
         const date = addDays(startDate, index);
@@ -76,7 +68,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
           const messageDate = new Date(message.timestamp);
           return format(messageDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
         });
-        
+
         return {
           date,
           dayName: format(date, 'EEEE', { locale: es }),
@@ -86,12 +78,12 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       });
     } else if (groupBy === 'week') {
       const weeks = new Map();
-      
+
       filteredMessages.forEach(message => {
         const messageDate = new Date(message.timestamp);
         const weekStart = startOfWeek(messageDate, { locale: es });
         const weekKey = format(weekStart, 'yyyy-MM-dd');
-        
+
         if (!weeks.has(weekKey)) {
           weeks.set(weekKey, {
             date: weekStart,
@@ -102,16 +94,17 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         }
         weeks.get(weekKey).messages.push(message);
       });
-      
-      return Array.from(weeks.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+
+      return Array.from(weeks.values())
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
     } else {
       const months = new Map();
-      
+
       filteredMessages.forEach(message => {
         const messageDate = new Date(message.timestamp);
         const monthStart = startOfMonth(messageDate);
         const monthKey = format(monthStart, 'yyyy-MM');
-        
+
         if (!months.has(monthKey)) {
           months.set(monthKey, {
             date: monthStart,
@@ -122,8 +115,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         }
         months.get(monthKey).messages.push(message);
       });
-      
-      return Array.from(months.values()).sort((a, b) => b.date.getTime() - a.date.getTime());
+
+      return Array.from(months.values())
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
     }
   };
 
