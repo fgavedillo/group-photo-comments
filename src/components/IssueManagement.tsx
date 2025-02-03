@@ -41,13 +41,16 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   // Effect to update filtered messages when messages prop or filters change
   useEffect(() => {
     const filtered = messages.filter(message => {
-      const statusMatch = statusFilter === 'all' || message.status === statusFilter;
+      if (!message) return false;
+      const statusMatch = statusFilter === 'all' || (message.status && message.status === statusFilter);
       return statusMatch;
     });
+    console.log('Filtered messages:', filtered, 'Status filter:', statusFilter);
     setFilteredMessages(filtered);
   }, [messages, statusFilter]);
 
   const handleFilterChange = (status: string) => {
+    console.log('Setting status filter to:', status);
     setStatusFilter(status);
   };
 
@@ -65,6 +68,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       return [...Array(7)].map((_, index) => {
         const date = addDays(startDate, index);
         const dayMessages = filteredMessages.filter(message => {
+          if (!message || !message.timestamp) return false;
           const messageDate = new Date(message.timestamp);
           return format(messageDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd');
         });
@@ -80,6 +84,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       const weeks = new Map();
 
       filteredMessages.forEach(message => {
+        if (!message || !message.timestamp) return;
         const messageDate = new Date(message.timestamp);
         const weekStart = startOfWeek(messageDate, { locale: es });
         const weekKey = format(weekStart, 'yyyy-MM-dd');
@@ -101,6 +106,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       const months = new Map();
 
       filteredMessages.forEach(message => {
+        if (!message || !message.timestamp) return;
         const messageDate = new Date(message.timestamp);
         const monthStart = startOfMonth(messageDate);
         const monthKey = format(monthStart, 'yyyy-MM');
