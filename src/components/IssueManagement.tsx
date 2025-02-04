@@ -20,7 +20,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   } = useIssueActions(loadIssues);
 
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedStates, setSelectedStates] = useState<string[]>(['en-estudio', 'en-curso', 'cerrada', 'denegado']);
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -30,31 +30,32 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       return;
     }
 
-    console.log('Current status filter:', statusFilter);
+    console.log('Selected states:', selectedStates);
     console.log('All messages:', messages);
 
     const filtered = messages.filter(message => {
       if (!message) return false;
       
-      const status = message.status || 'en-estudio'; // Default status if undefined
-      const statusMatch = statusFilter === 'all' || status === statusFilter;
+      const status = message.status || 'en-estudio';
+      const statusMatch = selectedStates.includes(status);
       
-      console.log(`Message ${message.id} - Status: ${status}, Filter: ${statusFilter}, Match: ${statusMatch}`);
+      console.log(`Message ${message.id} - Status: ${status}, Selected States: ${selectedStates.join(', ')}, Match: ${statusMatch}`);
       return statusMatch;
     });
 
     console.log('Filtered messages:', filtered);
     setFilteredMessages(filtered);
-  }, [messages, statusFilter]);
+  }, [messages, selectedStates]);
 
-  const handleFilterChange = (status: string) => {
-    console.log('Setting status filter to:', status);
-    setStatusFilter(status);
-  };
-
-  const handleGroupByChange = (value: 'day' | 'week' | 'month') => {
-    console.log('Setting group by to:', value);
-    setGroupBy(value);
+  const handleStateToggle = (state: string) => {
+    setSelectedStates(prev => {
+      if (prev.includes(state)) {
+        // Si es el último estado seleccionado, no permitimos deseleccionarlo
+        if (prev.length === 1) return prev;
+        return prev.filter(s => s !== state);
+      }
+      return [...prev, state];
+    });
   };
 
   const groupedDates = getGroupedDates(filteredMessages, groupBy);
@@ -65,9 +66,9 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       <div className="sticky top-0 z-50 bg-white border-b">
         <IssueFilters
           groupBy={groupBy}
-          statusFilter={statusFilter}
-          onGroupByChange={handleGroupByChange}
-          onStatusFilterChange={handleFilterChange}
+          selectedStates={selectedStates}
+          onGroupByChange={setGroupBy}
+          onStateToggle={handleStateToggle}
         />
       </div>
       

@@ -1,43 +1,63 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface IssueFiltersProps {
   groupBy: 'day' | 'week' | 'month';
-  statusFilter: string;
+  selectedStates: string[];
   onGroupByChange: (value: 'day' | 'week' | 'month') => void;
-  onStatusFilterChange: (value: string) => void;
+  onStateToggle: (state: string) => void;
 }
+
+const STATES = [
+  { value: 'en-estudio', label: 'En estudio' },
+  { value: 'en-curso', label: 'En curso' },
+  { value: 'cerrada', label: 'Cerrada' },
+  { value: 'denegado', label: 'Denegado' }
+];
 
 export const IssueFilters = ({
   groupBy,
-  statusFilter,
+  selectedStates,
   onGroupByChange,
-  onStatusFilterChange
+  onStateToggle
 }: IssueFiltersProps) => {
   return (
-    <div className="flex justify-between items-center gap-4 p-4">
-      <Select value={groupBy} onValueChange={onGroupByChange}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Agrupar por" />
-        </SelectTrigger>
-        <SelectContent className="bg-white">
-          <SelectItem value="day">Por día</SelectItem>
-          <SelectItem value="week">Por semana</SelectItem>
-          <SelectItem value="month">Por mes</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="flex flex-col gap-4 p-4">
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Agrupar por:</label>
+        <div className="flex gap-2">
+          {['day', 'week', 'month'].map((period) => (
+            <Button
+              key={period}
+              variant={groupBy === period ? "default" : "outline"}
+              onClick={() => onGroupByChange(period as 'day' | 'week' | 'month')}
+              className="flex-1"
+            >
+              {period === 'day' ? 'Días' : period === 'week' ? 'Semanas' : 'Meses'}
+            </Button>
+          ))}
+        </div>
+      </div>
 
-      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Filtrar por estado" />
-        </SelectTrigger>
-        <SelectContent className="bg-white">
-          <SelectItem value="all">Todos los estados</SelectItem>
-          <SelectItem value="en-estudio">En estudio</SelectItem>
-          <SelectItem value="en-curso">En curso</SelectItem>
-          <SelectItem value="cerrada">Cerrada</SelectItem>
-          <SelectItem value="denegado">Denegado</SelectItem>
-        </SelectContent>
-      </Select>
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Estados:</label>
+        <div className="flex flex-wrap gap-2">
+          {STATES.map(({ value, label }) => (
+            <Button
+              key={value}
+              variant={selectedStates.includes(value) ? "default" : "outline"}
+              onClick={() => onStateToggle(value)}
+              className={cn(
+                "flex-1",
+                selectedStates.includes(value) && "bg-primary"
+              )}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
