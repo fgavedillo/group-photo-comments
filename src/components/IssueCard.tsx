@@ -68,8 +68,8 @@ const IssueCard = ({
     action_plan: message.action_plan || ""
   });
 
-  // Actualizar el estado del formulario cuando cambia el mensaje
   useEffect(() => {
+    console.log('Message data received:', message);
     setFormState({
       status: message.status || 'en-estudio',
       area: message.area || "",
@@ -95,13 +95,18 @@ const IssueCard = ({
 
   const handleDelete = async () => {
     try {
+      console.log('Attempting to delete issue:', message.id);
       const { error } = await supabase
         .from('issues')
         .delete()
         .eq('id', message.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error deleting issue:', error);
+        throw error;
+      }
 
+      console.log('Issue deleted successfully');
       toast({
         title: "Incidencia eliminada",
         description: "La incidencia ha sido eliminada correctamente",
@@ -122,12 +127,12 @@ const IssueCard = ({
   const handleFormSubmit = async () => {
     setIsUpdating(true);
     try {
-      console.log('Actualizando incidencia:', {
+      console.log('Updating issue with data:', {
         id: message.id,
         formState
       });
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('issues')
         .update({
           status: formState.status,
@@ -137,9 +142,15 @@ const IssueCard = ({
           security_improvement: formState.security_improvement,
           action_plan: formState.action_plan
         })
-        .eq('id', message.id);
+        .eq('id', message.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating issue:', error);
+        throw error;
+      }
+
+      console.log('Issue updated successfully:', data);
 
       // Actualizar el estado global
       onStatusChange(message.id, formState.status);
@@ -173,7 +184,10 @@ const IssueCard = ({
         <Label>Estado</Label>
         <Select
           value={formState.status}
-          onValueChange={(value) => setFormState(prev => ({ ...prev, status: value }))}
+          onValueChange={(value) => {
+            console.log('Status changed to:', value);
+            setFormState(prev => ({ ...prev, status: value }));
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar estado" />
@@ -191,7 +205,10 @@ const IssueCard = ({
         <Label>Área</Label>
         <Select
           value={formState.area}
-          onValueChange={(value) => setFormState(prev => ({ ...prev, area: value }))}
+          onValueChange={(value) => {
+            console.log('Area changed to:', value);
+            setFormState(prev => ({ ...prev, area: value }));
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar área" />
@@ -210,7 +227,10 @@ const IssueCard = ({
         <Input
           type="text"
           value={formState.responsable}
-          onChange={(e) => setFormState(prev => ({ ...prev, responsable: e.target.value }))}
+          onChange={(e) => {
+            console.log('Responsable changed to:', e.target.value);
+            setFormState(prev => ({ ...prev, responsable: e.target.value }));
+          }}
           placeholder="Nombre del responsable"
         />
       </div>
@@ -220,7 +240,10 @@ const IssueCard = ({
         <Input
           type="email"
           value={formState.assigned_email}
-          onChange={(e) => setFormState(prev => ({ ...prev, assigned_email: e.target.value }))}
+          onChange={(e) => {
+            console.log('Email changed to:', e.target.value);
+            setFormState(prev => ({ ...prev, assigned_email: e.target.value }));
+          }}
           placeholder="ejemplo@email.com"
         />
       </div>
@@ -229,7 +252,10 @@ const IssueCard = ({
         <Label>Mejora de seguridad</Label>
         <Textarea
           value={formState.security_improvement}
-          onChange={(e) => setFormState(prev => ({ ...prev, security_improvement: e.target.value }))}
+          onChange={(e) => {
+            console.log('Security improvement changed to:', e.target.value);
+            setFormState(prev => ({ ...prev, security_improvement: e.target.value }));
+          }}
           placeholder="Describe la mejora de seguridad..."
           className="min-h-[100px] resize-y"
         />
@@ -239,7 +265,10 @@ const IssueCard = ({
         <Label>Plan de acción</Label>
         <Textarea
           value={formState.action_plan}
-          onChange={(e) => setFormState(prev => ({ ...prev, action_plan: e.target.value }))}
+          onChange={(e) => {
+            console.log('Action plan changed to:', e.target.value);
+            setFormState(prev => ({ ...prev, action_plan: e.target.value }));
+          }}
           placeholder="Describe el plan de acción..."
           className="min-h-[100px] resize-y"
         />

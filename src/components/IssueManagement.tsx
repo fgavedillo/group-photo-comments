@@ -30,6 +30,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       return;
     }
 
+    console.log('Current groupBy:', groupBy);
     console.log('Selected states:', selectedStates);
     console.log('All messages:', messages);
 
@@ -39,18 +40,18 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       const status = message.status || 'en-estudio';
       const statusMatch = selectedStates.includes(status);
       
-      console.log(`Message ${message.id} - Status: ${status}, Selected States: ${selectedStates.join(', ')}, Match: ${statusMatch}`);
+      console.log(`Message ${message.id} - Status: ${status}, Match: ${statusMatch}`);
       return statusMatch;
     });
 
     console.log('Filtered messages:', filtered);
     setFilteredMessages(filtered);
-  }, [messages, selectedStates]);
+  }, [messages, selectedStates, groupBy]);
 
   const handleStateToggle = (state: string) => {
+    console.log('Toggling state:', state);
     setSelectedStates(prev => {
       if (prev.includes(state)) {
-        // Si es el último estado seleccionado, no permitimos deseleccionarlo
         if (prev.length === 1) return prev;
         return prev.filter(s => s !== state);
       }
@@ -67,7 +68,10 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         <IssueFilters
           groupBy={groupBy}
           selectedStates={selectedStates}
-          onGroupByChange={setGroupBy}
+          onGroupByChange={(value) => {
+            console.log('Changing groupBy to:', value);
+            setGroupBy(value);
+          }}
           onStateToggle={handleStateToggle}
         />
       </div>

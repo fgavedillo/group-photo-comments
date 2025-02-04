@@ -11,13 +11,18 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
   const handleStatusChange = async (issueId: number, status: Issue['status']) => {
     try {
       console.log('Updating status:', { issueId, status });
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('issues')
         .update({ status })
-        .eq('id', issueId);
+        .eq('id', issueId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating status:', error);
+        throw error;
+      }
 
+      console.log('Status updated successfully:', data);
       await loadIssues();
       
       toast({
@@ -35,6 +40,7 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
   };
 
   const handleSecurityImprovementChange = (issueId: number, value: string) => {
+    console.log('Updating security improvement:', { issueId, value });
     setSecurityImprovements(prev => ({
       ...prev,
       [issueId]: value
@@ -42,6 +48,7 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
   };
 
   const handleActionPlanChange = (issueId: number, value: string) => {
+    console.log('Updating action plan:', { issueId, value });
     setActionPlans(prev => ({
       ...prev,
       [issueId]: value
@@ -50,17 +57,28 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
 
   const handleAddSecurityImprovement = async (issueId: number) => {
     try {
-      const { error } = await supabase
+      console.log('Adding security improvement:', { 
+        issueId, 
+        security_improvement: securityImprovements[issueId],
+        action_plan: actionPlans[issueId]
+      });
+
+      const { data, error } = await supabase
         .from('issues')
         .update({
           security_improvement: securityImprovements[issueId] || '',
           action_plan: actionPlans[issueId] || '',
           status: "en-curso"
         })
-        .eq('id', issueId);
+        .eq('id', issueId)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding security improvement:', error);
+        throw error;
+      }
 
+      console.log('Security improvement added successfully:', data);
       await loadIssues();
       
       toast({
@@ -83,12 +101,19 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     handleStatusChange,
     handleAreaChange: async (issueId: number, area: string) => {
       try {
-        const { error } = await supabase
+        console.log('Updating area:', { issueId, area });
+        const { data, error } = await supabase
           .from('issues')
           .update({ area })
-          .eq('id', issueId);
+          .eq('id', issueId)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating area:', error);
+          throw error;
+        }
+
+        console.log('Area updated successfully:', data);
         await loadIssues();
       } catch (error) {
         console.error('Error updating area:', error);
@@ -101,12 +126,19 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     },
     handleResponsableChange: async (issueId: number, responsable: string) => {
       try {
-        const { error } = await supabase
+        console.log('Updating responsable:', { issueId, responsable });
+        const { data, error } = await supabase
           .from('issues')
           .update({ responsable })
-          .eq('id', issueId);
+          .eq('id', issueId)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating responsable:', error);
+          throw error;
+        }
+
+        console.log('Responsable updated successfully:', data);
         await loadIssues();
       } catch (error) {
         console.error('Error updating responsable:', error);
@@ -122,18 +154,25 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     handleAddSecurityImprovement,
     handleAssignedEmailChange: async (issueId: number, email: string) => {
       try {
-        const { error } = await supabase
+        console.log('Updating assigned email:', { issueId, email });
+        const { data, error } = await supabase
           .from('issues')
           .update({ assigned_email: email })
-          .eq('id', issueId);
+          .eq('id', issueId)
+          .select();
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error updating assigned email:', error);
+          throw error;
+        }
+
+        console.log('Assigned email updated successfully:', data);
         await loadIssues();
       } catch (error) {
-        console.error('Error updating email:', error);
+        console.error('Error updating assigned email:', error);
         toast({
           title: "Error",
-          description: "No se pudo actualizar el correo",
+          description: "No se pudo actualizar el correo asignado",
           variant: "destructive"
         });
       }
