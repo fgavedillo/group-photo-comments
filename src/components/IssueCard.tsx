@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import {
@@ -60,13 +60,25 @@ const IssueCard = ({
   const [isUpdating, setIsUpdating] = useState(false);
 
   const [formState, setFormState] = useState({
-    status: message.status,
+    status: message.status || 'en-estudio',
     area: message.area || "",
     responsable: message.responsable || "",
     assigned_email: message.assigned_email || "",
     security_improvement: message.security_improvement || "",
     action_plan: message.action_plan || ""
   });
+
+  // Actualizar el estado del formulario cuando cambia el mensaje
+  useEffect(() => {
+    setFormState({
+      status: message.status || 'en-estudio',
+      area: message.area || "",
+      responsable: message.responsable || "",
+      assigned_email: message.assigned_email || "",
+      security_improvement: message.security_improvement || "",
+      action_plan: message.action_plan || ""
+    });
+  }, [message]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -110,6 +122,11 @@ const IssueCard = ({
   const handleFormSubmit = async () => {
     setIsUpdating(true);
     try {
+      console.log('Actualizando incidencia:', {
+        id: message.id,
+        formState
+      });
+
       const { error } = await supabase
         .from('issues')
         .update({
