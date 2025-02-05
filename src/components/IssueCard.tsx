@@ -58,7 +58,6 @@ const IssueCard = ({
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
-
   const [formState, setFormState] = useState({
     status: message.status || 'en-estudio',
     area: message.area || "",
@@ -68,6 +67,7 @@ const IssueCard = ({
     action_plan: message.action_plan || ""
   });
 
+  // Actualizar el estado del formulario cuando cambian los datos del mensaje
   useEffect(() => {
     console.log('Message data received:', message);
     setFormState({
@@ -159,6 +159,14 @@ const IssueCard = ({
       onAssignedEmailChange(message.id, formState.assigned_email);
       onSecurityImprovementChange(message.id, formState.security_improvement);
       onActionPlanChange(message.id, formState.action_plan);
+
+      // Actualizar el mensaje local con los nuevos datos
+      message.status = formState.status;
+      message.area = formState.area;
+      message.responsable = formState.responsable;
+      message.assigned_email = formState.assigned_email;
+      message.security_improvement = formState.security_improvement;
+      message.action_plan = formState.action_plan;
 
       toast({
         title: "Cambios guardados",
@@ -355,6 +363,12 @@ const IssueCard = ({
           <p>Estado: <span className="font-medium text-foreground">{message.status}</span></p>
           {message.area && <p>Área: <span className="font-medium text-foreground">{message.area}</span></p>}
           {message.responsable && <p>Responsable: <span className="font-medium text-foreground">{message.responsable}</span></p>}
+          {message.security_improvement && (
+            <p>Mejora de seguridad: <span className="font-medium text-foreground">{message.security_improvement}</span></p>
+          )}
+          {message.action_plan && (
+            <p>Plan de acción: <span className="font-medium text-foreground">{message.action_plan}</span></p>
+          )}
         </div>
       </CardContent>
     </Card>
