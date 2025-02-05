@@ -1,12 +1,15 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 interface IssueFiltersProps {
   groupBy: 'day' | 'week' | 'month';
   selectedStates: string[];
+  responsableFilter: string;
   onGroupByChange: (value: 'day' | 'week' | 'month') => void;
   onStateToggle: (state: string) => void;
+  onResponsableFilterChange: (value: string) => void;
 }
 
 const STATES = [
@@ -19,8 +22,10 @@ const STATES = [
 export const IssueFilters = ({
   groupBy,
   selectedStates,
+  responsableFilter,
   onGroupByChange,
-  onStateToggle
+  onStateToggle,
+  onResponsableFilterChange
 }: IssueFiltersProps) => {
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -57,6 +62,17 @@ export const IssueFilters = ({
             </Button>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Filtrar por responsable:</label>
+        <Input
+          type="text"
+          placeholder="Nombre del responsable"
+          value={responsableFilter}
+          onChange={(e) => onResponsableFilterChange(e.target.value)}
+          className="w-full"
+        />
       </div>
     </div>
   );

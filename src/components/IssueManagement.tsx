@@ -21,6 +21,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
   const [groupBy, setGroupBy] = useState<'day' | 'week' | 'month'>('day');
   const [selectedStates, setSelectedStates] = useState<string[]>(['en-estudio', 'en-curso', 'cerrada', 'denegado']);
+  const [responsableFilter, setResponsableFilter] = useState("");
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
 
   useEffect(() => {
@@ -32,6 +33,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
     console.log('Current groupBy:', groupBy);
     console.log('Selected states:', selectedStates);
+    console.log('Responsable filter:', responsableFilter);
     console.log('All messages:', messages);
 
     const filtered = messages.filter(message => {
@@ -39,14 +41,17 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       const status = message.status || 'en-estudio';
       const statusMatch = selectedStates.includes(status);
+      const responsableMatch = !responsableFilter || 
+        (message.responsable && 
+         message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
       
-      console.log(`Message ${message.id} - Status: ${status}, Match: ${statusMatch}`);
-      return statusMatch;
+      console.log(`Message ${message.id} - Status: ${status}, Status Match: ${statusMatch}, Responsable Match: ${responsableMatch}`);
+      return statusMatch && responsableMatch;
     });
 
     console.log('Filtered messages:', filtered);
     setFilteredMessages(filtered);
-  }, [messages, selectedStates, groupBy]);
+  }, [messages, selectedStates, groupBy, responsableFilter]);
 
   const handleStateToggle = (state: string) => {
     console.log('Toggling state:', state);
@@ -68,11 +73,13 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         <IssueFilters
           groupBy={groupBy}
           selectedStates={selectedStates}
+          responsableFilter={responsableFilter}
           onGroupByChange={(value) => {
             console.log('Changing groupBy to:', value);
             setGroupBy(value);
           }}
           onStateToggle={handleStateToggle}
+          onResponsableFilterChange={setResponsableFilter}
         />
       </div>
       
