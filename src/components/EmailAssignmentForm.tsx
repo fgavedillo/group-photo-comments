@@ -9,9 +9,10 @@ interface EmailAssignmentFormProps {
   assignedEmail: string;
   onEmailChange: (email: string) => void;
   message: string;
+  imageUrl?: string;
 }
 
-export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message }: EmailAssignmentFormProps) => {
+export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, imageUrl }: EmailAssignmentFormProps) => {
   const { toast } = useToast();
   const [email, setEmail] = useState(assignedEmail);
 
@@ -35,10 +36,22 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message }: E
     }
 
     try {
+      const emailContent = `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Nueva incidencia asignada</h2>
+          <p style="color: #666; line-height: 1.6;">${message}</p>
+          ${imageUrl ? `<img src="${imageUrl}" alt="Imagen de la incidencia" style="max-width: 100%; height: auto; margin: 20px 0; border-radius: 8px;">` : ''}
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+          <p style="color: #999; font-size: 0.9em;">
+            Este es un mensaje automático del sistema de gestión de incidencias.
+          </p>
+        </div>
+      `;
+
       await sendEmail(
         email,
         "Nueva incidencia asignada",
-        `Se le ha asignado una nueva incidencia: ${message}`
+        emailContent
       );
 
       toast({
