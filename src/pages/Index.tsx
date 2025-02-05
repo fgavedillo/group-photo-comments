@@ -1,6 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList, type Message } from "@/components/MessageList";
@@ -38,7 +35,13 @@ const Index = () => {
         username: issue.username,
         timestamp: new Date(issue.timestamp),
         message: issue.message,
-        imageUrl: issue.issue_images?.[0]?.image_url || undefined
+        imageUrl: issue.issue_images?.[0]?.image_url || undefined,
+        status: issue.status,
+        area: issue.area,
+        responsable: issue.responsable,
+        security_improvement: issue.security_improvement,
+        action_plan: issue.action_plan,
+        assigned_email: issue.assigned_email
       }));
 
       setMessages(formattedMessages);
@@ -72,10 +75,7 @@ const Index = () => {
         throw issueError;
       }
 
-      console.log("Incidencia creada:", issueData);
-
       if (image && issueData) {
-        console.log("Subiendo imagen...");
         const fileName = `${Date.now()}-anon.${image.name.split('.').pop()}`;
         
         const { error: uploadError } = await supabase.storage
@@ -87,13 +87,9 @@ const Index = () => {
           throw uploadError;
         }
 
-        console.log("Imagen subida correctamente");
-
         const { data: { publicUrl } } = supabase.storage
           .from('issue-images')
           .getPublicUrl(fileName);
-
-        console.log("URL pública de la imagen:", publicUrl);
 
         const { error: imageError } = await supabase
           .from('issue_images')
@@ -106,8 +102,6 @@ const Index = () => {
           console.error("Error creando registro de imagen:", imageError);
           throw imageError;
         }
-
-        console.log("Registro de imagen creado correctamente");
       }
 
       await loadMessages();

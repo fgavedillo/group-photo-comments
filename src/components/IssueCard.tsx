@@ -161,14 +161,6 @@ const IssueCard = ({
       onSecurityImprovementChange(message.id, formState.security_improvement);
       onActionPlanChange(message.id, formState.action_plan);
 
-      // Actualizar el mensaje local con los nuevos datos
-      message.status = formState.status;
-      message.area = formState.area;
-      message.responsable = formState.responsable;
-      message.assigned_email = formState.assigned_email;
-      message.security_improvement = formState.security_improvement;
-      message.action_plan = formState.action_plan;
-
       toast({
         title: "Cambios guardados",
         description: "Los cambios se han guardado correctamente",
