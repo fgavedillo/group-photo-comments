@@ -28,7 +28,7 @@ export const IssueFilters = ({
   onResponsableFilterChange
 }: IssueFiltersProps) => {
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className="flex flex-col gap-4 p-4 bg-white shadow-sm rounded-lg">
       <div className="space-y-2">
         <label className="text-sm font-medium">Agrupar por:</label>
         <div className="flex gap-2">
@@ -68,7 +68,7 @@ export const IssueFilters = ({
         <label className="text-sm font-medium">Filtrar por responsable:</label>
         <Input
           type="text"
-          placeholder="Nombre del responsable"
+          placeholder="Buscar por nombre del responsable"
           value={responsableFilter}
           onChange={(e) => onResponsableFilterChange(e.target.value)}
           className="w-full"

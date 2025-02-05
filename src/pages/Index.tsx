@@ -1,8 +1,6 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList, type Message } from "@/components/MessageList";
@@ -144,10 +142,16 @@ const Index = () => {
 
       <Tabs defaultValue="chat" className="flex-1 flex flex-col">
         <div className="sticky top-[4.5rem] bg-white z-40 border-b">
-          <TabsList className="w-full justify-start rounded-none">
-            <TabsTrigger value="chat">Chat</TabsTrigger>
-            <TabsTrigger value="issues">Gestión de Incidencias</TabsTrigger>
-            <TabsTrigger value="kpis">Indicadores</TabsTrigger>
+          <TabsList className="w-full justify-start rounded-none border-b">
+            <TabsTrigger value="chat" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+              Chat
+            </TabsTrigger>
+            <TabsTrigger value="issues" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+              Gestión de Incidencias
+            </TabsTrigger>
+            <TabsTrigger value="kpis" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+              Indicadores
+            </TabsTrigger>
           </TabsList>
         </div>
         

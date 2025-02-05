@@ -5,12 +5,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { EmailAssignmentForm } from "./EmailAssignmentForm";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -359,7 +360,7 @@ const IssueCard = ({
             />
           </div>
         )}
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground space-y-2">
           <p>Estado: <span className="font-medium text-foreground">{message.status}</span></p>
           {message.area && <p>Área: <span className="font-medium text-foreground">{message.area}</span></p>}
           {message.responsable && <p>Responsable: <span className="font-medium text-foreground">{message.responsable}</span></p>}
@@ -369,6 +370,15 @@ const IssueCard = ({
           {message.action_plan && (
             <p>Plan de acción: <span className="font-medium text-foreground">{message.action_plan}</span></p>
           )}
+        </div>
+        
+        <div className="mt-4">
+          <EmailAssignmentForm
+            assignedEmail={message.assigned_email || ""}
+            onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
+            message={message.message}
+            imageUrl={message.imageUrl}
+          />
         </div>
       </CardContent>
     </Card>
