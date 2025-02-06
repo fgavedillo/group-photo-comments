@@ -25,21 +25,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ImageModal } from "./ImageModal";
 
-interface IssueCardProps {
-  message: any;
-  index: number;
-  onStatusChange: (issueId: number, status: string) => void;
-  onAreaChange: (issueId: number, area: string) => void;
-  onResponsableChange: (issueId: number, responsable: string) => void;
-  onDelete: () => void;
-  securityImprovements: { [key: string]: string };
-  actionPlans: { [key: string]: string };
-  onSecurityImprovementChange: (issueId: number, value: string) => void;
-  onActionPlanChange: (issueId: number, value: string) => void;
-  onAddSecurityImprovement: (issueId: number) => void;
-  onAssignedEmailChange: (issueId: number, value: string) => void;
-}
-
 const IssueCard = ({
   message,
   index,
@@ -68,7 +53,6 @@ const IssueCard = ({
     action_plan: message.action_plan || ""
   });
 
-  // Actualizar el estado del formulario cuando cambian los datos del mensaje
   useEffect(() => {
     console.log('Message data received:', message);
     setFormState({
@@ -125,7 +109,11 @@ const IssueCard = ({
     }
   };
 
-  const handleFormSubmit = async () => {
+  const handleFormSubmit = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
     setIsUpdating(true);
     try {
       console.log('Updating issue with data:', {
@@ -153,7 +141,6 @@ const IssueCard = ({
 
       console.log('Issue updated successfully:', data);
 
-      // Actualizar el estado global
       onStatusChange(message.id, formState.status);
       onAreaChange(message.id, formState.area);
       onResponsableChange(message.id, formState.responsable);
@@ -180,7 +167,7 @@ const IssueCard = ({
   };
 
   const IssueForm = () => (
-    <div className="space-y-4">
+    <form onSubmit={handleFormSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Estado</Label>
         <Select
@@ -204,23 +191,15 @@ const IssueCard = ({
 
       <div className="space-y-2">
         <Label>Área</Label>
-        <Select
+        <Input
+          type="text"
           value={formState.area}
-          onValueChange={(value) => {
-            console.log('Area changed to:', value);
-            setFormState(prev => ({ ...prev, area: value }));
+          onChange={(e) => {
+            console.log('Area changed to:', e.target.value);
+            setFormState(prev => ({ ...prev, area: e.target.value }));
           }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccionar área" />
-          </SelectTrigger>
-          <SelectContent className="bg-white">
-            <SelectItem value="produccion">Producción</SelectItem>
-            <SelectItem value="calidad">Calidad</SelectItem>
-            <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
-            <SelectItem value="logistica">Logística</SelectItem>
-          </SelectContent>
-        </Select>
+          placeholder="Ingrese el área"
+        />
       </div>
 
       <div className="space-y-2">
@@ -276,14 +255,14 @@ const IssueCard = ({
       </div>
 
       <div className="flex justify-end space-x-2 pt-4">
-        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+        <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
           Cancelar
         </Button>
-        <Button onClick={handleFormSubmit} disabled={isUpdating}>
+        <Button type="submit" disabled={isUpdating}>
           {isUpdating ? "Guardando..." : "Guardar cambios"}
         </Button>
       </div>
-    </div>
+    </form>
   );
 
   return (
