@@ -25,6 +25,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ImageModal } from "./ImageModal";
 
+interface IssueCardProps {
+  message: Issue;
+  index: number;
+  onStatusChange: (issueId: number, status: string) => void;
+  onAreaChange: (issueId: number, area: string) => void;
+  onResponsableChange: (issueId: number, responsable: string) => void;
+  onDelete: () => void;
+  securityImprovements: { [key: string]: string };
+  actionPlans: { [key: string]: string };
+  onSecurityImprovementChange: (issueId: number, value: string) => void;
+  onActionPlanChange: (issueId: number, value: string) => void;
+  onAddSecurityImprovement: (issueId: number) => void;
+  onAssignedEmailChange: (issueId: number, value: string) => void;
+}
+
 const IssueCard = ({
   message,
   index,
