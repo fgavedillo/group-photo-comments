@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil, Mail } from "lucide-react";
+import { Trash2, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
@@ -28,7 +28,7 @@ import { ImageModal } from "./ImageModal";
 interface IssueCardProps {
   message: Issue;
   index: number;
-  onStatusChange: (issueId: number, status: string) => void;
+  onStatusChange: (issueId: number, status: Issue['status']) => void;
   onAreaChange: (issueId: number, area: string) => void;
   onResponsableChange: (issueId: number, responsable: string) => void;
   onDelete: () => void;
@@ -60,38 +60,13 @@ const IssueCard = ({
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [formState, setFormState] = useState({
-    status: message.status || 'en-estudio',
+    status: message.status,
     area: message.area || "",
     responsable: message.responsable || "",
-    assigned_email: message.assigned_email || "",
-    security_improvement: message.security_improvement || "",
-    action_plan: message.action_plan || ""
+    assigned_email: message.assignedEmail || "",
+    security_improvement: message.securityImprovement || "",
+    action_plan: message.actionPlan || ""
   });
-
-  useEffect(() => {
-    console.log('Message data received:', message);
-    setFormState({
-      status: message.status || 'en-estudio',
-      area: message.area || "",
-      responsable: message.responsable || "",
-      assigned_email: message.assigned_email || "",
-      security_improvement: message.security_improvement || "",
-      action_plan: message.action_plan || ""
-    });
-  }, [message]);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'cerrada':
-        return 'border-green-500';
-      case 'en-curso':
-        return 'border-yellow-500';
-      case 'denegado':
-        return 'border-red-500';
-      default:
-        return 'border-gray-200';
-    }
-  };
 
   const handleDelete = async () => {
     try {
@@ -131,11 +106,6 @@ const IssueCard = ({
     
     setIsUpdating(true);
     try {
-      console.log('Updating issue with data:', {
-        id: message.id,
-        formState
-      });
-
       const { data, error } = await supabase
         .from('issues')
         .update({
@@ -149,12 +119,7 @@ const IssueCard = ({
         .eq('id', message.id)
         .select();
 
-      if (error) {
-        console.error('Error updating issue:', error);
-        throw error;
-      }
-
-      console.log('Issue updated successfully:', data);
+      if (error) throw error;
 
       onStatusChange(message.id, formState.status);
       onAreaChange(message.id, formState.area);
@@ -188,8 +153,7 @@ const IssueCard = ({
         <Select
           value={formState.status}
           onValueChange={(value) => {
-            console.log('Status changed to:', value);
-            setFormState(prev => ({ ...prev, status: value }));
+            setFormState(prev => ({ ...prev, status: value as Issue['status'] }));
           }}
         >
           <SelectTrigger>
@@ -210,7 +174,6 @@ const IssueCard = ({
           type="text"
           value={formState.area}
           onChange={(e) => {
-            console.log('Area changed to:', e.target.value);
             setFormState(prev => ({ ...prev, area: e.target.value }));
           }}
           placeholder="Ingrese el área"
@@ -223,7 +186,6 @@ const IssueCard = ({
           type="text"
           value={formState.responsable}
           onChange={(e) => {
-            console.log('Responsable changed to:', e.target.value);
             setFormState(prev => ({ ...prev, responsable: e.target.value }));
           }}
           placeholder="Nombre del responsable"
@@ -236,7 +198,6 @@ const IssueCard = ({
           type="email"
           value={formState.assigned_email}
           onChange={(e) => {
-            console.log('Email changed to:', e.target.value);
             setFormState(prev => ({ ...prev, assigned_email: e.target.value }));
           }}
           placeholder="ejemplo@email.com"
@@ -248,7 +209,6 @@ const IssueCard = ({
         <Textarea
           value={formState.security_improvement}
           onChange={(e) => {
-            console.log('Security improvement changed to:', e.target.value);
             setFormState(prev => ({ ...prev, security_improvement: e.target.value }));
           }}
           placeholder="Describe la mejora de seguridad..."
@@ -261,7 +221,6 @@ const IssueCard = ({
         <Textarea
           value={formState.action_plan}
           onChange={(e) => {
-            console.log('Action plan changed to:', e.target.value);
             setFormState(prev => ({ ...prev, action_plan: e.target.value }));
           }}
           placeholder="Describe el plan de acción..."
@@ -350,17 +309,17 @@ const IssueCard = ({
           <p>Estado: <span className="font-medium text-foreground">{message.status}</span></p>
           {message.area && <p>Área: <span className="font-medium text-foreground">{message.area}</span></p>}
           {message.responsable && <p>Responsable: <span className="font-medium text-foreground">{message.responsable}</span></p>}
-          {message.security_improvement && (
-            <p>Mejora de seguridad: <span className="font-medium text-foreground">{message.security_improvement}</span></p>
+          {message.securityImprovement && (
+            <p>Mejora de seguridad: <span className="font-medium text-foreground">{message.securityImprovement}</span></p>
           )}
-          {message.action_plan && (
-            <p>Plan de acción: <span className="font-medium text-foreground">{message.action_plan}</span></p>
+          {message.actionPlan && (
+            <p>Plan de acción: <span className="font-medium text-foreground">{message.actionPlan}</span></p>
           )}
         </div>
         
         <div className="mt-4">
           <EmailAssignmentForm
-            assignedEmail={message.assigned_email || ""}
+            assignedEmail={message.assignedEmail || ""}
             onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
             message={message.message}
             imageUrl={message.imageUrl}

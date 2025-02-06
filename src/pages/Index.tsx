@@ -5,8 +5,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
+import { IssueTable } from "@/components/IssueTable";
 import { supabase } from "@/lib/supabase";
 import { sendEmail } from "@/lib/supabase";
+import { Issue } from "@/types/issue";
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -143,6 +145,9 @@ const Index = () => {
             <TabsTrigger value="issues" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Gestión de Incidencias
             </TabsTrigger>
+            <TabsTrigger value="table" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+              Tabla de Incidencias
+            </TabsTrigger>
             <TabsTrigger value="kpis" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Indicadores
             </TabsTrigger>
@@ -156,6 +161,10 @@ const Index = () => {
         
         <TabsContent value="issues" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
           <IssueManagement messages={messages} />
+        </TabsContent>
+
+        <TabsContent value="table" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
+          <IssueTable issues={messages as unknown as Issue[]} />
         </TabsContent>
         
         <TabsContent value="kpis" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">

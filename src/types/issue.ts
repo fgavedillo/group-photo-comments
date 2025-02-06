@@ -3,10 +3,10 @@ export type Issue = {
   imageUrl: string;
   timestamp: Date;
   username: string;
-  description: string;
+  message: string;
   securityImprovement?: string;
   actionPlan?: string;
-  status: "en-estudio" | "en-curso" | "cerrada";
+  status: "en-estudio" | "en-curso" | "cerrada" | "denegado";
   assignedEmail?: string;
   area?: string;
   responsable?: string;
