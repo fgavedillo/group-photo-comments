@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -136,6 +137,7 @@ const IssueCard = ({
 
       if (error) throw error;
 
+      // Actualizar el estado local después de guardar exitosamente
       onStatusChange(message.id, formState.status);
       onAreaChange(message.id, formState.area);
       onResponsableChange(message.id, formState.responsable);
@@ -226,6 +228,7 @@ const IssueCard = ({
           onChange={(e) => {
             setFormState(prev => ({ ...prev, security_improvement: e.target.value }));
           }}
+          onBlur={handleFormSubmit}
           placeholder="Describe la mejora de seguridad..."
           className="min-h-[100px] resize-y"
         />
@@ -238,6 +241,7 @@ const IssueCard = ({
           onChange={(e) => {
             setFormState(prev => ({ ...prev, action_plan: e.target.value }));
           }}
+          onBlur={handleFormSubmit}
           placeholder="Describe el plan de acción..."
           className="min-h-[100px] resize-y"
         />
@@ -346,3 +350,4 @@ const IssueCard = ({
 };
 
 export default IssueCard;
+
