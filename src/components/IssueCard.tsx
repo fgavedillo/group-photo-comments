@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -114,12 +115,10 @@ const IssueCard = ({
     }
   };
 
-  const handleFormSubmit = async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsUpdating(true);
+
     try {
       const { data, error } = await supabase
         .from('issues')
@@ -148,9 +147,7 @@ const IssueCard = ({
         description: "Los cambios se han guardado correctamente",
       });
 
-      if (e) { // Solo cerramos el diálogo si fue un submit del formulario
-        setIsEditDialogOpen(false);
-      }
+      setIsEditDialogOpen(false);
     } catch (error) {
       console.error('Error updating issue:', error);
       toast({
