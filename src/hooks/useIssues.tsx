@@ -23,12 +23,12 @@ export const useIssues = () => {
 
       if (!issuesData) return;
 
-      const formattedIssues = issuesData.map(issue => ({
+      const formattedIssues: Issue[] = issuesData.map(issue => ({
         id: issue.id,
         imageUrl: issue.issue_images?.[0]?.image_url || '',
         timestamp: new Date(issue.timestamp || ''),
         username: issue.username,
-        description: issue.message,
+        message: issue.message,
         securityImprovement: issue.security_improvement || undefined,
         actionPlan: issue.action_plan || undefined,
         status: (issue.status as Issue['status']) || 'en-estudio',
