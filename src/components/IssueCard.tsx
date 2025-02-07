@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -6,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, Save } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -92,10 +91,7 @@ const IssueCard = ({
         .delete()
         .eq('id', message.id);
 
-      if (error) {
-        console.error('Error deleting issue:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       console.log('Issue deleted successfully');
       toast({
@@ -160,15 +156,17 @@ const IssueCard = ({
     }
   };
 
+  const handleChange = (field: keyof typeof formState, value: string) => {
+    setFormState(prev => ({ ...prev, [field]: value }));
+  };
+
   const IssueForm = () => (
     <form onSubmit={handleFormSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label>Estado</Label>
         <Select
           value={formState.status}
-          onValueChange={(value) => {
-            setFormState(prev => ({ ...prev, status: value as Issue['status'] }));
-          }}
+          onValueChange={(value) => handleChange('status', value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Seleccionar estado" />
@@ -187,9 +185,7 @@ const IssueCard = ({
         <Input
           type="text"
           value={formState.area}
-          onChange={(e) => {
-            setFormState(prev => ({ ...prev, area: e.target.value }));
-          }}
+          onChange={(e) => handleChange('area', e.target.value)}
           placeholder="Ingrese el área"
         />
       </div>
@@ -199,9 +195,7 @@ const IssueCard = ({
         <Input
           type="text"
           value={formState.responsable}
-          onChange={(e) => {
-            setFormState(prev => ({ ...prev, responsable: e.target.value }));
-          }}
+          onChange={(e) => handleChange('responsable', e.target.value)}
           placeholder="Nombre del responsable"
         />
       </div>
@@ -211,9 +205,7 @@ const IssueCard = ({
         <Input
           type="email"
           value={formState.assigned_email}
-          onChange={(e) => {
-            setFormState(prev => ({ ...prev, assigned_email: e.target.value }));
-          }}
+          onChange={(e) => handleChange('assigned_email', e.target.value)}
           placeholder="ejemplo@email.com"
         />
       </div>
@@ -222,9 +214,7 @@ const IssueCard = ({
         <Label>Mejora de seguridad</Label>
         <Textarea
           value={formState.security_improvement}
-          onChange={(e) => {
-            setFormState(prev => ({ ...prev, security_improvement: e.target.value }));
-          }}
+          onChange={(e) => handleChange('security_improvement', e.target.value)}
           placeholder="Describe la mejora de seguridad..."
           className="min-h-[100px] resize-y"
         />
@@ -234,9 +224,7 @@ const IssueCard = ({
         <Label>Plan de acción</Label>
         <Textarea
           value={formState.action_plan}
-          onChange={(e) => {
-            setFormState(prev => ({ ...prev, action_plan: e.target.value }));
-          }}
+          onChange={(e) => handleChange('action_plan', e.target.value)}
           placeholder="Describe el plan de acción..."
           className="min-h-[100px] resize-y"
         />
@@ -246,7 +234,8 @@ const IssueCard = ({
         <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={isUpdating}>
+        <Button type="submit" disabled={isUpdating} className="flex items-center gap-2">
+          <Save className="h-4 w-4" />
           {isUpdating ? "Guardando..." : "Guardar cambios"}
         </Button>
       </div>
