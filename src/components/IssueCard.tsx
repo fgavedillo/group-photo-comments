@@ -145,6 +145,7 @@ const IssueCard = ({
         onEditDialogChange={setIsEditDialogOpen}
         isDeleteDialogOpen={isDeleteDialogOpen}
         onDeleteDialogChange={setIsDeleteDialogOpen}
+        onDelete={handleDelete}
       >
         <IssueForm
           formState={formState}

@@ -2,8 +2,8 @@
 import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trash2, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogContent, AlertDialogTrigger, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 interface IssueHeaderProps {
   username: string;
@@ -12,6 +12,7 @@ interface IssueHeaderProps {
   onEditDialogChange: (open: boolean) => void;
   isDeleteDialogOpen: boolean;
   onDeleteDialogChange: (open: boolean) => void;
+  onDelete: () => void;
   children?: React.ReactNode;
 }
 
@@ -22,6 +23,7 @@ export const IssueHeader = ({
   onEditDialogChange,
   isDeleteDialogOpen,
   onDeleteDialogChange,
+  onDelete,
   children
 }: IssueHeaderProps) => {
   return (
@@ -35,11 +37,9 @@ export const IssueHeader = ({
         </div>
         <div className="flex gap-2">
           <Dialog open={isEditDialogOpen} onOpenChange={onEditDialogChange}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
+            <Button variant="ghost" size="icon" onClick={() => onEditDialogChange(true)}>
+              <Pencil className="h-4 w-4" />
+            </Button>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-white">
               <DialogHeader>
                 <DialogTitle>Editar incidencia</DialogTitle>
@@ -47,6 +47,7 @@ export const IssueHeader = ({
               {children}
             </DialogContent>
           </Dialog>
+
           <AlertDialog open={isDeleteDialogOpen} onOpenChange={onDeleteDialogChange}>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon">
@@ -61,8 +62,12 @@ export const IssueHeader = ({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction>Eliminar</AlertDialogAction>
+                <AlertDialogCancel onClick={() => onDeleteDialogChange(false)}>
+                  Cancelar
+                </AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete}>
+                  Eliminar
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -71,3 +76,4 @@ export const IssueHeader = ({
     </CardHeader>
   );
 };
+
