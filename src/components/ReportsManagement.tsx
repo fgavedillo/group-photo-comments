@@ -17,17 +17,11 @@ export const ReportsManagement = () => {
 
       if (error) throw error;
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-test-report`, {
+      const { data, error: functionError } = await supabase.functions.invoke('send-test-report', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
       });
 
-      if (!response.ok) {
-        throw new Error('Error al enviar el reporte');
-      }
+      if (functionError) throw functionError;
 
       toast({
         title: "Reporte generado",
