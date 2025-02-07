@@ -138,47 +138,51 @@ const Index = () => {
         </h1>
       </header>
 
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+      <Tabs defaultValue="chat" className="flex-1 flex flex-col h-[calc(100vh-4rem)]">
         <div className="sticky top-[4.5rem] bg-white z-40 border-b">
-          <TabsList className="w-full justify-start rounded-none border-b">
-            <TabsTrigger value="chat" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+          <TabsList className="flex w-full h-auto flex-wrap md:flex-nowrap justify-start rounded-none border-b">
+            <TabsTrigger value="chat" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Chat
             </TabsTrigger>
-            <TabsTrigger value="issues" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="issues" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Gestión de Incidencias
             </TabsTrigger>
-            <TabsTrigger value="table" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="table" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Tabla de Incidencias
             </TabsTrigger>
-            <TabsTrigger value="kpis" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="kpis" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Indicadores
             </TabsTrigger>
-            <TabsTrigger value="reports" className="data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="reports" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
               Gestión de Reportes
             </TabsTrigger>
           </TabsList>
         </div>
         
-        <TabsContent value="chat" className="flex-1 flex flex-col h-[calc(100vh-8rem)] p-0 mt-0">
-          <MessageList messages={messages} onMessageDelete={loadMessages} />
-          <MessageInput onSend={handleSendMessage} />
-        </TabsContent>
-        
-        <TabsContent value="issues" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
-          <IssueManagement messages={messages} />
-        </TabsContent>
+        <div className="flex-1 overflow-hidden">
+          <TabsContent value="chat" className="h-full m-0 p-0 data-[state=active]:flex flex-col">
+            <div className="flex-1 overflow-auto">
+              <MessageList messages={messages} onMessageDelete={loadMessages} />
+            </div>
+            <MessageInput onSend={handleSendMessage} />
+          </TabsContent>
+          
+          <TabsContent value="issues" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+            <IssueManagement messages={messages} />
+          </TabsContent>
 
-        <TabsContent value="table" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
-          <IssueTable issues={messages as unknown as Issue[]} />
-        </TabsContent>
-        
-        <TabsContent value="kpis" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
-          <DashboardKPIs messages={messages} />
-        </TabsContent>
+          <TabsContent value="table" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+            <IssueTable issues={messages as unknown as Issue[]} />
+          </TabsContent>
+          
+          <TabsContent value="kpis" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+            <DashboardKPIs messages={messages} />
+          </TabsContent>
 
-        <TabsContent value="reports" className="flex-1 h-[calc(100vh-8rem)] overflow-auto p-0 mt-0">
-          <ReportsManagement />
-        </TabsContent>
+          <TabsContent value="reports" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+            <ReportsManagement />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
