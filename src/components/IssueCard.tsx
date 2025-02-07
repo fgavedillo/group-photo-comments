@@ -5,15 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import {
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { IssueForm } from "./issues/IssueForm";
 import { IssueHeader } from "./issues/IssueHeader";
 import { IssueContent } from "./issues/IssueContent";
@@ -169,21 +160,9 @@ const IssueCard = ({
         imageUrl={message.imageUrl}
         onAssignedEmailChange={onAssignedEmailChange}
       />
-
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer. Se eliminará permanentemente la incidencia.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete}>Eliminar</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
     </Card>
   );
 };
 
 export default IssueCard;
+
