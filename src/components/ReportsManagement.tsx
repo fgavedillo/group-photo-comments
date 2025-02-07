@@ -17,11 +17,19 @@ export const ReportsManagement = () => {
 
       if (error) throw error;
 
-      const { data, error: functionError } = await supabase.functions.invoke('send-test-report', {
+      console.log("Invocando función send-test-report...");
+      
+      const { data: functionResponse, error: functionError } = await supabase.functions.invoke('send-test-report', {
         method: 'POST',
+        body: { issues },
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        console.error("Error en la función edge:", functionError);
+        throw functionError;
+      }
+
+      console.log("Respuesta de la función:", functionResponse);
 
       toast({
         title: "Reporte generado",
