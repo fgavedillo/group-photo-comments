@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from "react";
 import { useIssues } from "@/hooks/useIssues";
 import { useIssueActions } from "@/hooks/useIssueActions";
 import { WeekDayCard } from "./WeekDayCard";
 import { IssueFilters } from "./IssueFilters";
 import { getGroupedDates } from "@/utils/dateUtils";
+import { supabase } from "@/lib/supabase";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const { issues, loadIssues } = useIssues();
@@ -51,7 +53,30 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
 
     console.log('Filtered messages:', filtered);
     setFilteredMessages(filtered);
-  }, [messages, selectedStates, groupBy, responsableFilter]);
+  }, [messages, selectedStates, responsableFilter]);
+
+  // Add real-time subscription for updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('issues-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues'
+        },
+        () => {
+          console.log('Issues table changed, refreshing data...');
+          loadIssues();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadIssues]);
 
   const handleStateToggle = (state: string) => {
     console.log('Toggling state:', state);

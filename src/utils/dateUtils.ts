@@ -1,4 +1,5 @@
-import { format, startOfWeek, addDays, startOfMonth, isWithinInterval, startOfDay, endOfDay, endOfWeek, endOfMonth } from "date-fns";
+
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week' | 'month') => {
@@ -7,7 +8,6 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
     return [];
   }
 
-  const today = new Date();
   console.log('Grouping messages by:', groupBy);
   console.log('Number of messages:', filteredMessages.length);
 
@@ -41,15 +41,15 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
     filteredMessages.forEach(message => {
       if (!message?.timestamp) return;
       const messageDate = new Date(message.timestamp);
-      const weekStart = startOfWeek(messageDate, { locale: es });
-      const weekKey = format(weekStart, 'yyyy-ww');
+      const weekStart = startOfWeek(messageDate, { weekStartsOn: 1, locale: es }); // Start week on Monday
+      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1, locale: es });
+      const weekKey = format(weekStart, 'yyyy-[W]ww');
 
       if (!weeks.has(weekKey)) {
-        const weekEnd = endOfWeek(weekStart, { locale: es });
         weeks.set(weekKey, {
           date: weekStart,
           dayName: `Semana del ${format(weekStart, 'd', { locale: es })} al ${format(weekEnd, 'd MMMM yyyy', { locale: es })}`,
-          dayNumber: format(weekStart, 'w', { locale: es }),
+          dayNumber: `Semana ${format(weekStart, 'w', { locale: es })}`,
           messages: []
         });
       }
@@ -72,7 +72,7 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
         months.set(monthKey, {
           date: monthStart,
           dayName: format(monthStart, 'MMMM yyyy', { locale: es }),
-          dayNumber: format(monthStart, 'M', { locale: es }),
+          dayNumber: format(monthStart, 'MMMM yyyy', { locale: es }),
           messages: []
         });
       }
