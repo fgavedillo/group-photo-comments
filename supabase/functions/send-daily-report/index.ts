@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { Resend } from "npm:resend@2.0.0";
@@ -34,6 +35,13 @@ serve(async (req) => {
       }
     };
 
+    const today = new Date().toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
     const issuesTable = issues.map(issue => `
       <tr style="border-bottom: 1px solid #eee;">
         <td style="padding: 12px;">${issue.id}</td>
@@ -51,13 +59,26 @@ serve(async (req) => {
         <td style="padding: 12px;">${new Date(issue.timestamp).toLocaleDateString('es-ES')}</td>
         <td style="padding: 12px;">${issue.area || '-'}</td>
         <td style="padding: 12px;">${issue.responsable || '-'}</td>
+        <td style="padding: 12px;">${issue.security_improvement || '-'}</td>
       </tr>
     `).join('');
 
     const emailContent = `
       <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto;">
         <h1 style="color: #333;">Reporte Diario de Incidencias</h1>
-        <p style="color: #666;">Resumen de incidencias abiertas y en curso al ${new Date().toLocaleDateString('es-ES')}</p>
+        
+        <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <h2 style="color: #2c5282; margin-top: 0;">Buenos días,</h2>
+          <p style="color: #4a5568; line-height: 1.6;">
+            A continuación encontrará el reporte diario de incidencias correspondiente al ${today}. 
+            Este informe incluye todas las incidencias que se encuentran actualmente en estado de estudio o en curso,
+            requiriendo atención y seguimiento.
+          </p>
+          <p style="color: #4a5568; line-height: 1.6;">
+            Por favor, revise cada incidencia y actualice su estado según corresponda. Es importante mantener 
+            la información al día para garantizar una gestión efectiva de todas las situaciones reportadas.
+          </p>
+        </div>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
           <thead>
@@ -68,6 +89,7 @@ serve(async (req) => {
               <th style="padding: 12px; text-align: left;">Fecha</th>
               <th style="padding: 12px; text-align: left;">Área</th>
               <th style="padding: 12px; text-align: left;">Responsable</th>
+              <th style="padding: 12px; text-align: left;">Mejora de Seguridad</th>
             </tr>
           </thead>
           <tbody>
@@ -75,16 +97,23 @@ serve(async (req) => {
           </tbody>
         </table>
         
-        <p style="color: #999; margin-top: 20px; font-size: 0.9em;">
-          Este es un mensaje automático del sistema de gestión de incidencias.
+        <p style="color: #666; margin-top: 20px;">
+          Resumen: ${issues.length} incidencia(s) activa(s)
         </p>
+        
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+          <p style="color: #999; font-size: 0.9em;">
+            Este es un mensaje automático enviado a las 9:00 AM. 
+            Por favor, no responda a este correo.
+          </p>
+        </div>
       </div>
     `;
 
     const emailResponse = await resend.emails.send({
       from: "Lovable <onboarding@resend.dev>",
       to: ["fgavedillo@gmail.com"],
-      subject: "Reporte Diario de Incidencias",
+      subject: `Reporte Diario de Incidencias - ${today}`,
       html: emailContent,
     });
 
