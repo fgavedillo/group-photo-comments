@@ -43,7 +43,7 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
       const messageDate = new Date(message.timestamp);
       const weekStart = startOfWeek(messageDate, { weekStartsOn: 1, locale: es }); // Start week on Monday
       const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1, locale: es });
-      const weekKey = format(weekStart, 'yyyy-[W]ww');
+      const weekKey = format(weekStart, 'yyyy-ww'); // Cambiado de 'yyyy-[W]ww' a 'yyyy-ww'
 
       if (!weeks.has(weekKey)) {
         weeks.set(weekKey, {
