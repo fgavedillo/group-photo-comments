@@ -172,7 +172,7 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="table" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
-            <IssueTable issues={messages as unknown as Issue[]} />
+            <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
           </TabsContent>
           
           <TabsContent value="kpis" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">

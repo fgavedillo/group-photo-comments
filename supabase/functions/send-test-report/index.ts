@@ -21,27 +21,25 @@ serve(async (req) => {
   try {
     const { data: issues, error } = await supabase
       .from('issues')
-      .select('*')
-      .in('status', ['en-estudio', 'en-curso']);
+      .select(`
+        *,
+        issue_images (
+          image_url
+        )
+      `)
+      .in('status', ['en-estudio', 'en-curso'])
+      .order('timestamp', { ascending: false });
 
     if (error) throw error;
-
-    const getStatusColor = (status: string) => {
-      switch (status) {
-        case 'en-curso':
-          return '#FFA500';
-        default:
-          return '#808080';
-      }
-    };
 
     const issuesTable = issues.map(issue => `
       <tr style="border-bottom: 1px solid #eee;">
         <td style="padding: 12px;">${issue.id}</td>
         <td style="padding: 12px;">${issue.message}</td>
+        <td style="padding: 12px;">${issue.security_improvement || '-'}</td>
         <td style="padding: 12px;">
           <span style="
-            background-color: ${getStatusColor(issue.status)};
+            background-color: ${issue.status === 'en-curso' ? '#FFA500' : '#808080'};
             color: white;
             padding: 4px 8px;
             border-radius: 4px;
@@ -49,26 +47,31 @@ serve(async (req) => {
             ${issue.status}
           </span>
         </td>
-        <td style="padding: 12px;">${new Date(issue.timestamp).toLocaleDateString('es-ES')}</td>
-        <td style="padding: 12px;">${issue.area || '-'}</td>
-        <td style="padding: 12px;">${issue.responsable || '-'}</td>
+        <td style="padding: 12px;">
+          ${issue.issue_images?.[0]?.image_url ? 
+            `<img src="${issue.issue_images[0].image_url}" 
+                  alt="Incidencia" 
+                  style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;"
+            />` : 
+            '-'
+          }
+        </td>
       </tr>
     `).join('');
 
     const emailContent = `
       <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto;">
-        <h1 style="color: #333;">Reporte de Prueba de Incidencias</h1>
-        <p style="color: #666;">Resumen de incidencias abiertas y en curso al ${new Date().toLocaleDateString('es-ES')}</p>
+        <h1 style="color: #333;">Reporte de Incidencias Activas</h1>
+        <p style="color: #666;">Resumen de incidencias en estudio y en curso al ${new Date().toLocaleDateString('es-ES')}</p>
         
         <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
           <thead>
             <tr style="background-color: #f8f8f8;">
               <th style="padding: 12px; text-align: left;">ID</th>
-              <th style="padding: 12px; text-align: left;">Descripción</th>
+              <th style="padding: 12px; text-align: left;">Que Sucede</th>
+              <th style="padding: 12px; text-align: left;">Mejora de Seguridad</th>
               <th style="padding: 12px; text-align: left;">Estado</th>
-              <th style="padding: 12px; text-align: left;">Fecha</th>
-              <th style="padding: 12px; text-align: left;">Área</th>
-              <th style="padding: 12px; text-align: left;">Responsable</th>
+              <th style="padding: 12px; text-align: left;">Imagen</th>
             </tr>
           </thead>
           <tbody>
@@ -77,7 +80,7 @@ serve(async (req) => {
         </table>
         
         <p style="color: #999; margin-top: 20px; font-size: 0.9em;">
-          Este es un correo de prueba del sistema de gestión de incidencias.
+          Este es un reporte automático del sistema de gestión de incidencias.
         </p>
       </div>
     `;
@@ -85,7 +88,7 @@ serve(async (req) => {
     const emailResponse = await resend.emails.send({
       from: "Lovable <onboarding@resend.dev>",
       to: ["fgavedillo@gmail.com"],
-      subject: "Correo de Prueba - Reporte de Incidencias",
+      subject: "Reporte de Incidencias Activas",
       html: emailContent,
     });
 
