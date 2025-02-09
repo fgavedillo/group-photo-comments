@@ -140,7 +140,7 @@ const Index = () => {
 
       <Tabs defaultValue="inicio" className="flex-1">
         <div className="sticky top-[3.5rem] bg-white z-40 border-b">
-          <TabsList className="w-full h-auto justify-start rounded-none">
+          <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
             <TabsTrigger value="inicio">
               Inicio
             </TabsTrigger>
@@ -162,7 +162,7 @@ const Index = () => {
           </TabsList>
         </div>
         
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-auto">
           <TabsContent value="inicio" className="h-full m-0 p-4">
             <div className="max-w-2xl mx-auto space-y-4">
               <h2 className="text-2xl font-bold text-center mb-8">Bienvenido al Sistema de Gestión de Incidencias</h2>
@@ -179,19 +179,19 @@ const Index = () => {
             <MessageInput onSend={handleSendMessage} />
           </TabsContent>
           
-          <TabsContent value="issues" className="h-full m-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col">
             <IssueManagement messages={messages} />
           </TabsContent>
 
-          <TabsContent value="table" className="h-full m-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col">
             <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
           </TabsContent>
           
-          <TabsContent value="kpis" className="h-full m-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="kpis" className="h-full m-0 data-[state=active]:flex flex-col">
             <DashboardKPIs messages={messages} />
           </TabsContent>
 
-          <TabsContent value="reports" className="h-full m-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="reports" className="h-full m-0 data-[state=active]:flex flex-col">
             <ReportsManagement />
           </TabsContent>
         </div>
