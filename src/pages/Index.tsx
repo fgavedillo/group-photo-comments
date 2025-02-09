@@ -1,134 +1,19 @@
 
-import { useState, useEffect } from "react";
 import { MessageInput } from "@/components/MessageInput";
-import { MessageList, type Message } from "@/components/MessageList";
-import { useToast } from "@/hooks/use-toast";
+import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
 import { IssueTable } from "@/components/IssueTable";
 import { ReportsManagement } from "@/components/ReportsManagement";
-import { supabase } from "@/lib/supabase";
-import { sendEmail } from "@/lib/supabase";
+import { useMessages } from "@/hooks/useMessages";
+import { useMessageSender } from "@/hooks/useMessageSender";
+import { WelcomePage } from "@/components/WelcomePage";
 import { Issue } from "@/types/issue";
 
 const Index = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const { toast } = useToast();
-
-  useEffect(() => {
-    loadMessages();
-  }, []);
-
-  const loadMessages = async () => {
-    try {
-      const { data: issuesData, error: issuesError } = await supabase
-        .from('issues')
-        .select(`
-          *,
-          issue_images (
-            image_url
-          )
-        `)
-        .order('timestamp', { ascending: true });
-
-      if (issuesError) throw issuesError;
-
-      const formattedMessages = issuesData.map(issue => ({
-        id: issue.id.toString(),
-        username: issue.username,
-        timestamp: new Date(issue.timestamp),
-        message: issue.message,
-        imageUrl: issue.issue_images?.[0]?.image_url || undefined,
-        status: issue.status,
-        area: issue.area,
-        responsable: issue.responsable,
-        securityImprovement: issue.security_improvement,
-        actionPlan: issue.action_plan,
-        assignedEmail: issue.assigned_email
-      }));
-
-      setMessages(formattedMessages);
-    } catch (error) {
-      console.error('Error cargando mensajes:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los mensajes",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSendMessage = async (text: string, image?: File) => {
-    try {
-      console.log("Iniciando envío de mensaje...");
-      
-      const { data: issueData, error: issueError } = await supabase
-        .from('issues')
-        .insert({
-          message: text,
-          username: "Usuario",
-          timestamp: new Date().toISOString(),
-          status: "en-estudio"
-        })
-        .select()
-        .single();
-
-      if (issueError) {
-        console.error("Error creando incidencia:", issueError);
-        throw issueError;
-      }
-
-      if (image && issueData) {
-        const fileName = `${Date.now()}-anon.${image.name.split('.').pop()}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('issue-images')
-          .upload(fileName, image);
-
-        if (uploadError) {
-          console.error("Error subiendo imagen:", uploadError);
-          throw uploadError;
-        }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('issue-images')
-          .getPublicUrl(fileName);
-
-        const { error: imageError } = await supabase
-          .from('issue_images')
-          .insert({
-            issue_id: issueData.id,
-            image_url: publicUrl
-          });
-
-        if (imageError) {
-          console.error("Error creando registro de imagen:", imageError);
-          throw imageError;
-        }
-      }
-
-      await loadMessages();
-      
-      toast({
-        title: "Mensaje enviado",
-        description: "Tu mensaje ha sido publicado exitosamente",
-      });
-
-      await sendEmail(
-        "fgavedillo@gmail.com",
-        "Nuevo mensaje en el sistema",
-        `Se ha recibido un nuevo mensaje: ${text}`
-      );
-    } catch (error) {
-      console.error("Error al procesar el mensaje:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al enviar el mensaje",
-        variant: "destructive"
-      });
-    }
-  };
+  const { messages, loadMessages } = useMessages();
+  const { handleSendMessage } = useMessageSender(loadMessages);
 
   return (
     <div className="min-h-screen flex flex-col bg-white shadow-sm">
@@ -164,12 +49,7 @@ const Index = () => {
         
         <div className="flex-1 overflow-auto">
           <TabsContent value="inicio" className="h-full m-0 p-4">
-            <div className="max-w-2xl mx-auto space-y-4">
-              <h2 className="text-2xl font-bold text-center mb-8">Bienvenido al Sistema de Gestión de Incidencias</h2>
-              <p className="text-gray-600 text-center">
-                Por favor, identifíquese para acceder al sistema.
-              </p>
-            </div>
+            <WelcomePage />
           </TabsContent>
 
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
