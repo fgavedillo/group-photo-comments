@@ -58,8 +58,8 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
               <TableCell>{format(issue.timestamp, 'dd/MM/yyyy HH:mm')}</TableCell>
               <TableCell>{issue.username}</TableCell>
               <TableCell className="whitespace-pre-wrap">{issue.message}</TableCell>
-              <TableCell className="whitespace-pre-wrap">{issue.action_plan || '-'}</TableCell>
-              <TableCell className="whitespace-pre-wrap">{issue.security_improvement || '-'}</TableCell>
+              <TableCell className="whitespace-pre-wrap">{issue.actionPlan || '-'}</TableCell>
+              <TableCell className="whitespace-pre-wrap">{issue.securityImprovement || '-'}</TableCell>
               <TableCell>{issue.status}</TableCell>
               <TableCell>{issue.area || '-'}</TableCell>
               <TableCell>{issue.responsable || '-'}</TableCell>
@@ -80,3 +80,4 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
     </div>
   );
 };
+
