@@ -12,7 +12,6 @@ interface IssueTableProps {
 
 export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
   useEffect(() => {
-    // Subscribe to real-time changes
     const channel = supabase
       .channel('issues-changes')
       .on(
@@ -43,12 +42,12 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
             <TableHead>Fecha</TableHead>
             <TableHead>Usuario</TableHead>
             <TableHead className="min-w-[200px]">Que Sucede</TableHead>
+            <TableHead className="min-w-[200px]">Plan de Acción</TableHead>
             <TableHead className="min-w-[200px]">Mejora de Seguridad</TableHead>
             <TableHead>Estado</TableHead>
             <TableHead>Área</TableHead>
             <TableHead>Responsable</TableHead>
             <TableHead>Email Asignado</TableHead>
-            <TableHead>Plan de Acción</TableHead>
             <TableHead>Imagen</TableHead>
           </TableRow>
         </TableHeader>
@@ -59,12 +58,12 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
               <TableCell>{format(issue.timestamp, 'dd/MM/yyyy HH:mm')}</TableCell>
               <TableCell>{issue.username}</TableCell>
               <TableCell className="whitespace-pre-wrap">{issue.message}</TableCell>
+              <TableCell className="whitespace-pre-wrap">{issue.actionPlan || '-'}</TableCell>
               <TableCell className="whitespace-pre-wrap">{issue.securityImprovement || '-'}</TableCell>
               <TableCell>{issue.status}</TableCell>
               <TableCell>{issue.area || '-'}</TableCell>
               <TableCell>{issue.responsable || '-'}</TableCell>
               <TableCell>{issue.assignedEmail || '-'}</TableCell>
-              <TableCell className="whitespace-pre-wrap">{issue.actionPlan || '-'}</TableCell>
               <TableCell>
                 {issue.imageUrl && (
                   <img 

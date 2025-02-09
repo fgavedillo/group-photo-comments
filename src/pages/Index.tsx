@@ -131,55 +131,67 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col max-w-4xl mx-auto bg-white shadow-sm">
+    <div className="min-h-screen flex flex-col bg-white shadow-sm">
       <header className="bg-white border-b border-gray-100 p-2 sticky top-0 z-50">
         <h1 className="text-lg font-semibold text-foreground">
           Sistema de Gestión de Incidencias
         </h1>
       </header>
 
-      <Tabs defaultValue="chat" className="flex-1 flex flex-col h-[calc(100vh-4rem)]">
-        <div className="sticky top-[4.5rem] bg-white z-40 border-b">
-          <TabsList className="flex w-full h-auto flex-wrap md:flex-nowrap justify-start rounded-none border-b">
-            <TabsTrigger value="chat" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+      <Tabs defaultValue="inicio" className="flex-1">
+        <div className="sticky top-[3.5rem] bg-white z-40 border-b">
+          <TabsList className="w-full h-auto justify-start rounded-none">
+            <TabsTrigger value="inicio">
+              Inicio
+            </TabsTrigger>
+            <TabsTrigger value="chat">
               Chat
             </TabsTrigger>
-            <TabsTrigger value="issues" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="issues">
               Gestión de Incidencias
             </TabsTrigger>
-            <TabsTrigger value="table" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="table">
               Tabla de Incidencias
             </TabsTrigger>
-            <TabsTrigger value="kpis" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="kpis">
               Indicadores
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex-shrink-0 data-[state=active]:border-b-2 data-[state=active]:border-primary">
+            <TabsTrigger value="reports">
               Gestión de Reportes
             </TabsTrigger>
           </TabsList>
         </div>
         
         <div className="flex-1 overflow-hidden">
-          <TabsContent value="chat" className="h-full m-0 p-0 data-[state=active]:flex flex-col">
+          <TabsContent value="inicio" className="h-full m-0 p-4">
+            <div className="max-w-2xl mx-auto space-y-4">
+              <h2 className="text-2xl font-bold text-center mb-8">Bienvenido al Sistema de Gestión de Incidencias</h2>
+              <p className="text-gray-600 text-center">
+                Por favor, identifíquese para acceder al sistema.
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
             <div className="flex-1 overflow-auto">
               <MessageList messages={messages} onMessageDelete={loadMessages} />
             </div>
             <MessageInput onSend={handleSendMessage} />
           </TabsContent>
           
-          <TabsContent value="issues" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="issues" className="h-full m-0 data-[state=active]:block overflow-auto">
             <IssueManagement messages={messages} />
           </TabsContent>
 
-          <TabsContent value="table" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="table" className="h-full m-0 data-[state=active]:block overflow-auto">
             <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
           </TabsContent>
           
-          <TabsContent value="kpis" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="kpis" className="h-full m-0 data-[state=active]:block overflow-auto">
             <DashboardKPIs messages={messages} />
           </TabsContent>
 
-          <TabsContent value="reports" className="h-full m-0 p-0 data-[state=active]:block overflow-auto">
+          <TabsContent value="reports" className="h-full m-0 data-[state=active]:block overflow-auto">
             <ReportsManagement />
           </TabsContent>
         </div>
