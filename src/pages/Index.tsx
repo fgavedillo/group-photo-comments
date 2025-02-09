@@ -43,9 +43,9 @@ const Index = () => {
         status: issue.status,
         area: issue.area,
         responsable: issue.responsable,
-        security_improvement: issue.security_improvement,
-        action_plan: issue.action_plan,
-        assigned_email: issue.assigned_email
+        securityImprovement: issue.security_improvement,
+        actionPlan: issue.action_plan,
+        assignedEmail: issue.assigned_email
       }));
 
       setMessages(formattedMessages);
