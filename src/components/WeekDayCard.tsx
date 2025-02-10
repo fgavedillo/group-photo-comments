@@ -1,3 +1,4 @@
+
 import IssueCard from "./IssueCard";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +16,7 @@ interface WeekDayCardProps {
   onActionPlanChange: (issueId: number, value: string) => void;
   onAddSecurityImprovement: (issueId: number) => void;
   onAssignedEmailChange: (issueId: number, value: string) => void;
+  isAdmin: boolean;
 }
 
 export const WeekDayCard = ({
@@ -31,6 +33,7 @@ export const WeekDayCard = ({
   onActionPlanChange,
   onAddSecurityImprovement,
   onAssignedEmailChange,
+  isAdmin,
 }: WeekDayCardProps) => {
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-4">
@@ -63,6 +66,7 @@ export const WeekDayCard = ({
                 onActionPlanChange={onActionPlanChange}
                 onAddSecurityImprovement={onAddSecurityImprovement}
                 onAssignedEmailChange={onAssignedEmailChange}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

@@ -57,7 +57,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     console.log('Responsable filter:', responsableFilter);
     console.log('All messages:', messages);
 
-    const filtered = messages.filter(message => {
+    const filtered = messages.filter(async message => {
       if (!message) return false;
       
       const status = message.status || 'en-estudio';
@@ -70,8 +70,8 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       
       // If user is not admin, only show messages they're responsible for
       if (!isAdmin && message.responsable) {
-        const userEmail = supabase.auth.getUser()?.data?.user?.email;
-        if (!userEmail || message.responsable.toLowerCase() !== userEmail.toLowerCase()) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user?.email || message.responsable.toLowerCase() !== user.email.toLowerCase()) {
           return false;
         }
       }
