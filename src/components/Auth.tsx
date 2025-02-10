@@ -25,22 +25,6 @@ export const Auth = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      
-      // First check if user exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('email')
-        .eq('email', email)
-        .single();
-
-      if (existingUser) {
-        toast({
-          title: "Error",
-          description: "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
-          variant: "destructive",
-        });
-        return;
-      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -61,11 +45,15 @@ export const Auth = () => {
       });
       clearForm();
     } catch (error: any) {
+      let errorMessage = "No se pudo completar el registro.";
+      
+      if (error.message.includes("User already registered")) {
+        errorMessage = "Este correo electrónico ya está registrado. Por favor, inicia sesión.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message === "User already registered"
-          ? "Este correo electrónico ya está registrado. Por favor, inicia sesión."
-          : error.message || "No se pudo completar el registro.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
