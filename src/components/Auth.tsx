@@ -23,8 +23,33 @@ export const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
+
+      // First check if user already exists
+      const { data: existingUser, error: existingUserError } = await supabase.auth.signInWithPassword({
+        email,
+        password: 'dummy-password', // Use a dummy password to check if email exists
+      });
+
+      if (!existingUserError || (existingUserError && existingUserError.message.includes('Invalid login credentials'))) {
+        toast({
+          title: "Error",
+          description: "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -63,6 +88,16 @@ export const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -78,10 +113,7 @@ export const Auth = () => {
       });
       clearForm();
     } catch (error: any) {
-      let errorMessage = "No se pudo iniciar sesión.";
-      if (error.message.includes("Invalid login credentials")) {
-        errorMessage = "Correo electrónico o contraseña incorrectos.";
-      }
+      let errorMessage = "Correo electrónico o contraseña incorrectos.";
       
       toast({
         title: "Error",
