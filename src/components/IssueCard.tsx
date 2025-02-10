@@ -22,6 +22,7 @@ interface IssueCardProps {
   onActionPlanChange: (issueId: number, value: string) => void;
   onAddSecurityImprovement: (issueId: number) => void;
   onAssignedEmailChange: (issueId: number, value: string) => void;
+  isAdmin: boolean;
 }
 
 const getStatusColor = (status: Issue['status']) => {
@@ -47,6 +48,7 @@ const IssueCard = ({
   onResponsableChange,
   onDelete,
   onAssignedEmailChange,
+  isAdmin,
 }: IssueCardProps) => {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
