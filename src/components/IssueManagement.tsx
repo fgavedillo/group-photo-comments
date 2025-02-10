@@ -25,6 +25,25 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [selectedStates, setSelectedStates] = useState<string[]>(['en-estudio', 'en-curso', 'cerrada', 'denegado']);
   const [responsableFilter, setResponsableFilter] = useState("");
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const { data, error } = await supabase.rpc('has_role', {
+          _role: 'admin'
+        });
+        
+        if (error) throw error;
+        setIsAdmin(!!data);
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        setIsAdmin(false);
+      }
+    };
+
+    checkUserRole();
+  }, []);
 
   useEffect(() => {
     if (!messages || !Array.isArray(messages)) {
@@ -48,12 +67,21 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
          message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
       
       console.log(`Message ${message.id} - Status: ${status}, Status Match: ${statusMatch}, Responsable Match: ${responsableMatch}`);
+      
+      // If user is not admin, only show messages they're responsible for
+      if (!isAdmin && message.responsable) {
+        const userEmail = supabase.auth.getUser()?.data?.user?.email;
+        if (!userEmail || message.responsable.toLowerCase() !== userEmail.toLowerCase()) {
+          return false;
+        }
+      }
+      
       return statusMatch && responsableMatch;
     });
 
     console.log('Filtered messages:', filtered);
     setFilteredMessages(filtered);
-  }, [messages, selectedStates, responsableFilter]);
+  }, [messages, selectedStates, responsableFilter, isAdmin]);
 
   // Add real-time subscription for updates
   useEffect(() => {
@@ -125,6 +153,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             onActionPlanChange={handleActionPlanChange}
             onAddSecurityImprovement={handleAddSecurityImprovement}
             onAssignedEmailChange={handleAssignedEmailChange}
+            isAdmin={isAdmin}
           />
         ))}
       </div>
