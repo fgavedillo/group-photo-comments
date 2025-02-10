@@ -35,22 +35,6 @@ export const Auth = () => {
 
     try {
       setLoading(true);
-
-      // First check if user already exists
-      const { data: existingUser, error: existingUserError } = await supabase.auth.signInWithPassword({
-        email,
-        password: 'dummy-password', // Use a dummy password to check if email exists
-      });
-
-      if (!existingUserError || (existingUserError && existingUserError.message.includes('Invalid login credentials'))) {
-        toast({
-          title: "Error",
-          description: "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
