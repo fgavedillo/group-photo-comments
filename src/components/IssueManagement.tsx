@@ -46,41 +46,49 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   }, []);
 
   useEffect(() => {
-    if (!messages || !Array.isArray(messages)) {
-      console.log('No messages or invalid messages format');
-      setFilteredMessages([]);
-      return;
-    }
-
-    console.log('Current groupBy:', groupBy);
-    console.log('Selected states:', selectedStates);
-    console.log('Responsable filter:', responsableFilter);
-    console.log('All messages:', messages);
-
-    const filtered = messages.filter(async message => {
-      if (!message) return false;
-      
-      const status = message.status || 'en-estudio';
-      const statusMatch = selectedStates.includes(status);
-      const responsableMatch = !responsableFilter || 
-        (message.responsable && 
-         message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
-      
-      console.log(`Message ${message.id} - Status: ${status}, Status Match: ${statusMatch}, Responsable Match: ${responsableMatch}`);
-      
-      // If user is not admin, only show messages they're responsible for
-      if (!isAdmin && message.responsable) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user?.email || message.responsable.toLowerCase() !== user.email.toLowerCase()) {
-          return false;
-        }
+    const filterAndSetMessages = async () => {
+      if (!messages || !Array.isArray(messages)) {
+        console.log('No messages or invalid messages format');
+        setFilteredMessages([]);
+        return;
       }
-      
-      return statusMatch && responsableMatch;
-    });
 
-    console.log('Filtered messages:', filtered);
-    setFilteredMessages(filtered);
+      console.log('Current groupBy:', groupBy);
+      console.log('Selected states:', selectedStates);
+      console.log('Responsable filter:', responsableFilter);
+      console.log('All messages:', messages);
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        const filtered = messages.filter(message => {
+          if (!message) return false;
+          
+          const status = message.status || 'en-estudio';
+          const statusMatch = selectedStates.includes(status);
+          const responsableMatch = !responsableFilter || 
+            (message.responsable && 
+             message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
+          
+          console.log(`Message ${message.id} - Status: ${status}, Status Match: ${statusMatch}, Responsable Match: ${responsableMatch}`);
+          
+          // If user is not admin, only show messages they're responsible for
+          if (!isAdmin && message.responsable && user?.email) {
+            return statusMatch && responsableMatch && message.responsable.toLowerCase() === user.email.toLowerCase();
+          }
+          
+          return statusMatch && responsableMatch;
+        });
+
+        console.log('Filtered messages:', filtered);
+        setFilteredMessages(filtered);
+      } catch (error) {
+        console.error('Error filtering messages:', error);
+        setFilteredMessages([]);
+      }
+    };
+
+    filterAndSetMessages();
   }, [messages, selectedStates, responsableFilter, isAdmin]);
 
   // Add real-time subscription for updates
