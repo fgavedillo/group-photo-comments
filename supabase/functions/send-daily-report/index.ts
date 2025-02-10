@@ -72,8 +72,16 @@ serve(async (req) => {
 
     const issuesTable = activeIssues.map(issue => `
       <tr style="border-bottom: 1px solid #eee;">
-        <td style="padding: 12px;">${issue.id}</td>
-        <td style="padding: 12px;">${issue.message}</td>
+        <td style="padding: 12px;">
+          <a href="${supabaseUrl}?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: underline;">
+            ${issue.id}
+          </a>
+        </td>
+        <td style="padding: 12px;">
+          <a href="${supabaseUrl}?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: none;">
+            ${issue.message}
+          </a>
+        </td>
         <td style="padding: 12px;">${issue.security_improvement || '-'}</td>
         <td style="padding: 12px;">
           <span style="

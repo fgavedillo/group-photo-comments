@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useIssues } from "@/hooks/useIssues";
 import { useIssueActions } from "@/hooks/useIssueActions";
@@ -6,8 +5,10 @@ import { WeekDayCard } from "./WeekDayCard";
 import { IssueFilters } from "./IssueFilters";
 import { getGroupedDates } from "@/utils/dateUtils";
 import { supabase } from "@/lib/supabase";
+import { useSearchParams } from "react-router-dom";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
+  const [searchParams] = useSearchParams();
   const { issues, loadIssues } = useIssues();
   const {
     securityImprovements,
@@ -26,6 +27,18 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [responsableFilter, setResponsableFilter] = useState("");
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const issueId = searchParams.get('issue_id');
+    const action = searchParams.get('action');
+    
+    if (issueId && action === 'edit') {
+      const issue = messages.find(msg => msg.id === parseInt(issueId));
+      if (issue) {
+        console.log('Opening edit modal for issue:', issue);
+      }
+    }
+  }, [searchParams, messages]);
 
   useEffect(() => {
     const checkUserRole = async () => {
@@ -91,7 +104,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     filterAndSetMessages();
   }, [messages, selectedStates, responsableFilter, isAdmin]);
 
-  // Add real-time subscription for updates
   useEffect(() => {
     const channel = supabase
       .channel('issues-changes')
