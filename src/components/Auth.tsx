@@ -14,10 +14,34 @@ export const Auth = () => {
   const [lastName, setLastName] = useState('');
   const { toast } = useToast();
 
+  const clearForm = () => {
+    setEmail('');
+    setPassword('');
+    setFirstName('');
+    setLastName('');
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setLoading(true);
+      
+      // First check if user exists
+      const { data: existingUser } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', email)
+        .single();
+
+      if (existingUser) {
+        toast({
+          title: "Error",
+          description: "Este correo electrónico ya está registrado. Por favor, inicia sesión.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -35,10 +59,13 @@ export const Auth = () => {
         title: "¡Registro exitoso!",
         description: "Ya puedes iniciar sesión en el sistema.",
       });
+      clearForm();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message || "No se pudo completar el registro.",
+        description: error.message === "User already registered"
+          ? "Este correo electrónico ya está registrado. Por favor, inicia sesión."
+          : error.message || "No se pudo completar el registro.",
         variant: "destructive",
       });
     } finally {
@@ -61,10 +88,16 @@ export const Auth = () => {
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
       });
+      clearForm();
     } catch (error: any) {
+      let errorMessage = "No se pudo iniciar sesión.";
+      if (error.message.includes("Invalid login credentials")) {
+        errorMessage = "Correo electrónico o contraseña incorrectos.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "No se pudo iniciar sesión.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -73,8 +106,13 @@ export const Auth = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="flex flex-col items-center justify-center min-h-[80vh] p-4">
+      <div className="w-full max-w-sm space-y-4">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold">Bienvenido</h1>
+          <p className="text-muted-foreground">Inicia sesión o regístrate para continuar</p>
+        </div>
+        
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
@@ -96,6 +134,7 @@ export const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
               <Button
                 type="submit"
@@ -134,6 +173,7 @@ export const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
               <Button
                 type="submit"
