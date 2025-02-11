@@ -1,10 +1,11 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useNavigate } from 'react-router-dom';
 
 export const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -13,6 +14,7 @@ export const Auth = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const clearForm = () => {
     setEmail('');
@@ -20,6 +22,18 @@ export const Auth = () => {
     setFirstName('');
     setLastName('');
   };
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/?tab=chat');
+      }
+    };
+    
+    checkUser();
+  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,6 +123,7 @@ export const Auth = () => {
         description: "Has iniciado sesión correctamente.",
       });
       clearForm();
+      navigate('/?tab=chat');
     } catch (error: any) {
       let errorMessage = "Correo electrónico o contraseña incorrectos.";
       
