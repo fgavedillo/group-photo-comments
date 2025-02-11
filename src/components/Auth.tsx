@@ -50,7 +50,7 @@ export const Auth = () => {
 
       toast({
         title: "¡Registro exitoso!",
-        description: "Ya puedes iniciar sesión en el sistema.",
+        description: "Por favor, verifica tu correo electrónico para continuar.",
       });
       clearForm();
     } catch (error: any) {
@@ -89,7 +89,20 @@ export const Auth = () => {
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Check for email not confirmed error
+        if (error.message.includes("Email not confirmed")) {
+          const { data: resendData, error: resendError } = await supabase.auth.resend({
+            type: 'signup',
+            email,
+          });
+          
+          if (!resendError) {
+            throw new Error("email_not_confirmed");
+          }
+        }
+        throw error;
+      }
       
       toast({
         title: "¡Bienvenido!",
@@ -98,6 +111,10 @@ export const Auth = () => {
       clearForm();
     } catch (error: any) {
       let errorMessage = "Correo electrónico o contraseña incorrectos.";
+      
+      if (error.message === "email_not_confirmed") {
+        errorMessage = "Por favor, verifica tu correo electrónico. Hemos enviado un nuevo enlace de verificación.";
+      }
       
       toast({
         title: "Error",
