@@ -7,6 +7,7 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const supabase = createClient(supabaseUrl, supabaseKey);
+const APP_URL = "https://incidencias.lovable.dev"; // Actualizado para usar la URL de la aplicación
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -73,12 +74,12 @@ serve(async (req) => {
     const issuesTable = activeIssues.map(issue => `
       <tr style="border-bottom: 1px solid #eee;">
         <td style="padding: 12px;">
-          <a href="${supabaseUrl}?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: underline;">
+          <a href="${APP_URL}/?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: underline;">
             ${issue.id}
           </a>
         </td>
         <td style="padding: 12px;">
-          <a href="${supabaseUrl}?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: none;">
+          <a href="${APP_URL}/?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: none;">
             ${issue.message}
           </a>
         </td>
