@@ -1,9 +1,8 @@
-
 import { Card } from "@/components/ui/card";
 import { Issue } from "@/types/issue";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { IssueForm } from "./issues/IssueForm";
 import { IssueHeader } from "./issues/IssueHeader";
@@ -16,13 +15,14 @@ interface IssueCardProps {
   onAreaChange: (issueId: number, area: string) => void;
   onResponsableChange: (issueId: number, responsable: string) => void;
   onDelete: () => void;
+  onAssignedEmailChange: (issueId: number, value: string) => void;
+  isAdmin: boolean;
+  isEditing?: boolean;
   securityImprovements: { [key: string]: string };
   actionPlans: { [key: string]: string };
   onSecurityImprovementChange: (issueId: number, value: string) => void;
   onActionPlanChange: (issueId: number, value: string) => void;
   onAddSecurityImprovement: (issueId: number) => void;
-  onAssignedEmailChange: (issueId: number, value: string) => void;
-  isAdmin: boolean;
 }
 
 const getStatusColor = (status: Issue['status']) => {
@@ -49,10 +49,16 @@ const IssueCard = ({
   onDelete,
   onAssignedEmailChange,
   isAdmin,
+  isEditing = false,
+  securityImprovements,
+  actionPlans,
+  onSecurityImprovementChange,
+  onActionPlanChange,
+  onAddSecurityImprovement,
 }: IssueCardProps) => {
   const { toast } = useToast();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(isEditing);
   const [isUpdating, setIsUpdating] = useState(false);
   const [formState, setFormState] = useState({
     status: message.status,
@@ -62,6 +68,12 @@ const IssueCard = ({
     security_improvement: message.securityImprovement || "",
     action_plan: message.actionPlan || ""
   });
+
+  useEffect(() => {
+    if (isEditing) {
+      setIsEditDialogOpen(true);
+    }
+  }, [isEditing]);
 
   const handleDelete = async () => {
     try {
@@ -168,4 +180,3 @@ const IssueCard = ({
 };
 
 export default IssueCard;
-

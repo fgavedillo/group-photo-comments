@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useIssues } from "@/hooks/useIssues";
 import { useIssueActions } from "@/hooks/useIssueActions";
@@ -6,9 +7,11 @@ import { IssueFilters } from "./IssueFilters";
 import { getGroupedDates } from "@/utils/dateUtils";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [searchParams] = useSearchParams();
+  const { toast } = useToast();
   const { issues, loadIssues } = useIssues();
   const {
     securityImprovements,
@@ -27,6 +30,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [responsableFilter, setResponsableFilter] = useState("");
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [editingIssueId, setEditingIssueId] = useState<number | null>(null);
 
   useEffect(() => {
     const issueId = searchParams.get('issue_id');
@@ -36,6 +40,17 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
       const issue = messages.find(msg => msg.id === parseInt(issueId));
       if (issue) {
         console.log('Opening edit modal for issue:', issue);
+        setEditingIssueId(parseInt(issueId));
+        toast({
+          title: "Incidencia cargada",
+          description: "Se ha abierto el editor para la incidencia seleccionada",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se encontró la incidencia especificada",
+          variant: "destructive"
+        });
       }
     }
   }, [searchParams, messages]);
@@ -174,6 +189,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
             onAddSecurityImprovement={handleAddSecurityImprovement}
             onAssignedEmailChange={handleAssignedEmailChange}
             isAdmin={isAdmin}
+            editingIssueId={editingIssueId}
           />
         ))}
       </div>

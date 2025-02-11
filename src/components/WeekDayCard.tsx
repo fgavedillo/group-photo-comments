@@ -17,6 +17,7 @@ interface WeekDayCardProps {
   onAddSecurityImprovement: (issueId: number) => void;
   onAssignedEmailChange: (issueId: number, value: string) => void;
   isAdmin: boolean;
+  editingIssueId?: number | null;
 }
 
 export const WeekDayCard = ({
@@ -34,6 +35,7 @@ export const WeekDayCard = ({
   onAddSecurityImprovement,
   onAssignedEmailChange,
   isAdmin,
+  editingIssueId,
 }: WeekDayCardProps) => {
   return (
     <div className="w-full bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden mb-4">
@@ -67,6 +69,7 @@ export const WeekDayCard = ({
                 onAddSecurityImprovement={onAddSecurityImprovement}
                 onAssignedEmailChange={onAssignedEmailChange}
                 isAdmin={isAdmin}
+                isEditing={editingIssueId === message.id}
               />
             ))}
           </div>
