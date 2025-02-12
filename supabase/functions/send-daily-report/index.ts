@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { Resend } from "npm:resend@2.0.0";
@@ -7,7 +6,7 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const supabase = createClient(supabaseUrl, supabaseKey);
-const APP_URL = "https://incidencias.lovable.dev";
+const APP_URL = "https://incidencias-gestion.lovable.dev";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,7 +48,7 @@ const formatDate = (): string => {
   });
 };
 
-const calculateKPIs = (issues: Issue[]) => {
+const calculateKPIs = (issues: Issue[]): { total: number, activeIssues: Issue[], withImages: number } => {
   const total = issues.length;
   const activeIssues = issues.filter(i => ['en-estudio', 'en-curso'].includes(i.status));
   const withImages = issues.filter(i => i.issue_images?.length > 0).length;
@@ -57,7 +56,7 @@ const calculateKPIs = (issues: Issue[]) => {
   return { total, activeIssues, withImages };
 };
 
-const getDistributionData = (issues: Issue[]) => {
+const getDistributionData = (issues: Issue[]): { byStatus: Record<string, number>, byArea: Record<string, number> } => {
   const byStatus = issues.reduce((acc: Record<string, number>, issue) => {
     const status = issue.status || 'Sin estado';
     acc[status] = (acc[status] || 0) + 1;
@@ -131,8 +130,8 @@ const generateDistributionSection = (data: Record<string, number>, total: number
 
 const generateEmailContent = (
   issues: Issue[],
-  kpis: { total: number; activeIssues: Issue[]; withImages: number },
-  distribution: { byStatus: Record<string, number>; byArea: Record<string, number> }
+  kpis: { total: number, activeIssues: Issue[], withImages: number },
+  distribution: { byStatus: Record<string, number>, byArea: Record<string, number> }
 ): string => {
   const today = formatDate();
   const issuesTable = kpis.activeIssues.map(generateIssueRow).join('');
@@ -207,7 +206,6 @@ const generateEmailContent = (
   `;
 };
 
-// Manejador principal
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -232,7 +230,7 @@ serve(async (req) => {
     const today = formatDate();
 
     const emailResponse = await resend.emails.send({
-      from: "Lovable <onboarding@resend.dev>",
+      from: "Incidencias <incidencias@resend.dev>",
       to: ["fgavedillo@gmail.com"],
       subject: `Reporte Diario de Incidencias - ${today}`,
       html: emailContent,
