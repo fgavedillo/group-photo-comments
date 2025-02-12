@@ -1,13 +1,14 @@
 
-import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-core';
+import '@tensorflow/tfjs-backend-webgl';
+import '@tensorflow/tfjs-converter';
 import * as faceDetection from '@tensorflow-models/face-detection';
 
 let model: faceDetection.FaceDetector | null = null;
 
 const loadModel = async () => {
   if (!model) {
-    // Ensure TensorFlow backend is initialized
-    await tf.ready();
+    // No need to call tf.ready() since we're importing the backends directly
     console.log("TensorFlow backend initialized");
 
     const detector = faceDetection.SupportedModels.MediaPipeFaceDetector;
