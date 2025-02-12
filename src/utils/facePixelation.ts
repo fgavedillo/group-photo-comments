@@ -113,7 +113,7 @@ export const pixelateFaces = async (imageFile: File): Promise<Blob> => {
 
     // Convert canvas to tensor for face detection
     console.log("Detecting faces...");
-    const faces = await model.detectFaces(canvas);
+    const faces = await model.estimateFaces(canvas);
     console.log("Faces detected:", faces.length);
 
     // Pixelate each detected face
