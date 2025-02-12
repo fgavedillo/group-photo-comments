@@ -14,8 +14,12 @@ const loadModel = async () => {
     const detector = faceDetection.SupportedModels.MediaPipeFaceDetector;
     model = await faceDetection.createDetector(detector, {
       runtime: 'tfjs',
-      maxFaces: 5,
-      modelType: 'short'
+      maxFaces: 10, // Aumentado para detectar más caras
+      modelType: 'full', // Cambiado a 'full' para mejor precisión
+      detectorModelUrl: undefined,
+      boundingBox: true,
+      keypoints: true,
+      attention: true // Mejorar la detección de características faciales
     });
     console.log("Face detection model loaded");
   }
@@ -113,10 +117,42 @@ export const pixelateFaces = async (imageFile: File): Promise<Blob> => {
 
     // Convert canvas to tensor for face detection
     console.log("Detecting faces...");
-    const faces = await model.estimateFaces(canvas);
+    const faces = await model.estimateFaces(canvas, {
+      flipHorizontal: false,
+      returnTensors: false,
+      predictIrises: false
+    });
     console.log("Faces detected:", faces.length);
 
-    // Pixelate each detected face
+    // Si no se detectan caras, intentar con diferentes orientaciones
+    if (faces.length === 0) {
+      console.log("No faces detected, trying with rotated image...");
+      const rotations = [90, 180, 270]; // Intentar diferentes rotaciones
+      for (const rotation of rotations) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.translate(canvas.width/2, canvas.height/2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        ctx.drawImage(img, -img.width/2, -img.height/2);
+        ctx.restore();
+        
+        const rotatedFaces = await model.estimateFaces(canvas, {
+          flipHorizontal: false,
+          returnTensors: false,
+          predictIrises: false
+        });
+        
+        if (rotatedFaces.length > 0) {
+          console.log(`Found faces after ${rotation}° rotation:`, rotatedFaces.length);
+          // Revertir la rotación antes de continuar
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          break;
+        }
+      }
+    }
+
+    // Pixelar cada cara detectada con un padding más grande
     faces.forEach((face, index) => {
       const box = face.box;
       console.log(`Processing face ${index + 1}:`, box);
@@ -124,27 +160,54 @@ export const pixelateFaces = async (imageFile: File): Promise<Blob> => {
       const width = box.width;
       const height = box.height;
       
-      // Add some padding around the face
-      const padding = { x: width * 0.2, y: height * 0.2 };
+      // Aumentar el padding significativamente para cubrir más área
+      const padding = {
+        x: width * 0.4, // 40% de padding horizontal
+        y: height * 0.4  // 40% de padding vertical
+      };
       
+      // Asegurarse de que el área a pixelar no se salga del canvas
+      const pixelArea = {
+        x: Math.max(0, box.xMin - padding.x),
+        y: Math.max(0, box.yMin - padding.y),
+        width: Math.min(width + padding.x * 2, canvas.width - (box.xMin - padding.x)),
+        height: Math.min(height + padding.y * 2, canvas.height - (box.yMin - padding.y))
+      };
+
+      // Aumentar el tamaño del pixelado para mayor anonimización
       pixelateArea(
         ctx,
-        Math.max(0, box.xMin - padding.x),
-        Math.max(0, box.yMin - padding.y),
-        Math.min(width + padding.x * 2, canvas.width - box.xMin),
-        Math.min(height + padding.y * 2, canvas.height - box.yMin),
-        15
+        pixelArea.x,
+        pixelArea.y,
+        pixelArea.width,
+        pixelArea.height,
+        20 // Tamaño de pixel más grande para mejor anonimización
       );
     });
 
-    // If no faces were detected, log it
+    // Si no se detectaron caras, pixelar áreas comunes donde suelen estar los rostros
     if (faces.length === 0) {
-      console.log("No faces detected in the image");
+      console.log("No faces detected, applying fallback pixelation to common face areas");
+      const commonAreas = [
+        { x: canvas.width * 0.3, y: canvas.height * 0.2, w: canvas.width * 0.4, h: canvas.height * 0.4 }
+      ];
+      
+      commonAreas.forEach((area, index) => {
+        console.log(`Applying fallback pixelation to area ${index + 1}`);
+        pixelateArea(
+          ctx,
+          area.x,
+          area.y,
+          area.w,
+          area.h,
+          20
+        );
+      });
     }
 
     console.log("Converting processed image to blob");
 
-    // Convert canvas to blob
+    // Convert canvas to blob with high quality
     return new Promise((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (blob) {
