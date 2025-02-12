@@ -2,11 +2,56 @@
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { sendEmail } from "@/lib/supabase";
+import { saveOfflineMessage, getPendingMessages, markMessageAsSent } from "@/utils/offlineStorage";
 
 export const useMessageSender = (onMessageSent: () => Promise<void>) => {
   const { toast } = useToast();
 
-  const handleSendMessage = async (text: string, image?: File) => {
+  const syncOfflineMessages = async () => {
+    const pendingMessages = await getPendingMessages();
+    
+    for (const message of pendingMessages) {
+      try {
+        await handleSendMessage(message.message, message.image, message.id);
+      } catch (error) {
+        console.error("Error syncing offline message:", error);
+      }
+    }
+  };
+
+  // Escuchar cambios en la conectividad
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => {
+      toast({
+        title: "Conexión restaurada",
+        description: "Sincronizando mensajes pendientes...",
+      });
+      syncOfflineMessages();
+    });
+  }
+
+  const handleSendMessage = async (text: string, image?: File, offlineId?: string) => {
+    const isOnline = navigator.onLine;
+
+    if (!isOnline) {
+      try {
+        await saveOfflineMessage(text, image);
+        toast({
+          title: "Mensaje guardado",
+          description: "Se enviará cuando haya conexión a internet",
+        });
+        return;
+      } catch (error) {
+        console.error("Error saving offline message:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo guardar el mensaje offline",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
+
     try {
       console.log("Iniciando envío de mensaje...");
       
@@ -55,6 +100,10 @@ export const useMessageSender = (onMessageSent: () => Promise<void>) => {
         }
       }
 
+      if (offlineId) {
+        await markMessageAsSent(offlineId);
+      }
+
       await onMessageSent();
       
       toast({
@@ -69,11 +118,21 @@ export const useMessageSender = (onMessageSent: () => Promise<void>) => {
       );
     } catch (error) {
       console.error("Error al procesar el mensaje:", error);
-      toast({
-        title: "Error",
-        description: "Hubo un problema al enviar el mensaje",
-        variant: "destructive"
-      });
+      
+      if (navigator.onLine) {
+        toast({
+          title: "Error",
+          description: "Hubo un problema al enviar el mensaje",
+          variant: "destructive"
+        });
+      } else {
+        // Si perdimos la conexión durante el envío, guardamos el mensaje offline
+        await saveOfflineMessage(text, image);
+        toast({
+          title: "Sin conexión",
+          description: "El mensaje se enviará cuando haya conexión",
+        });
+      }
     }
   };
 
