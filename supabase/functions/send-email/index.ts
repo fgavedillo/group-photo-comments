@@ -32,8 +32,8 @@ serve(async (req: Request) => {
     });
 
     const emailResponse = await resend.emails.send({
-      from: "Incidencias <incidencias@resend.dev>",
-      reply_to: "no-reply@resend.dev",
+      from: "Notificaciones <notificaciones@tudominio.com>", // Reemplaza tudominio.com con tu dominio verificado
+      reply_to: "no-reply@tudominio.com", // Reemplaza tudominio.com con tu dominio verificado
       to: [to],
       subject: subject,
       html: `
