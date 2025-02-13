@@ -31,11 +31,13 @@ serve(async (req: Request) => {
       timeStyle: 'short'
     });
 
+    const messageId = `${Date.now()}.${crypto.randomUUID()}@resend.dev`;
+
     const emailResponse = await resend.emails.send({
-      from: "Notificaciones <onboarding@resend.dev>",
+      from: "Sistema de Incidencias <notifications@resend.dev>",
       reply_to: "no-reply@resend.dev",
       to: [to],
-      subject: subject,
+      subject: `[Sistema de Incidencias] ${subject}`,
       html: `
         <!DOCTYPE html>
         <html>
@@ -47,7 +49,7 @@ serve(async (req: Request) => {
           </head>
           <body style="margin: 0; padding: 0; word-break: break-word; -webkit-font-smoothing: antialiased; background-color: #f8f9fd;">
             <div style="display: none; line-height: 0; font-size: 0;">
-              ${subject}
+              Notificación importante del Sistema de Incidencias - ${subject}
             </div>
             <table style="width: 100%; border-collapse: collapse; background-color: #f8f9fd;" cellpadding="0" cellspacing="0" role="presentation">
               <tr>
@@ -64,7 +66,7 @@ serve(async (req: Request) => {
                         <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;" />
                         <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #6b7280;">
                           Mensaje enviado el ${now}.<br/>
-                          Este es un mensaje automático, por favor no responda a este correo.
+                          Este es un mensaje automático del Sistema de Incidencias, por favor no responda a este correo.
                         </p>
                       </td>
                     </tr>
@@ -77,11 +79,21 @@ serve(async (req: Request) => {
       `,
       headers: {
         "X-Entity-Ref-ID": crypto.randomUUID(),
+        "X-Message-ID": messageId,
+        "List-Unsubscribe": `<mailto:unsubscribe@resend.dev?subject=unsubscribe_${messageId}>`,
+        "Feedback-ID": `${Date.now()}:incidencias:resend`,
+        "X-Priority": "1",
+        "Importance": "high",
+        "Message-ID": `<${messageId}>`,
       },
       tags: [
         {
           name: "category",
           value: "incidencias"
+        },
+        {
+          name: "priority",
+          value: "high"
         }
       ]
     });
