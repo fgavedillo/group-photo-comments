@@ -1,140 +1,90 @@
 
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { sendEmail } from "@/lib/supabase";
-import { saveOfflineMessage, getPendingMessages, markMessageAsSent } from "@/utils/offlineStorage";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
-export const useMessageSender = (onMessageSent: () => Promise<void>) => {
+export const useMessageSender = (onMessageSent: () => void) => {
+  const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const syncOfflineMessages = async () => {
-    const pendingMessages = await getPendingMessages();
-    
-    for (const message of pendingMessages) {
-      try {
-        await handleSendMessage(message.message, message.image, message.id);
-      } catch (error) {
-        console.error("Error syncing offline message:", error);
-      }
-    }
-  };
-
-  // Escuchar cambios en la conectividad
-  if (typeof window !== 'undefined') {
-    window.addEventListener('online', () => {
-      toast({
-        title: "Conexión restaurada",
-        description: "Sincronizando mensajes pendientes...",
-      });
-      syncOfflineMessages();
-    });
-  }
-
-  const handleSendMessage = async (text: string, image?: File, offlineId?: string) => {
-    const isOnline = navigator.onLine;
-
-    if (!isOnline) {
-      try {
-        await saveOfflineMessage(text, image);
-        toast({
-          title: "Mensaje guardado",
-          description: "Se enviará cuando haya conexión a internet",
-        });
-        return;
-      } catch (error) {
-        console.error("Error saving offline message:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo guardar el mensaje offline",
-          variant: "destructive"
-        });
-        return;
-      }
-    }
-
+  const handleSendMessage = async (message: string, image?: File) => {
     try {
-      console.log("Iniciando envío de mensaje...");
-      
-      const { data: issueData, error: issueError } = await supabase
-        .from('issues')
-        .insert({
-          message: text,
-          username: "Usuario",
-          timestamp: new Date().toISOString(),
-          status: "en-estudio"
-        })
-        .select()
-        .single();
+      setIsSending(true);
 
-      if (issueError) {
-        console.error("Error creando incidencia:", issueError);
-        throw issueError;
+      // Obtener la sesión del usuario actual
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No hay sesión activa");
       }
 
-      if (image && issueData) {
-        const fileName = `${Date.now()}-anon.${image.name.split('.').pop()}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('issue-images')
+      let imageUrl;
+      if (image) {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const { data: imageData, error: imageError } = await supabase.storage
+          .from('images')
           .upload(fileName, image);
 
-        if (uploadError) {
-          console.error("Error subiendo imagen:", uploadError);
-          throw uploadError;
+        if (imageError) {
+          throw imageError;
         }
 
         const { data: { publicUrl } } = supabase.storage
-          .from('issue-images')
+          .from('images')
           .getPublicUrl(fileName);
 
-        const { error: imageError } = await supabase
+        imageUrl = publicUrl;
+      }
+
+      // Crear la incidencia con el user_id
+      const { data: issue, error: issueError } = await supabase
+        .from('issues')
+        .insert([
+          {
+            message,
+            user_id: session.user.id // Añadimos el ID del usuario actual
+          }
+        ])
+        .select()
+        .single();
+
+      if (issueError) throw issueError;
+
+      if (imageUrl) {
+        const { error: imageRelationError } = await supabase
           .from('issue_images')
-          .insert({
-            issue_id: issueData.id,
-            image_url: publicUrl
-          });
+          .insert([
+            {
+              issue_id: issue.id,
+              image_url: imageUrl
+            }
+          ]);
 
-        if (imageError) {
-          console.error("Error creando registro de imagen:", imageError);
-          throw imageError;
-        }
+        if (imageRelationError) throw imageRelationError;
       }
 
-      if (offlineId) {
-        await markMessageAsSent(offlineId);
-      }
-
-      await onMessageSent();
-      
+      onMessageSent();
       toast({
         title: "Mensaje enviado",
-        description: "Tu mensaje ha sido publicado exitosamente",
+        description: "Tu mensaje se ha enviado correctamente",
       });
 
-      await sendEmail(
-        "fgavedillo@gmail.com",
-        "Nuevo mensaje en el sistema",
-        `Se ha recibido un nuevo mensaje: ${text}`
-      );
+      // Redirigir a la pestaña de chat
+      navigate('/?tab=chat');
+
     } catch (error) {
-      console.error("Error al procesar el mensaje:", error);
-      
-      if (navigator.onLine) {
-        toast({
-          title: "Error",
-          description: "Hubo un problema al enviar el mensaje",
-          variant: "destructive"
-        });
-      } else {
-        // Si perdimos la conexión durante el envío, guardamos el mensaje offline
-        await saveOfflineMessage(text, image);
-        toast({
-          title: "Sin conexión",
-          description: "El mensaje se enviará cuando haya conexión",
-        });
-      }
+      console.error('Error sending message:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo enviar el mensaje",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSending(false);
     }
   };
 
-  return { handleSendMessage };
+  return { handleSendMessage, isSending };
 };
