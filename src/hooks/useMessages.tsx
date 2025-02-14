@@ -10,6 +10,9 @@ export const useMessages = () => {
 
   const loadMessages = async () => {
     try {
+      // Primero obtenemos la sesión actual
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -37,13 +40,34 @@ export const useMessages = () => {
       );
 
       const formattedMessages = issuesData.map(issue => {
+        // Si el issue fue creado por el usuario actual, usamos su información
+        if (session && issue.user_id === session.user.id) {
+          const currentUser = userMap.get(session.user.id);
+          if (currentUser) {
+            return {
+              id: issue.id.toString(),
+              username: `${currentUser.first_name} ${currentUser.last_name}`,
+              timestamp: new Date(issue.timestamp),
+              message: issue.message,
+              imageUrl: issue.issue_images?.[0]?.image_url || undefined,
+              status: issue.status,
+              area: issue.area,
+              responsable: issue.responsable,
+              securityImprovement: issue.security_improvement,
+              actionPlan: issue.action_plan,
+              assignedEmail: issue.assigned_email
+            };
+          }
+        }
+
+        // Para otros usuarios, buscamos en el userMap
         const user = issue.user_id ? userMap.get(issue.user_id) : null;
         
         return {
           id: issue.id.toString(),
           username: user
             ? `${user.first_name} ${user.last_name}`
-            : "Sin nombre", // Cambiado de issue.username a "Sin nombre"
+            : "Sin asignar",
           timestamp: new Date(issue.timestamp),
           message: issue.message,
           imageUrl: issue.issue_images?.[0]?.image_url || undefined,

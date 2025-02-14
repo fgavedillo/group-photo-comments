@@ -10,6 +10,9 @@ export const useIssues = () => {
 
   const loadIssues = async () => {
     try {
+      // Primero obtenemos la sesión actual
+      const { data: { session } } = await supabase.auth.getSession();
+
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
@@ -39,6 +42,27 @@ export const useIssues = () => {
       );
 
       const formattedIssues: Issue[] = issuesData.map(issue => {
+        // Si el issue fue creado por el usuario actual, usamos su información
+        if (session && issue.user_id === session.user.id) {
+          const currentUser = userMap.get(session.user.id);
+          if (currentUser) {
+            return {
+              id: issue.id,
+              imageUrl: issue.issue_images?.[0]?.image_url || '',
+              timestamp: new Date(issue.timestamp || ''),
+              username: `${currentUser.first_name} ${currentUser.last_name}`,
+              message: issue.message,
+              securityImprovement: issue.security_improvement || undefined,
+              actionPlan: issue.action_plan || undefined,
+              status: (issue.status as Issue['status']) || 'en-estudio',
+              assignedEmail: issue.assigned_email || undefined,
+              area: issue.area || undefined,
+              responsable: issue.responsable || undefined
+            };
+          }
+        }
+
+        // Para otros usuarios, buscamos en el userMap
         const user = issue.user_id ? userMap.get(issue.user_id) : null;
         
         return {
@@ -47,7 +71,7 @@ export const useIssues = () => {
           timestamp: new Date(issue.timestamp || ''),
           username: user
             ? `${user.first_name} ${user.last_name}`
-            : "Sin nombre", // Cambiado de issue.username a "Sin nombre"
+            : "Sin asignar",
           message: issue.message,
           securityImprovement: issue.security_improvement || undefined,
           actionPlan: issue.action_plan || undefined,
