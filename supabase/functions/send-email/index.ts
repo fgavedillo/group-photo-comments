@@ -1,8 +1,21 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
+import nodemailer from "npm:nodemailer";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const gmailUser = Deno.env.get("GMAIL_USER");
+const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+
+if (!gmailUser || !gmailPassword) {
+  throw new Error("Gmail credentials are not configured");
+}
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: gmailUser,
+    pass: gmailPassword,
+  },
+});
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -31,11 +44,8 @@ serve(async (req: Request) => {
       timeStyle: 'short'
     });
 
-    const messageId = `${Date.now()}.${crypto.randomUUID()}@resend.dev`;
-
-    const emailResponse = await resend.emails.send({
-      from: "Sistema de Incidencias <onboarding@resend.dev>",
-      reply_to: "onboarding@resend.dev",
+    const emailResponse = await transporter.sendMail({
+      from: gmailUser,
       to: [to],
       subject: `Sistema de Incidencias: ${subject}`,
       html: `
@@ -76,12 +86,7 @@ serve(async (req: Request) => {
             </table>
           </body>
         </html>
-      `,
-      headers: {
-        "Message-ID": `<${messageId}>`,
-        "X-Priority": "1",
-        "Importance": "high",
-      }
+      `
     });
 
     console.log("Email sent successfully:", emailResponse);
