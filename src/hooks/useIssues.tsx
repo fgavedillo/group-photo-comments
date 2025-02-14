@@ -17,7 +17,7 @@ export const useIssues = () => {
           issue_images (
             image_url
           ),
-          profiles:auth.users(
+          user:user_id (
             raw_user_meta_data
           )
         `)
@@ -31,8 +31,8 @@ export const useIssues = () => {
         id: issue.id,
         imageUrl: issue.issue_images?.[0]?.image_url || '',
         timestamp: new Date(issue.timestamp || ''),
-        username: issue.profiles?.raw_user_meta_data?.first_name 
-          ? `${issue.profiles.raw_user_meta_data.first_name} ${issue.profiles.raw_user_meta_data.last_name}`
+        username: issue.user?.raw_user_meta_data?.first_name 
+          ? `${issue.user.raw_user_meta_data.first_name} ${issue.user.raw_user_meta_data.last_name}`
           : issue.username,
         message: issue.message,
         securityImprovement: issue.security_improvement || undefined,
