@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +16,9 @@ export const useIssues = () => {
           *,
           issue_images (
             image_url
+          ),
+          profiles:auth.users(
+            raw_user_meta_data
           )
         `)
         .order('timestamp', { ascending: false });
@@ -27,7 +31,9 @@ export const useIssues = () => {
         id: issue.id,
         imageUrl: issue.issue_images?.[0]?.image_url || '',
         timestamp: new Date(issue.timestamp || ''),
-        username: issue.username,
+        username: issue.profiles?.raw_user_meta_data?.first_name 
+          ? `${issue.profiles.raw_user_meta_data.first_name} ${issue.profiles.raw_user_meta_data.last_name}`
+          : issue.username,
         message: issue.message,
         securityImprovement: issue.security_improvement || undefined,
         actionPlan: issue.action_plan || undefined,
@@ -50,6 +56,27 @@ export const useIssues = () => {
 
   useEffect(() => {
     loadIssues();
+
+    // Suscribirse a cambios en la tabla issues
+    const channel = supabase
+      .channel('issues-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues'
+        },
+        () => {
+          console.log('Issues table changed, refreshing data...');
+          loadIssues();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { issues, loadIssues };
