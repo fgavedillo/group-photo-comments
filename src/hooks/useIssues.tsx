@@ -47,7 +47,7 @@ export const useIssues = () => {
           timestamp: new Date(issue.timestamp || ''),
           username: user
             ? `${user.first_name} ${user.last_name}`
-            : issue.username,
+            : "Sin nombre", // Cambiado de issue.username a "Sin nombre"
           message: issue.message,
           securityImprovement: issue.security_improvement || undefined,
           actionPlan: issue.action_plan || undefined,

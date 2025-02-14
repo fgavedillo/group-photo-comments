@@ -22,19 +22,39 @@ export const useMessages = () => {
 
       if (issuesError) throw issuesError;
 
-      const formattedMessages = issuesData.map(issue => ({
-        id: issue.id.toString(),
-        username: issue.username,
-        timestamp: new Date(issue.timestamp),
-        message: issue.message,
-        imageUrl: issue.issue_images?.[0]?.image_url || undefined,
-        status: issue.status,
-        area: issue.area,
-        responsable: issue.responsable,
-        securityImprovement: issue.security_improvement,
-        actionPlan: issue.action_plan,
-        assignedEmail: issue.assigned_email
-      }));
+      // Obtener los usuarios para los user_ids
+      const userIds = issuesData
+        .map(issue => issue.user_id)
+        .filter(id => id !== null) as string[];
+
+      const { data: usersData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+
+      const userMap = new Map(
+        usersData?.map(user => [user.id, user]) || []
+      );
+
+      const formattedMessages = issuesData.map(issue => {
+        const user = issue.user_id ? userMap.get(issue.user_id) : null;
+        
+        return {
+          id: issue.id.toString(),
+          username: user
+            ? `${user.first_name} ${user.last_name}`
+            : "Sin nombre", // Cambiado de issue.username a "Sin nombre"
+          timestamp: new Date(issue.timestamp),
+          message: issue.message,
+          imageUrl: issue.issue_images?.[0]?.image_url || undefined,
+          status: issue.status,
+          area: issue.area,
+          responsable: issue.responsable,
+          securityImprovement: issue.security_improvement,
+          actionPlan: issue.action_plan,
+          assignedEmail: issue.assigned_email
+        };
+      });
 
       setMessages(formattedMessages);
     } catch (error) {
