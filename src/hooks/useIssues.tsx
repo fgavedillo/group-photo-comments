@@ -16,9 +16,6 @@ export const useIssues = () => {
           *,
           issue_images (
             image_url
-          ),
-          user:user_id (
-            raw_user_meta_data
           )
         `)
         .order('timestamp', { ascending: false });
@@ -27,21 +24,39 @@ export const useIssues = () => {
 
       if (!issuesData) return;
 
-      const formattedIssues: Issue[] = issuesData.map(issue => ({
-        id: issue.id,
-        imageUrl: issue.issue_images?.[0]?.image_url || '',
-        timestamp: new Date(issue.timestamp || ''),
-        username: issue.user?.raw_user_meta_data?.first_name 
-          ? `${issue.user.raw_user_meta_data.first_name} ${issue.user.raw_user_meta_data.last_name}`
-          : issue.username,
-        message: issue.message,
-        securityImprovement: issue.security_improvement || undefined,
-        actionPlan: issue.action_plan || undefined,
-        status: (issue.status as Issue['status']) || 'en-estudio',
-        assignedEmail: issue.assigned_email || undefined,
-        area: issue.area || undefined,
-        responsable: issue.responsable || undefined
-      }));
+      // Obtener los usuarios para los user_ids
+      const userIds = issuesData
+        .map(issue => issue.user_id)
+        .filter(id => id !== null) as string[];
+
+      const { data: usersData } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name')
+        .in('id', userIds);
+
+      const userMap = new Map(
+        usersData?.map(user => [user.id, user]) || []
+      );
+
+      const formattedIssues: Issue[] = issuesData.map(issue => {
+        const user = issue.user_id ? userMap.get(issue.user_id) : null;
+        
+        return {
+          id: issue.id,
+          imageUrl: issue.issue_images?.[0]?.image_url || '',
+          timestamp: new Date(issue.timestamp || ''),
+          username: user
+            ? `${user.first_name} ${user.last_name}`
+            : issue.username,
+          message: issue.message,
+          securityImprovement: issue.security_improvement || undefined,
+          actionPlan: issue.action_plan || undefined,
+          status: (issue.status as Issue['status']) || 'en-estudio',
+          assignedEmail: issue.assigned_email || undefined,
+          area: issue.area || undefined,
+          responsable: issue.responsable || undefined
+        };
+      });
 
       setIssues(formattedIssues);
     } catch (error) {
