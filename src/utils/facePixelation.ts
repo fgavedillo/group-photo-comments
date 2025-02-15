@@ -1,3 +1,4 @@
+
 import '@tensorflow/tfjs-core';
 import '@tensorflow/tfjs-backend-webgl';
 import '@tensorflow/tfjs-converter';
@@ -12,8 +13,8 @@ const loadModel = async () => {
     const detector = faceDetection.SupportedModels.MediaPipeFaceDetector;
     model = await faceDetection.createDetector(detector, {
       runtime: 'tfjs',
-      maxFaces: 10, // Aumentado para detectar más caras
-      modelType: 'full', // Cambiado a 'full' para mejor precisión
+      maxFaces: 10,
+      modelType: 'short',  // Cambiado a 'short' para mejor rendimiento
     });
     console.log("Face detection model loaded");
   }
@@ -105,76 +106,55 @@ export const pixelateFaces = async (imageFile: File): Promise<Blob> => {
     });
     console.log("Faces detected:", faces.length);
 
-    if (faces.length === 0) {
-      console.log("No faces detected, trying with rotated image...");
-      const rotations = [90, 180, 270];
-      for (const rotation of rotations) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.save();
-        ctx.translate(canvas.width/2, canvas.height/2);
-        ctx.rotate((rotation * Math.PI) / 180);
-        ctx.drawImage(img, -img.width/2, -img.height/2);
-        ctx.restore();
+    if (faces.length > 0) {
+      // Si se detectaron caras, pixelarlas con un padding más pequeño
+      faces.forEach((face, index) => {
+        const box = face.box;
+        console.log(`Processing face ${index + 1}:`, box);
+
+        const width = box.width;
+        const height = box.height;
         
-        const rotatedFaces = await model.estimateFaces(canvas, {
-          flipHorizontal: false,
-        });
+        // Reducir el padding para que pixele menos área
+        const padding = {
+          x: width * 0.2,  // Reducido de 0.5 a 0.2
+          y: height * 0.2  // Reducido de 0.5 a 0.2
+        };
         
-        if (rotatedFaces.length > 0) {
-          console.log(`Found faces after ${rotation}° rotation:`, rotatedFaces.length);
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(img, 0, 0);
-          break;
-        }
-      }
-    }
+        const pixelArea = {
+          x: Math.max(0, box.xMin - padding.x),
+          y: Math.max(0, box.yMin - padding.y),
+          width: Math.min(width + padding.x * 2, canvas.width - (box.xMin - padding.x)),
+          height: Math.min(height + padding.y * 2, canvas.height - (box.yMin - padding.y))
+        };
 
-    faces.forEach((face, index) => {
-      const box = face.box;
-      console.log(`Processing face ${index + 1}:`, box);
-
-      const width = box.width;
-      const height = box.height;
-      
-      const padding = {
-        x: width * 0.5,
-        y: height * 0.5
-      };
-      
-      const pixelArea = {
-        x: Math.max(0, box.xMin - padding.x),
-        y: Math.max(0, box.yMin - padding.y),
-        width: Math.min(width + padding.x * 2, canvas.width - (box.xMin - padding.x)),
-        height: Math.min(height + padding.y * 2, canvas.height - (box.yMin - padding.y))
-      };
-
-      pixelateArea(
-        ctx,
-        pixelArea.x,
-        pixelArea.y,
-        pixelArea.width,
-        pixelArea.height,
-        25
-      );
-    });
-
-    if (faces.length === 0) {
-      console.log("No faces detected, applying fallback pixelation to common face areas");
-      const commonAreas = [
-        { x: canvas.width * 0.2, y: canvas.height * 0.1, w: canvas.width * 0.6, h: canvas.height * 0.6 }
-      ];
-      
-      commonAreas.forEach((area, index) => {
-        console.log(`Applying fallback pixelation to area ${index + 1}`);
         pixelateArea(
           ctx,
-          area.x,
-          area.y,
-          area.w,
-          area.h,
-          25
+          pixelArea.x,
+          pixelArea.y,
+          pixelArea.width,
+          pixelArea.height,
+          15  // Tamaño de pixel más pequeño para un pixelado más suave
         );
       });
+    } else {
+      // Si no se detectan caras, aplicar un pixelado muy suave solo en la parte superior central
+      console.log("No faces detected, applying minimal pixelation to central area");
+      const centerArea = {
+        x: canvas.width * 0.3,
+        y: canvas.height * 0.1,
+        w: canvas.width * 0.4,  // Reducido de 0.6 a 0.4
+        h: canvas.height * 0.3  // Reducido de 0.6 a 0.3
+      };
+      
+      pixelateArea(
+        ctx,
+        centerArea.x,
+        centerArea.y,
+        centerArea.w,
+        centerArea.h,
+        20  // Pixelado más grande para que sea menos notable
+      );
     }
 
     console.log("Converting processed image to blob");
