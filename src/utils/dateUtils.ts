@@ -1,5 +1,5 @@
 
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, isSameDay, isSameWeek, isSameMonth } from "date-fns";
 import { es } from "date-fns/locale";
 
 export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week' | 'month') => {
@@ -29,7 +29,11 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
           messages: []
         });
       }
-      days.get(dayKey).messages.push(message);
+      
+      // Solo añadir el mensaje si pertenece a este día
+      if (isSameDay(messageDate, dayStart)) {
+        days.get(dayKey).messages.push(message);
+      }
     });
 
     return Array.from(days.values())
@@ -42,8 +46,8 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
       if (!message?.timestamp) return;
       const messageDate = new Date(message.timestamp);
       const weekStart = startOfWeek(messageDate, { weekStartsOn: 1, locale: es }); // Start week on Monday
-      const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1, locale: es });
-      const weekKey = format(weekStart, 'yyyy-ww'); // Cambiado de 'yyyy-[W]ww' a 'yyyy-ww'
+      const weekEnd = endOfWeek(messageDate, { weekStartsOn: 1, locale: es });
+      const weekKey = format(weekStart, 'yyyy-ww');
 
       if (!weeks.has(weekKey)) {
         weeks.set(weekKey, {
@@ -53,7 +57,11 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
           messages: []
         });
       }
-      weeks.get(weekKey).messages.push(message);
+      
+      // Solo añadir el mensaje si pertenece a esta semana
+      if (isSameWeek(messageDate, weekStart, { weekStartsOn: 1, locale: es })) {
+        weeks.get(weekKey).messages.push(message);
+      }
     });
 
     return Array.from(weeks.values())
@@ -76,7 +84,11 @@ export const getGroupedDates = (filteredMessages: any[], groupBy: 'day' | 'week'
           messages: []
         });
       }
-      months.get(monthKey).messages.push(message);
+      
+      // Solo añadir el mensaje si pertenece a este mes
+      if (isSameMonth(messageDate, monthStart)) {
+        months.get(monthKey).messages.push(message);
+      }
     });
 
     return Array.from(months.values())
