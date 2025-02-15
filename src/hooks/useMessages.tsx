@@ -17,7 +17,7 @@ export const useMessages = () => {
           issue_images (
             image_url
           ),
-          profiles (
+          profiles!user_id (
             first_name,
             last_name
           )
