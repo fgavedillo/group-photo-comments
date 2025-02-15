@@ -19,7 +19,7 @@ export const useIssues = () => {
           issue_images (
             image_url
           ),
-          profiles!issues_user_id_fkey (
+          profiles (
             first_name,
             last_name
           )
