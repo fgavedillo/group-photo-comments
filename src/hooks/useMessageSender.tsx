@@ -19,6 +19,15 @@ export const useMessageSender = (onMessageSent: () => void) => {
         throw new Error("No hay sesión activa");
       }
 
+      // Obtener los datos del perfil del usuario
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
       let imageUrl;
       if (image) {
         const fileExt = image.name.split('.').pop();
@@ -38,15 +47,19 @@ export const useMessageSender = (onMessageSent: () => void) => {
         imageUrl = publicUrl;
       }
 
-      // Crear la incidencia con el user_id
+      // Construir el nombre de usuario a partir del perfil
+      const username = profileData 
+        ? `${profileData.first_name} ${profileData.last_name}`
+        : "Usuario sin nombre";
+
+      // Crear la incidencia con el user_id y username
       const { data: issue, error: issueError } = await supabase
         .from('issues')
-        .insert([
-          {
-            message,
-            user_id: session.user.id // Añadimos el ID del usuario actual
-          }
-        ])
+        .insert({
+          message,
+          user_id: session.user.id,
+          username
+        })
         .select()
         .single();
 
