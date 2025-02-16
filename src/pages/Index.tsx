@@ -43,7 +43,7 @@ const Index = () => {
           toast({
             title: "Acceso pendiente",
             description: "Tu cuenta está pendiente de aprobación por un administrador.",
-            variant: "warning",
+            variant: "default",
           });
         } else {
           // Check if user is approved (has 'user' or 'admin' role)
