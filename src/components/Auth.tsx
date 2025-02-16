@@ -80,6 +80,7 @@ export const Auth = () => {
         description: errorMessage,
         variant: "destructive",
       });
+      console.error('Error during signup:', error);
     } finally {
       setLoading(false);
     }
@@ -104,20 +105,7 @@ export const Auth = () => {
         password,
       });
 
-      if (error) {
-        // Check for email not confirmed error
-        if (error.message.includes("Email not confirmed")) {
-          const { data: resendData, error: resendError } = await supabase.auth.resend({
-            type: 'signup',
-            email,
-          });
-          
-          if (!resendError) {
-            throw new Error("email_not_confirmed");
-          }
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       toast({
         title: "¡Bienvenido!",
@@ -126,15 +114,10 @@ export const Auth = () => {
       clearForm();
       navigate('/?tab=chat');
     } catch (error: any) {
-      let errorMessage = "Correo electrónico o contraseña incorrectos.";
-      
-      if (error.message === "email_not_confirmed") {
-        errorMessage = "Por favor, verifica tu correo electrónico. Hemos enviado un nuevo enlace de verificación.";
-      }
-      
+      console.error('Error during signin:', error);
       toast({
         title: "Error",
-        description: errorMessage,
+        description: "Correo electrónico o contraseña incorrectos.",
         variant: "destructive",
       });
     } finally {
