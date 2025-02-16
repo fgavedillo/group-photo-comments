@@ -22,6 +22,32 @@ const Index = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const notifyAdmin = async (userEmail: string, userName: string) => {
+    try {
+      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/notify-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ userEmail, userName }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al enviar la notificación');
+      }
+
+      console.log('Notificación enviada al administrador');
+    } catch (error) {
+      console.error('Error al notificar al administrador:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo notificar al administrador",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     const checkUserAccess = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -45,6 +71,18 @@ const Index = () => {
             description: "Tu cuenta está pendiente de aprobación por un administrador.",
             variant: "default",
           });
+
+          // Notificar al administrador
+          const { data: userData } = await supabase
+            .from('profiles')
+            .select('email, first_name, last_name')
+            .eq('id', session.user.id)
+            .single();
+
+          if (userData) {
+            const fullName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim();
+            await notifyAdmin(userData.email || session.user.email || '', fullName);
+          }
         } else {
           // Check if user is approved (has 'user' or 'admin' role)
           const { data: isApproved } = await supabase.rpc('has_role', {
