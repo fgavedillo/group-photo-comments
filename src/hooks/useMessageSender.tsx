@@ -33,14 +33,17 @@ export const useMessageSender = (onMessageSent: () => void) => {
       if (image) {
         console.log("Processing image upload", { fileName: image.name });
         
-        // Asegurar que el nombre del archivo sea seguro
+        // Asegurar que el nombre del archivo sea seguro y único
         const timestamp = Date.now();
-        const safeFileName = `${timestamp}-anon.${image.name.split('.').pop()}`;
+        const fileExt = image.name.split('.').pop();
+        const safeFileName = `${timestamp}-${session.user.id}.${fileExt}`;
         
+        // Subir la imagen al bucket 'images'
         const { data: imageData, error: imageError } = await supabase.storage
           .from('images')
           .upload(safeFileName, image, {
             cacheControl: '3600',
+            contentType: image.type,
             upsert: false
           });
 
@@ -49,6 +52,7 @@ export const useMessageSender = (onMessageSent: () => void) => {
           throw new Error(`Error al subir la imagen: ${imageError.message}`);
         }
 
+        // Obtener la URL pública de la imagen
         const { data: { publicUrl } } = supabase.storage
           .from('images')
           .getPublicUrl(safeFileName);
@@ -69,7 +73,7 @@ export const useMessageSender = (onMessageSent: () => void) => {
           message,
           user_id: session.user.id,
           username,
-          imageUrl // Incluir la URL de la imagen directamente en la tabla de issues
+          imageUrl
         })
         .select()
         .single();
