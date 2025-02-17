@@ -1,7 +1,6 @@
 
 // @ts-ignore
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 import nodemailer from "npm:nodemailer"
 
 const corsHeaders = {
@@ -16,17 +15,20 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Función invocada")
     const { userEmail, userName } = await req.json()
-    console.log("Recibida solicitud para notificar al administrador:", { userEmail, userName })
+    console.log("Datos recibidos:", { userEmail, userName })
 
     const gmailUser = Deno.env.get("GMAIL_USER")
     const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD")
     const adminEmail = "fgavedillo@gmail.com"
 
     if (!gmailUser || !gmailPassword) {
+      console.error("Credenciales faltantes:", { hasUser: !!gmailUser, hasPassword: !!gmailPassword })
       throw new Error("Credenciales de Gmail no configuradas")
     }
 
+    console.log("Configurando transporte de email")
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
