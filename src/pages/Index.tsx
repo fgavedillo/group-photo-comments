@@ -1,4 +1,3 @@
-
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,18 +24,14 @@ const Index = () => {
   const notifyAdmin = async (userEmail: string, userName: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/notify-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ userEmail, userName }),
+      const response = await supabase.functions.invoke('notify-admin', {
+        body: { userEmail, userName }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response:', errorData);
+      console.log('Respuesta de la función:', response);
+
+      if (response.error) {
+        console.error('Error response:', response.error);
         throw new Error('Error al enviar la notificación');
       }
 
