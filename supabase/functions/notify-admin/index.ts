@@ -8,6 +8,7 @@ const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
 const adminEmail = "fgavedillo@gmail.com";
 
 if (!gmailUser || !gmailPassword) {
+  console.error("Gmail credentials are missing:", { gmailUser: !!gmailUser, gmailPassword: !!gmailPassword });
   throw new Error("Gmail credentials are not configured");
 }
 
@@ -25,27 +26,31 @@ const corsHeaders = {
 };
 
 serve(async (req: Request) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     const { userEmail, userName } = await req.json();
+    console.log("Received request to notify admin about:", { userEmail, userName });
 
+    // Guardar la solicitud en la base de datos
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Guardar la solicitud en la base de datos
     const { error: dbError } = await supabase
       .from('approval_requests')
       .insert({
         admin_email: adminEmail,
-        status: 'pending'
+        status: 'pending',
+        user_id: (await supabase.auth.getUser()).data.user?.id
       });
 
     if (dbError) {
+      console.error("Database error:", dbError);
       throw dbError;
     }
 
@@ -62,8 +67,9 @@ serve(async (req: Request) => {
       </div>
     `;
 
+    console.log("Attempting to send email to:", adminEmail);
     const emailResponse = await transporter.sendMail({
-      from: gmailUser,
+      from: `"Sistema de Gestión" <${gmailUser}>`,
       to: adminEmail,
       subject: "Nuevo Usuario Pendiente de Aprobación",
       html: emailContent

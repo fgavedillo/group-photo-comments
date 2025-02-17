@@ -24,16 +24,19 @@ const Index = () => {
 
   const notifyAdmin = async (userEmail: string, userName: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/notify-admin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY}`,
+          'Authorization': `Bearer ${session?.access_token}`,
         },
         body: JSON.stringify({ userEmail, userName }),
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Error response:', errorData);
         throw new Error('Error al enviar la notificación');
       }
 
