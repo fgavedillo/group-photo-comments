@@ -27,9 +27,15 @@ export const Auth = () => {
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/?tab=chat');
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session check:', session); // Añadido log
+        if (session) {
+          console.log('Usuario autenticado, redirigiendo...'); // Añadido log
+          navigate('/');
+        }
+      } catch (error) {
+        console.error('Error checking session:', error); // Añadido log
       }
     };
     
@@ -50,6 +56,7 @@ export const Auth = () => {
 
     try {
       setLoading(true);
+      console.log('Iniciando registro...'); // Añadido log
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -63,12 +70,15 @@ export const Auth = () => {
 
       if (error) throw error;
 
+      console.log('Registro exitoso:', data); // Añadido log
       toast({
         title: "¡Registro exitoso!",
         description: "Por favor, verifica tu correo electrónico para continuar.",
       });
       clearForm();
+      navigate('/');
     } catch (error: any) {
+      console.error('Error en registro:', error); // Añadido log
       let errorMessage = "No se pudo completar el registro.";
       
       if (error.message.includes("User already registered")) {
@@ -80,7 +90,6 @@ export const Auth = () => {
         description: errorMessage,
         variant: "destructive",
       });
-      console.error('Error during signup:', error);
     } finally {
       setLoading(false);
     }
@@ -100,6 +109,7 @@ export const Auth = () => {
 
     try {
       setLoading(true);
+      console.log('Iniciando sesión...'); // Añadido log
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -107,14 +117,15 @@ export const Auth = () => {
 
       if (error) throw error;
       
+      console.log('Inicio de sesión exitoso:', data); // Añadido log
       toast({
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
       });
       clearForm();
-      navigate('/?tab=chat');
+      navigate('/');
     } catch (error: any) {
-      console.error('Error during signin:', error);
+      console.error('Error en inicio de sesión:', error); // Añadido log
       toast({
         title: "Error",
         description: "Correo electrónico o contraseña incorrectos.",
