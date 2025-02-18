@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 export const Auth = () => {
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,6 @@ export const Auth = () => {
   const [lastName, setLastName] = useState('');
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   const clearForm = () => {
     setEmail('');
@@ -23,24 +22,6 @@ export const Auth = () => {
     setFirstName('');
     setLastName('');
   };
-
-  useEffect(() => {
-    // Check if user is already logged in
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Session check:', session); // Añadido log
-        if (session) {
-          console.log('Usuario autenticado, redirigiendo...'); // Añadido log
-          navigate('/');
-        }
-      } catch (error) {
-        console.error('Error checking session:', error); // Añadido log
-      }
-    };
-    
-    checkUser();
-  }, [navigate]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +37,7 @@ export const Auth = () => {
 
     try {
       setLoading(true);
-      console.log('Iniciando registro...'); // Añadido log
+      console.log('Iniciando registro...');
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -70,15 +51,15 @@ export const Auth = () => {
 
       if (error) throw error;
 
-      console.log('Registro exitoso:', data); // Añadido log
+      console.log('Registro exitoso:', data);
       toast({
         title: "¡Registro exitoso!",
         description: "Por favor, verifica tu correo electrónico para continuar.",
       });
       clearForm();
-      navigate('/');
+      // No redirigimos después del registro ya que necesitan verificar su email
     } catch (error: any) {
-      console.error('Error en registro:', error); // Añadido log
+      console.error('Error en registro:', error);
       let errorMessage = "No se pudo completar el registro.";
       
       if (error.message.includes("User already registered")) {
@@ -109,7 +90,7 @@ export const Auth = () => {
 
     try {
       setLoading(true);
-      console.log('Iniciando sesión...'); // Añadido log
+      console.log('Iniciando sesión...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -117,15 +98,16 @@ export const Auth = () => {
 
       if (error) throw error;
       
-      console.log('Inicio de sesión exitoso:', data); // Añadido log
+      console.log('Inicio de sesión exitoso:', data);
       toast({
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente.",
       });
       clearForm();
-      navigate('/');
+      // Redirigimos al dashboard después del login exitoso
+      navigate('/dashboard');
     } catch (error: any) {
-      console.error('Error en inicio de sesión:', error); // Añadido log
+      console.error('Error en inicio de sesión:', error);
       toast({
         title: "Error",
         description: "Correo electrónico o contraseña incorrectos.",
