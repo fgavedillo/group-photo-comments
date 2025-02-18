@@ -39,7 +39,7 @@ export const useMessageSender = (onMessageSent: () => void) => {
         const safeFileName = `${timestamp}-${session.user.id}.${fileExt}`;
         
         // Subir la imagen al bucket 'images'
-        const { data: imageData, error: imageError } = await supabase.storage
+        const { data: imageData, error: imageUploadError } = await supabase.storage
           .from('images')
           .upload(safeFileName, image, {
             cacheControl: '3600',
@@ -47,9 +47,9 @@ export const useMessageSender = (onMessageSent: () => void) => {
             upsert: false
           });
 
-        if (imageError) {
-          console.error("Image upload error:", imageError);
-          throw new Error(`Error al subir la imagen: ${imageError.message}`);
+        if (imageUploadError) {
+          console.error("Image upload error:", imageUploadError);
+          throw new Error(`Error al subir la imagen: ${imageUploadError.message}`);
         }
 
         // Obtener la URL pública de la imagen
@@ -73,7 +73,6 @@ export const useMessageSender = (onMessageSent: () => void) => {
           message,
           user_id: session.user.id,
           username,
-          imageUrl
         })
         .select()
         .single();
@@ -81,6 +80,21 @@ export const useMessageSender = (onMessageSent: () => void) => {
       if (issueError) {
         console.error("Issue creation error:", issueError);
         throw new Error(`Error al crear la incidencia: ${issueError.message}`);
+      }
+
+      // Si hay una imagen, crear el registro en issue_images
+      if (imageUrl && issue) {
+        const { error: imageRecordError } = await supabase
+          .from('issue_images')
+          .insert({
+            image_url: imageUrl,
+            issue_id: issue.id
+          });
+
+        if (imageRecordError) {
+          console.error("Image record creation error:", imageRecordError);
+          throw new Error(`Error al registrar la imagen: ${imageRecordError.message}`);
+        }
       }
 
       onMessageSent();
