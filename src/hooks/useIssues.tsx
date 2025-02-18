@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Issue } from "@/types/issue";
 
 export const useIssues = () => {
@@ -11,6 +11,11 @@ export const useIssues = () => {
   const loadIssues = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('No session found, user must be authenticated');
+        return;
+      }
 
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
@@ -26,9 +31,17 @@ export const useIssues = () => {
         `)
         .order('timestamp', { ascending: false });
 
-      if (issuesError) throw issuesError;
+      if (issuesError) {
+        console.error('Error fetching issues:', issuesError);
+        throw issuesError;
+      }
 
-      if (!issuesData) return;
+      if (!issuesData) {
+        console.log('No issues data returned');
+        return;
+      }
+
+      console.log('Fetched issues:', issuesData);
 
       const formattedIssues: Issue[] = issuesData.map(issue => ({
         id: issue.id,
@@ -60,7 +73,6 @@ export const useIssues = () => {
   useEffect(() => {
     loadIssues();
 
-    // Suscribirse a cambios en la tabla issues
     const channel = supabase
       .channel('issues-changes')
       .on(
@@ -70,14 +82,17 @@ export const useIssues = () => {
           schema: 'public',
           table: 'issues'
         },
-        () => {
-          console.log('Issues table changed, refreshing data...');
+        (payload) => {
+          console.log('Received realtime update:', payload);
           loadIssues();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Realtime subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, []);

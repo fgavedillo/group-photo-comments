@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { Issue } from "@/types/issue";
 
 export const useIssueActions = (loadIssues: () => Promise<void>) => {
@@ -23,7 +23,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
       }
 
       console.log('Status updated successfully:', data);
-      await loadIssues();
       
       toast({
         title: "Estado actualizado",
@@ -79,7 +78,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
       }
 
       console.log('Security improvement added successfully:', data);
-      await loadIssues();
       
       toast({
         title: "Situación actualizada",
@@ -99,6 +97,9 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     securityImprovements,
     actionPlans,
     handleStatusChange,
+    handleSecurityImprovementChange,
+    handleActionPlanChange,
+    handleAddSecurityImprovement,
     handleAreaChange: async (issueId: number, area: string) => {
       try {
         console.log('Updating area:', { issueId, area });
@@ -114,7 +115,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
         }
 
         console.log('Area updated successfully:', data);
-        await loadIssues();
       } catch (error) {
         console.error('Error updating area:', error);
         toast({
@@ -139,7 +139,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
         }
 
         console.log('Responsable updated successfully:', data);
-        await loadIssues();
       } catch (error) {
         console.error('Error updating responsable:', error);
         toast({
@@ -149,9 +148,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
         });
       }
     },
-    handleSecurityImprovementChange,
-    handleActionPlanChange,
-    handleAddSecurityImprovement,
     handleAssignedEmailChange: async (issueId: number, email: string) => {
       try {
         console.log('Updating assigned email:', { issueId, email });
@@ -167,7 +163,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
         }
 
         console.log('Assigned email updated successfully:', data);
-        await loadIssues();
       } catch (error) {
         console.error('Error updating assigned email:', error);
         toast({
