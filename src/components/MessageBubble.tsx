@@ -1,8 +1,9 @@
+
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Trash2, CheckCheck } from "lucide-react";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { ImageModal } from "./ImageModal";
 import {
