@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = "https://jzmzmjvtxcrxljnhhrjo.supabase.co";
@@ -17,7 +18,13 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     console.log("Attempting to send email via Supabase function:", { to, subject });
     
     const { data, error } = await supabase.functions.invoke('send-email', {
-      body: { to, subject, content, attachments }
+      body: { 
+        to, 
+        subject, 
+        content, 
+        attachments,
+        from: "prevencionlingotes@gmail.com"
+      }
     });
 
     if (error) {
