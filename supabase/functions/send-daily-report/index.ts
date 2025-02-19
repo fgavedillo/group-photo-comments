@@ -36,7 +36,7 @@ serve(async (req) => {
 
     const emailResponse = await resend.emails.send({
       from: "Incidencias <incidencias@resend.dev>",
-      to: ["fgavedillo@gmail.com"],
+      to: ["prevencionlingotes@gmail.com"],
       subject: `Reporte Diario de Incidencias - ${today}`,
       html: emailContent,
     });

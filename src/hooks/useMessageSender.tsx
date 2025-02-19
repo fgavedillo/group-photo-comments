@@ -63,10 +63,10 @@ export const useMessageSender = (onMessageSent: () => void) => {
 
       // Construir el nombre de usuario a partir del perfil
       const username = profileData 
-        ? `${profileData.first_name} ${profileData.last_name}`
+        ? `${profileData.first_name || ''} ${profileData.last_name || ''}`.trim()
         : "Sin asignar";
 
-      // Crear la incidencia con el user_id y username
+      // Crear la incidencia con el user_id
       const { data: issue, error: issueError } = await supabase
         .from('issues')
         .insert({

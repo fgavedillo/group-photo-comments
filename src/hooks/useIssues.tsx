@@ -43,21 +43,31 @@ export const useIssues = () => {
 
       console.log('Fetched issues:', issuesData);
 
-      const formattedIssues: Issue[] = issuesData.map(issue => ({
-        id: issue.id,
-        imageUrl: issue.issue_images?.[0]?.image_url || '',
-        timestamp: new Date(issue.timestamp || ''),
-        username: issue.profiles
-          ? `${issue.profiles.first_name} ${issue.profiles.last_name}`
-          : "Sin asignar",
-        message: issue.message,
-        securityImprovement: issue.security_improvement || undefined,
-        actionPlan: issue.action_plan || undefined,
-        status: (issue.status as Issue['status']) || 'en-estudio',
-        assignedEmail: issue.assigned_email || undefined,
-        area: issue.area || undefined,
-        responsable: issue.responsable || undefined
-      }));
+      const formattedIssues: Issue[] = issuesData.map(issue => {
+        // Si el issue tiene user_id, intentamos obtener el nombre del perfil
+        let username = "Sin asignar";
+        if (issue.user_id && issue.profiles) {
+          const firstName = issue.profiles.first_name || '';
+          const lastName = issue.profiles.last_name || '';
+          if (firstName || lastName) {
+            username = `${firstName} ${lastName}`.trim();
+          }
+        }
+
+        return {
+          id: issue.id,
+          imageUrl: issue.issue_images?.[0]?.image_url || '',
+          timestamp: new Date(issue.timestamp || ''),
+          username,
+          message: issue.message,
+          securityImprovement: issue.security_improvement || undefined,
+          actionPlan: issue.action_plan || undefined,
+          status: (issue.status as Issue['status']) || 'en-estudio',
+          assignedEmail: issue.assigned_email || undefined,
+          area: issue.area || undefined,
+          responsable: issue.responsable || undefined
+        };
+      });
 
       setIssues(formattedIssues);
     } catch (error) {
