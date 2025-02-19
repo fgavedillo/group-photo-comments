@@ -1,19 +1,16 @@
 
 import { Auth } from "@/components/Auth";
-import { MessageInput } from "@/components/MessageInput";
-import { MessageList } from "@/components/MessageList";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMessages } from "@/hooks/useMessages";
-import { useMessageSender } from "@/hooks/useMessageSender";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
+import { LogOut } from "lucide-react";
 
 const Landing = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const { messages, loadMessages } = useMessages();
-  const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -32,6 +29,23 @@ const Landing = () => {
     };
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Sesión cerrada",
+        description: "Has cerrado sesión correctamente",
+      });
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar la sesión",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (isAuthenticated === null) {
     return <div className="flex items-center justify-center min-h-screen">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -43,29 +57,35 @@ const Landing = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-white shadow-sm">
-      <header className="bg-white border-b border-gray-100 p-2 sticky top-0 z-50">
-        <h1 className="text-lg font-semibold text-foreground">
-          Sistema de Gestión de Incidencias
-        </h1>
-      </header>
-
-      <Tabs defaultValue="chat" className="flex-1">
-        <div className="sticky top-[3.5rem] bg-white z-40 border-b">
-          <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
-            <TabsTrigger value="chat">
-              Chat
-            </TabsTrigger>
-          </TabsList>
+    <div className="min-h-screen flex flex-col bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-foreground">
+            Sistema de Gestión de Incidencias
+          </h1>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </Button>
         </div>
-        
-        <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
-          <div className="flex-1 overflow-auto">
-            <MessageList messages={messages} onMessageDelete={loadMessages} />
+        <div className="mt-8 text-center">
+          <p className="text-muted-foreground">
+            Bienvenido al Sistema de Gestión de Incidencias.
+          </p>
+          <div className="mt-4">
+            <Button 
+              onClick={() => navigate('/dashboard')}
+              className="mx-2"
+            >
+              Ir al Dashboard
+            </Button>
           </div>
-          <MessageInput onSend={handleSendMessage} />
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 };
