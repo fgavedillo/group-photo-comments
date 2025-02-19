@@ -1,89 +1,71 @@
 
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Auth } from '@/components/Auth';
+import { Auth } from "@/components/Auth";
+import { MessageInput } from "@/components/MessageInput";
+import { MessageList } from "@/components/MessageList";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMessages } from "@/hooks/useMessages";
+import { useMessageSender } from "@/hooks/useMessageSender";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { useNavigate } from "react-router-dom";
 
 const Landing = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { messages, loadMessages } = useMessages();
+  const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUser = async () => {
+    const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/dashboard');
-      }
+      setIsAuthenticated(!!session);
     };
-    
-    checkUser();
-  }, [navigate]);
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  if (isAuthenticated === null) {
+    return <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+    </div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Auth />;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold text-primary">Sistema de Gestión de Incidencias</h1>
-        </div>
+    <div className="min-h-screen flex flex-col bg-white shadow-sm">
+      <header className="bg-white border-b border-gray-100 p-2 sticky top-0 z-50">
+        <h1 className="text-lg font-semibold text-foreground">
+          Sistema de Gestión de Incidencias
+        </h1>
       </header>
 
-      <main>
-        {/* Hero Section */}
-        <section className="py-16 bg-gradient-to-b from-background to-muted/20">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-              <div className="space-y-6">
-                <h2 className="text-4xl font-bold">
-                  Gestiona tus incidencias de manera eficiente
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  Una plataforma completa para el seguimiento y gestión de incidencias, 
-                  diseñada para mejorar la comunicación y eficiencia de tu equipo.
-                </p>
-              </div>
-              <div className="bg-card rounded-lg p-8 shadow-lg">
-                <Auth />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-16">
-          <div className="container mx-auto px-4">
-            <h3 className="text-2xl font-semibold text-center mb-8">
-              Características Principales
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-6 bg-card rounded-lg shadow-sm">
-                <h4 className="text-xl font-semibold mb-3">Gestión Simplificada</h4>
-                <p className="text-muted-foreground">
-                  Interfaz intuitiva para crear, asignar y dar seguimiento a incidencias.
-                </p>
-              </div>
-              <div className="p-6 bg-card rounded-lg shadow-sm">
-                <h4 className="text-xl font-semibold mb-3">Comunicación en Tiempo Real</h4>
-                <p className="text-muted-foreground">
-                  Chat integrado para una comunicación efectiva entre el equipo.
-                </p>
-              </div>
-              <div className="p-6 bg-card rounded-lg shadow-sm">
-                <h4 className="text-xl font-semibold mb-3">Reportes Detallados</h4>
-                <p className="text-muted-foreground">
-                  Análisis y métricas para mejorar el rendimiento del equipo.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t mt-16">
-        <div className="container mx-auto px-4 py-8">
-          <p className="text-center text-muted-foreground">
-            © 2024 Sistema de Gestión de Incidencias. Todos los derechos reservados.
-          </p>
+      <Tabs defaultValue="chat" className="flex-1">
+        <div className="sticky top-[3.5rem] bg-white z-40 border-b">
+          <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
+            <TabsTrigger value="chat">
+              Chat
+            </TabsTrigger>
+          </TabsList>
         </div>
-      </footer>
+        
+        <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
+          <div className="flex-1 overflow-auto">
+            <MessageList messages={messages} onMessageDelete={loadMessages} />
+          </div>
+          <MessageInput onSend={handleSendMessage} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
