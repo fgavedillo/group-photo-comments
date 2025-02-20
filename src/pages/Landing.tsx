@@ -72,19 +72,6 @@ const Landing = () => {
             Cerrar sesión
           </Button>
         </div>
-        <div className="mt-8 text-center">
-          <p className="text-muted-foreground">
-            Bienvenido al Sistema de Gestión de Incidencias.
-          </p>
-          <div className="mt-4">
-            <Button 
-              onClick={() => navigate('/dashboard')}
-              className="mx-2"
-            >
-              Ir al Dashboard
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );
