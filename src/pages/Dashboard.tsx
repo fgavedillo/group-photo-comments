@@ -14,12 +14,23 @@ import { LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { messages, loadMessages } = useMessages();
   const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate('/');
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
   const handleLogout = async () => {
     try {
@@ -41,8 +52,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white shadow-sm">
-      <header className="bg-white border-b border-gray-100 p-2 sticky top-0 z-50 flex justify-between items-center">
-        <h1 className="text-lg font-semibold text-foreground">
+      <header className="bg-white border-b border-gray-100 p-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <h1 className="text-2xl font-semibold text-foreground">
           Panel de Control
         </h1>
         <Button 
@@ -56,8 +67,8 @@ const Dashboard = () => {
       </header>
 
       <Tabs defaultValue="chat" className="flex-1">
-        <div className="sticky top-[3.5rem] bg-white z-40 border-b">
-          <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
+        <div className="sticky top-[4.5rem] bg-white z-40 border-b">
+          <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-4 py-2">
             <TabsTrigger value="chat">
               Chat
             </TabsTrigger>

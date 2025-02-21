@@ -19,6 +19,18 @@ export const useMessageSender = (onMessageSent: () => void) => {
         throw new Error("No hay sesión activa");
       }
 
+      // Obtener el perfil del usuario
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('first_name, last_name, email')
+        .eq('id', session.user.id)
+        .single();
+
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
+        throw new Error("Error al obtener el perfil del usuario");
+      }
+
       let imageUrl = undefined;
       if (image) {
         console.log("Processing image upload", { fileName: image.name });
@@ -48,12 +60,13 @@ export const useMessageSender = (onMessageSent: () => void) => {
         console.log("Image uploaded successfully", { imageUrl });
       }
 
-      // Crear la incidencia
+      // Crear la incidencia con la información del perfil
       const { data: issue, error: issueError } = await supabase
         .from('issues')
         .insert({
           message,
-          user_id: session.user.id,
+          username: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
+          user_id: session.user.id
         })
         .select()
         .single();

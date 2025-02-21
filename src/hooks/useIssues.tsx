@@ -31,7 +31,11 @@ export const useIssues = () => {
           issue_images (
             image_url
           ),
-          profiles!issues_user_id_fkey (
+          user_id (
+            id,
+            email
+          ),
+          profiles!user_id (
             first_name,
             last_name,
             email
