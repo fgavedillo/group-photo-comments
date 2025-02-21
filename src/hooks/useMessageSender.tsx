@@ -8,60 +8,54 @@ export const useMessageSender = (onMessageSent: () => void) => {
   const { toast } = useToast();
 
   const handleSendMessage = async (message: string, image?: File) => {
+    if (isSending) return;
+    
     try {
       setIsSending(true);
-      console.log("Starting message send process", { hasImage: !!image });
-
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error("No hay sesión activa");
+        throw new Error("Debes iniciar sesión para enviar mensajes");
       }
 
-      let imageUrl = undefined;
+      let imageUrl: string | undefined;
+      
       if (image) {
-        console.log("Processing image upload", { fileName: image.name });
-        
         const timestamp = Date.now();
         const fileExt = image.name.split('.').pop();
-        const safeFileName = `${timestamp}-${session.user.id}.${fileExt}`;
-        
-        const { data: imageData, error: imageUploadError } = await supabase.storage
+        const fileName = `${timestamp}-${session.user.id}.${fileExt}`;
+
+        const { error: uploadError, data } = await supabase.storage
           .from('images')
-          .upload(safeFileName, image, {
+          .upload(fileName, image, {
             cacheControl: '3600',
-            contentType: image.type,
             upsert: false
           });
 
-        if (imageUploadError) {
-          console.error("Image upload error:", imageUploadError);
-          throw new Error(`Error al subir la imagen: ${imageUploadError.message}`);
+        if (uploadError) {
+          throw new Error(`Error al subir la imagen: ${uploadError.message}`);
         }
 
         const { data: { publicUrl } } = supabase.storage
           .from('images')
-          .getPublicUrl(safeFileName);
+          .getPublicUrl(fileName);
 
         imageUrl = publicUrl;
-        console.log("Image uploaded successfully", { imageUrl });
       }
 
-      // Crear la incidencia
       const { data: issue, error: issueError } = await supabase
         .from('issues')
         .insert({
-          message,
+          message: message.trim(),
           user_id: session.user.id
         })
         .select()
         .single();
 
       if (issueError) {
-        console.error("Issue creation error:", issueError);
         throw new Error(`Error al crear la incidencia: ${issueError.message}`);
       }
 
-      // Si hay una imagen, crear el registro en issue_images
       if (imageUrl && issue) {
         const { error: imageRecordError } = await supabase
           .from('issue_images')
@@ -71,24 +65,20 @@ export const useMessageSender = (onMessageSent: () => void) => {
           });
 
         if (imageRecordError) {
-          console.error("Image record creation error:", imageRecordError);
           throw new Error(`Error al registrar la imagen: ${imageRecordError.message}`);
         }
       }
 
       onMessageSent();
-      toast({
-        title: "Mensaje enviado",
-        description: "Tu mensaje se ha enviado correctamente",
-      });
 
     } catch (error: any) {
-      console.error('Error sending message:', error);
+      console.error('Error en el envío del mensaje:', error);
       toast({
         title: "Error",
         description: error.message || "No se pudo enviar el mensaje",
         variant: "destructive"
       });
+      throw error; // Re-lanzar el error para que MessageInput pueda manejarlo
     } finally {
       setIsSending(false);
     }
