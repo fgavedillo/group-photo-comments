@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail } from "lucide-react";
@@ -52,9 +51,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       await sendEmail(
         email,
         "Nueva incidencia asignada",
-        emailContent,
-        [],
-        "prevencionlingotes@gmail.com"
+        emailContent
       );
 
       toast({

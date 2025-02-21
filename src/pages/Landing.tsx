@@ -36,7 +36,6 @@ const Landing = () => {
         title: "Sesión cerrada",
         description: "Has cerrado sesión correctamente",
       });
-      navigate('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
       toast({
@@ -58,16 +57,34 @@ const Landing = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="p-4">
-        <Button 
-          variant="outline" 
-          onClick={handleLogout}
-          className="gap-2"
-        >
-          <LogOut className="h-4 w-4" />
-          Cerrar sesión
-        </Button>
+    <div className="min-h-screen flex flex-col bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-semibold text-foreground">
+            Sistema de Gestión de Incidencias
+          </h1>
+          <Button 
+            variant="outline" 
+            onClick={handleLogout}
+            className="gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Cerrar sesión
+          </Button>
+        </div>
+        <div className="mt-8 text-center">
+          <p className="text-muted-foreground">
+            Bienvenido al Sistema de Gestión de Incidencias.
+          </p>
+          <div className="mt-4">
+            <Button 
+              onClick={() => navigate('/dashboard')}
+              className="mx-2"
+            >
+              Ir al Dashboard
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

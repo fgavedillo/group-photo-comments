@@ -8,13 +8,6 @@ export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
 
-  const formatUserName = (profiles: any) => {
-    if (!profiles) return "Usuario no encontrado";
-    const firstName = profiles.first_name || '';
-    const lastName = profiles.last_name || '';
-    return firstName || lastName ? `${firstName} ${lastName}`.trim() : profiles.email || "Usuario no encontrado";
-  };
-
   const loadMessages = async () => {
     try {
       const { data: issuesData, error: issuesError } = await supabase
@@ -24,10 +17,9 @@ export const useMessages = () => {
           issue_images (
             image_url
           ),
-          profiles!issues_user_id_fkey (
+          profiles!user_id (
             first_name,
-            last_name,
-            email
+            last_name
           )
         `)
         .order('timestamp', { ascending: true });
@@ -36,7 +28,9 @@ export const useMessages = () => {
 
       const formattedMessages = issuesData.map(issue => ({
         id: issue.id.toString(),
-        username: formatUserName(issue.profiles),
+        username: issue.profiles
+          ? `${issue.profiles.first_name} ${issue.profiles.last_name}`
+          : "Sin asignar",
         timestamp: new Date(issue.timestamp),
         message: issue.message,
         imageUrl: issue.issue_images?.[0]?.image_url || undefined,

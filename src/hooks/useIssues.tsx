@@ -9,10 +9,10 @@ export const useIssues = () => {
   const { toast } = useToast();
 
   const formatUserName = (profiles: any) => {
-    if (!profiles) return "Usuario no encontrado";
+    if (!profiles) return "Sin asignar";
     const firstName = profiles.first_name || '';
     const lastName = profiles.last_name || '';
-    return firstName || lastName ? `${firstName} ${lastName}`.trim() : profiles.email || "Usuario no encontrado";
+    return firstName || lastName ? `${firstName} ${lastName}`.trim() : "Sin asignar";
   };
 
   const loadIssues = async () => {
@@ -31,14 +31,9 @@ export const useIssues = () => {
           issue_images (
             image_url
           ),
-          user_id (
-            id,
-            email
-          ),
           profiles!user_id (
             first_name,
-            last_name,
-            email
+            last_name
           )
         `)
         .order('timestamp', { ascending: false });
@@ -66,8 +61,7 @@ export const useIssues = () => {
         status: (issue.status as Issue['status']) || 'en-estudio',
         assignedEmail: issue.assigned_email || undefined,
         area: issue.area || undefined,
-        responsable: issue.responsable || undefined,
-        user_id: issue.user_id
+        responsable: issue.responsable || undefined
       }));
 
       setIssues(formattedIssues);
