@@ -2,12 +2,10 @@
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
-import { useNavigate } from "react-router-dom";
 
 export const useMessageSender = (onMessageSent: () => void) => {
   const [isSending, setIsSending] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleSendMessage = async (message: string, image?: File) => {
     try {
@@ -17,18 +15,6 @@ export const useMessageSender = (onMessageSent: () => void) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("No hay sesión activa");
-      }
-
-      // Obtener el perfil del usuario
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('first_name, last_name, email')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        throw new Error("Error al obtener el perfil del usuario");
       }
 
       let imageUrl = undefined;
@@ -60,12 +46,11 @@ export const useMessageSender = (onMessageSent: () => void) => {
         console.log("Image uploaded successfully", { imageUrl });
       }
 
-      // Crear la incidencia con la información del perfil
+      // Crear la incidencia
       const { data: issue, error: issueError } = await supabase
         .from('issues')
         .insert({
           message,
-          username: `${profile.first_name || ''} ${profile.last_name || ''}`.trim() || profile.email,
           user_id: session.user.id
         })
         .select()

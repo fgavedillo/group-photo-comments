@@ -1,6 +1,6 @@
 
 import { useState, useRef, useCallback } from "react";
-import { ImagePlus, Send } from "lucide-react";
+import { ImagePlus, Send, Loader2 } from "lucide-react";
 import { pixelateFaces } from "@/utils/facePixelation";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,6 +13,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -26,14 +27,12 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           description: "Detectando rostros...",
         });
 
-        // Primero mostramos la imagen original como preview temporal
         const reader = new FileReader();
         reader.onloadend = () => {
           setImagePreview(reader.result as string);
         };
         reader.readAsDataURL(file);
 
-        // Procesar la imagen para pixelar rostros
         console.log("Starting face detection process");
         const processedBlob = await pixelateFaces(file);
         console.log("Face detection completed");
@@ -41,7 +40,6 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         const processedFile = new File([processedBlob], file.name, { type: file.type });
         setSelectedImage(processedFile);
         
-        // Actualizar preview con la imagen procesada
         const processedReader = new FileReader();
         processedReader.onloadend = () => {
           setImagePreview(processedReader.result as string);
@@ -65,13 +63,18 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
     }
   }, [toast]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() || selectedImage) {
-      onSend(message, selectedImage || undefined);
-      setMessage("");
-      setImagePreview(null);
-      setSelectedImage(null);
+      try {
+        setIsSending(true);
+        await onSend(message, selectedImage || undefined);
+        setMessage("");
+        setImagePreview(null);
+        setSelectedImage(null);
+      } finally {
+        setIsSending(false);
+      }
     }
   };
 
@@ -101,9 +104,9 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`p-2 text-primary hover:text-primary-hover transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`p-2 text-primary hover:text-primary-hover transition-colors ${(isProcessing || isSending) ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={isProcessing ? "Procesando imagen..." : "Añadir imagen"}
-          disabled={isProcessing}
+          disabled={isProcessing || isSending}
         >
           <ImagePlus size={20} />
         </button>
@@ -114,7 +117,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           onChange={handleImageSelect}
           accept="image/*"
           className="hidden"
-          disabled={isProcessing}
+          disabled={isProcessing || isSending}
         />
         
         <input
@@ -123,16 +126,20 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           onChange={(e) => setMessage(e.target.value)}
           placeholder={isProcessing ? "Procesando imagen..." : "Escribe un mensaje..."}
           className="flex-1 px-4 py-2 bg-transparent text-sm focus:outline-none"
-          disabled={isProcessing}
+          disabled={isProcessing || isSending}
         />
         
         <button
           type="submit"
-          disabled={(!message.trim() && !selectedImage) || isProcessing}
+          disabled={(!message.trim() && !selectedImage) || isProcessing || isSending}
           className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
-          title="Enviar mensaje"
+          title={isSending ? "Enviando..." : "Enviar mensaje"}
         >
-          <Send size={20} />
+          {isSending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Send size={20} />
+          )}
         </button>
       </div>
     </form>
