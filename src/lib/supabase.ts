@@ -13,9 +13,15 @@ interface Attachment {
   type: string;
 }
 
-export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[]) => {
+export const sendEmail = async (
+  to: string, 
+  subject: string, 
+  content: string, 
+  attachments?: Attachment[],
+  from: string = "prevencionlingotes@gmail.com"
+) => {
   try {
-    console.log("Attempting to send email via Supabase function:", { to, subject });
+    console.log("Attempting to send email via Supabase function:", { to, subject, from });
     
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: { 
@@ -23,7 +29,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
         subject, 
         content, 
         attachments,
-        from: "prevencionlingotes@gmail.com"
+        from
       }
     });
 
