@@ -10,27 +10,48 @@ export const useMessages = () => {
 
   const loadMessages = async () => {
     try {
+      console.log('Iniciando carga de mensajes...');
+      
       const { data: issuesData, error: issuesError } = await supabase
         .from('issues')
         .select(`
-          *,
+          id,
+          message,
+          timestamp,
+          status,
+          area,
+          responsable,
+          security_improvement,
+          action_plan,
+          assigned_email,
+          user_id,
           issue_images (
             image_url
           ),
-          profiles!user_id (
+          profiles!inner (
             first_name,
             last_name
           )
         `)
         .order('timestamp', { ascending: true });
 
-      if (issuesError) throw issuesError;
+      if (issuesError) {
+        console.error('Error al cargar mensajes:', issuesError);
+        throw issuesError;
+      }
+
+      if (!issuesData) {
+        console.log('No se encontraron mensajes');
+        return;
+      }
+
+      console.log('Mensajes cargados:', issuesData);
 
       const formattedMessages = issuesData.map(issue => ({
         id: issue.id.toString(),
         username: issue.profiles
-          ? `${issue.profiles.first_name} ${issue.profiles.last_name}`
-          : "Sin asignar",
+          ? `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() || 'Usuario'
+          : 'Usuario',
         timestamp: new Date(issue.timestamp),
         message: issue.message,
         imageUrl: issue.issue_images?.[0]?.image_url || undefined,
@@ -55,6 +76,28 @@ export const useMessages = () => {
 
   useEffect(() => {
     loadMessages();
+
+    const channel = supabase
+      .channel('issues-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues'
+        },
+        () => {
+          console.log('Cambios detectados en la tabla issues, recargando...');
+          loadMessages();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Estado de la suscripción:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return { messages, loadMessages };
