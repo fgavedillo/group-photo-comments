@@ -81,15 +81,7 @@ export type Database = {
           user_id?: string | null
           username?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "issues_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       profiles: {
         Row: {
