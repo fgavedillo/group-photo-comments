@@ -46,7 +46,7 @@ export const useMessages = () => {
           issue_images (
             image_url
           ),
-          profiles!inner (
+          profiles:user_id (
             first_name,
             last_name
           )
@@ -65,9 +65,9 @@ export const useMessages = () => {
 
       console.log('Mensajes cargados:', issuesData);
 
-      const formattedMessages = (issuesData as IssueWithProfile[]).map(issue => ({
+      const formattedMessages = (issuesData as unknown as IssueWithProfile[]).map(issue => ({
         id: issue.id.toString(),
-        username: `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() || 'Usuario',
+        username: `${issue.profiles?.first_name || ''} ${issue.profiles?.last_name || ''}`.trim() || 'Usuario',
         timestamp: new Date(issue.timestamp),
         message: issue.message,
         imageUrl: issue.issue_images?.[0]?.image_url || undefined,
