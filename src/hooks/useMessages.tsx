@@ -4,6 +4,24 @@ import { Message } from "@/components/MessageList";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
+interface IssueWithProfile {
+  id: number;
+  message: string;
+  timestamp: string;
+  status: string;
+  area: string | null;
+  responsable: string | null;
+  security_improvement: string | null;
+  action_plan: string | null;
+  assigned_email: string | null;
+  user_id: string;
+  issue_images: { image_url: string }[] | null;
+  profiles: {
+    first_name: string | null;
+    last_name: string | null;
+  };
+}
+
 export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
@@ -47,11 +65,9 @@ export const useMessages = () => {
 
       console.log('Mensajes cargados:', issuesData);
 
-      const formattedMessages = issuesData.map(issue => ({
+      const formattedMessages = (issuesData as IssueWithProfile[]).map(issue => ({
         id: issue.id.toString(),
-        username: issue.profiles
-          ? `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() || 'Usuario'
-          : 'Usuario',
+        username: `${issue.profiles.first_name || ''} ${issue.profiles.last_name || ''}`.trim() || 'Usuario',
         timestamp: new Date(issue.timestamp),
         message: issue.message,
         imageUrl: issue.issue_images?.[0]?.image_url || undefined,
