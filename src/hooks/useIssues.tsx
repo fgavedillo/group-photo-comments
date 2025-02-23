@@ -8,11 +8,9 @@ export const useIssues = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const { toast } = useToast();
 
-  const formatUserName = (profiles: any) => {
-    if (!profiles) return "Sin asignar";
-    const firstName = profiles.first_name || '';
-    const lastName = profiles.last_name || '';
-    return firstName || lastName ? `${firstName} ${lastName}`.trim() : "Sin asignar";
+  const formatUserName = (firstName?: string | null, lastName?: string | null) => {
+    if (!firstName && !lastName) return "Sin asignar";
+    return `${firstName || ''} ${lastName || ''}`.trim();
   };
 
   const loadIssues = async () => {
@@ -24,18 +22,10 @@ export const useIssues = () => {
         return;
       }
 
+      console.log('Fetching issues from issue_details view...');
       const { data: issuesData, error: issuesError } = await supabase
-        .from('issues')
-        .select(`
-          *,
-          issue_images (
-            image_url
-          ),
-          profiles!user_id (
-            first_name,
-            last_name
-          )
-        `)
+        .from('issue_details')
+        .select('*')
         .order('timestamp', { ascending: false });
 
       if (issuesError) {
@@ -52,16 +42,17 @@ export const useIssues = () => {
 
       const formattedIssues: Issue[] = issuesData.map(issue => ({
         id: issue.id,
-        imageUrl: issue.issue_images?.[0]?.image_url || '',
+        imageUrl: issue.image_url || '',
         timestamp: new Date(issue.timestamp || ''),
-        username: formatUserName(issue.profiles),
+        username: formatUserName(issue.first_name, issue.last_name),
         message: issue.message,
         securityImprovement: issue.security_improvement || undefined,
         actionPlan: issue.action_plan || undefined,
         status: (issue.status as Issue['status']) || 'en-estudio',
         assignedEmail: issue.assigned_email || undefined,
         area: issue.area || undefined,
-        responsable: issue.responsable || undefined
+        responsable: issue.responsable || undefined,
+        user_id: issue.user_id
       }));
 
       setIssues(formattedIssues);

@@ -33,6 +33,13 @@ export type Database = {
             foreignKeyName: "issue_images_issue_id_fkey"
             columns: ["issue_id"]
             isOneToOne: false
+            referencedRelation: "issue_details"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "issue_images_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
             referencedRelation: "issues"
             referencedColumns: ["id"]
           },
@@ -130,7 +137,26 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      issue_details: {
+        Row: {
+          action_plan: string | null
+          area: string | null
+          assigned_email: string | null
+          first_name: string | null
+          id: number | null
+          image_url: string | null
+          last_name: string | null
+          message: string | null
+          responsable: string | null
+          security_improvement: string | null
+          status: string | null
+          timestamp: string | null
+          url_key: string | null
+          user_id: string | null
+          username: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {

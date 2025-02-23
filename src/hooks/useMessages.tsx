@@ -4,24 +4,6 @@ import { Message } from "@/components/MessageList";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
-interface IssueWithProfile {
-  id: number;
-  message: string;
-  timestamp: string;
-  status: string;
-  area: string | null;
-  responsable: string | null;
-  security_improvement: string | null;
-  action_plan: string | null;
-  assigned_email: string | null;
-  user_id: string;
-  issue_images: { image_url: string }[] | null;
-  profiles: {
-    first_name: string | null;
-    last_name: string | null;
-  };
-}
-
 export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
@@ -31,26 +13,8 @@ export const useMessages = () => {
       console.log('Iniciando carga de mensajes...');
       
       const { data: issuesData, error: issuesError } = await supabase
-        .from('issues')
-        .select(`
-          id,
-          message,
-          timestamp,
-          status,
-          area,
-          responsable,
-          security_improvement,
-          action_plan,
-          assigned_email,
-          user_id,
-          issue_images (
-            image_url
-          ),
-          profiles:user_id (
-            first_name,
-            last_name
-          )
-        `)
+        .from('issue_details')
+        .select('*')
         .order('timestamp', { ascending: true });
 
       if (issuesError) {
@@ -65,12 +29,12 @@ export const useMessages = () => {
 
       console.log('Mensajes cargados:', issuesData);
 
-      const formattedMessages = (issuesData as unknown as IssueWithProfile[]).map(issue => ({
+      const formattedMessages = issuesData.map(issue => ({
         id: issue.id.toString(),
-        username: `${issue.profiles?.first_name || ''} ${issue.profiles?.last_name || ''}`.trim() || 'Usuario',
+        username: `${issue.first_name || ''} ${issue.last_name || ''}`.trim() || 'Usuario',
         timestamp: new Date(issue.timestamp),
         message: issue.message,
-        imageUrl: issue.issue_images?.[0]?.image_url || undefined,
+        imageUrl: issue.image_url || undefined,
         status: issue.status,
         area: issue.area,
         responsable: issue.responsable,
