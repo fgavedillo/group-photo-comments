@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Message } from "@/components/MessageList";
+import { Message } from "@/types/message";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
