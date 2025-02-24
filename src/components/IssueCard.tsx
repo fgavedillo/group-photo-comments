@@ -75,6 +75,50 @@ const IssueCard = ({
     }
   }, [isEditing]);
 
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsUpdating(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('issues')
+        .update({
+          status: formState.status,
+          area: formState.area,
+          responsable: formState.responsable,
+          assigned_email: formState.assigned_email,
+          security_improvement: formState.security_improvement,
+          action_plan: formState.action_plan
+        })
+        .eq('id', message.id)
+        .select();
+
+      if (error) throw error;
+
+      // Actualizar el estado local inmediatamente
+      onStatusChange(message.id, formState.status);
+      onAreaChange(message.id, formState.area);
+      onResponsableChange(message.id, formState.responsable);
+      onAssignedEmailChange(message.id, formState.assigned_email);
+
+      toast({
+        title: "Cambios guardados",
+        description: "Los cambios se han guardado correctamente",
+      });
+
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      console.error('Error updating issue:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron guardar los cambios",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       console.log('Attempting to delete issue:', message.id);
@@ -100,49 +144,6 @@ const IssueCard = ({
         description: "No se pudo eliminar la incidencia",
         variant: "destructive",
       });
-    }
-  };
-
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsUpdating(true);
-
-    try {
-      const { data, error } = await supabase
-        .from('issues')
-        .update({
-          status: formState.status,
-          area: formState.area,
-          responsable: formState.responsable,
-          assigned_email: formState.assigned_email,
-          security_improvement: formState.security_improvement,
-          action_plan: formState.action_plan
-        })
-        .eq('id', message.id)
-        .select();
-
-      if (error) throw error;
-
-      onStatusChange(message.id, formState.status);
-      onAreaChange(message.id, formState.area);
-      onResponsableChange(message.id, formState.responsable);
-      onAssignedEmailChange(message.id, formState.assigned_email);
-
-      toast({
-        title: "Cambios guardados",
-        description: "Los cambios se han guardado correctamente",
-      });
-
-      setIsEditDialogOpen(false);
-    } catch (error) {
-      console.error('Error updating issue:', error);
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar los cambios",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUpdating(false);
     }
   };
 

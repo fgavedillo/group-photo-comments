@@ -12,9 +12,17 @@ export const useMessages = () => {
     try {
       console.log('Iniciando carga de mensajes...');
       
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const { data: issuesData, error: issuesError } = await supabase
         .from('issue_details')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            first_name,
+            last_name
+          )
+        `)
         .order('timestamp', { ascending: true });
 
       if (issuesError) {
@@ -31,7 +39,7 @@ export const useMessages = () => {
 
       const formattedMessages = issuesData.map(issue => ({
         id: issue.id.toString(),
-        username: `${issue.first_name || ''} ${issue.last_name || ''}`.trim() || 'Usuario',
+        username: `${issue.profiles?.first_name || ''} ${issue.profiles?.last_name || ''}`.trim() || 'Usuario',
         timestamp: new Date(issue.timestamp),
         message: issue.message,
         imageUrl: issue.image_url || undefined,
@@ -40,7 +48,8 @@ export const useMessages = () => {
         responsable: issue.responsable,
         securityImprovement: issue.security_improvement,
         actionPlan: issue.action_plan,
-        assignedEmail: issue.assigned_email
+        assignedEmail: issue.assigned_email,
+        userId: issue.user_id
       }));
 
       setMessages(formattedMessages);
@@ -57,6 +66,7 @@ export const useMessages = () => {
   useEffect(() => {
     loadMessages();
 
+    // Configurar suscripción a cambios en tiempo real
     const channel = supabase
       .channel('issues-changes')
       .on(
@@ -66,8 +76,8 @@ export const useMessages = () => {
           schema: 'public',
           table: 'issues'
         },
-        () => {
-          console.log('Cambios detectados en la tabla issues, recargando...');
+        (payload) => {
+          console.log('Cambio detectado:', payload);
           loadMessages();
         }
       )
