@@ -3,6 +3,7 @@ import { useState, useRef, useCallback } from "react";
 import { ImagePlus, Send } from "lucide-react";
 import { pixelateFaces } from "@/utils/facePixelation";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabase";
 
 interface MessageInputProps {
   onSend: (message: string, image?: File) => void;
@@ -65,10 +66,37 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
     }
   }, [toast]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() || selectedImage) {
-      onSend(message, selectedImage || undefined);
+      let imageUrl;
+      if (selectedImage) {
+        const timestamp = Date.now();
+        const fileExt = selectedImage.name.split('.').pop();
+        const fileName = `${timestamp}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('images')
+          .upload(fileName, selectedImage);
+
+        if (uploadError) {
+          console.error('Error uploading image:', uploadError);
+          toast({
+            title: "Error",
+            description: "No se pudo subir la imagen",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('images')
+          .getPublicUrl(fileName);
+
+        imageUrl = publicUrl;
+      }
+
+      onSend(message, selectedImage);
       setMessage("");
       setImagePreview(null);
       setSelectedImage(null);
