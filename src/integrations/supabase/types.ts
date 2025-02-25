@@ -153,6 +153,7 @@ export type Database = {
           timestamp: string | null
           url_key: string | null
           user_id: string | null
+          username: string | null
         }
         Relationships: []
       }
