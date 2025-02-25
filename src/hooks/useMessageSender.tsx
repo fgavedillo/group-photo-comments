@@ -25,12 +25,15 @@ export const useMessageSender = (onMessageSent: () => void) => {
         
         const timestamp = Date.now();
         const fileExt = image.name.split('.').pop();
-        const safeFileName = `${timestamp}-${session.user.id}.${fileExt}`;
+        const fileName = `${timestamp}-${session.user.id}${fileExt ? `.${fileExt}` : ''}`;
         
         // Subir la imagen al bucket
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('images')
-          .upload(safeFileName, image);
+          .upload(fileName, image, {
+            cacheControl: '3600',
+            contentType: image.type
+          });
 
         if (uploadError) {
           console.error("Image upload error:", uploadError);
@@ -40,7 +43,7 @@ export const useMessageSender = (onMessageSent: () => void) => {
         // Obtener la URL pública de la imagen
         const { data: { publicUrl } } = supabase.storage
           .from('images')
-          .getPublicUrl(safeFileName);
+          .getPublicUrl(fileName);
 
         imageUrl = publicUrl;
         console.log("Image uploaded successfully", { publicUrl });

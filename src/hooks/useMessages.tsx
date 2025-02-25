@@ -58,9 +58,9 @@ export const useMessages = () => {
   useEffect(() => {
     loadMessages();
 
-    // Configurar suscripción a cambios en tiempo real
+    // Configurar suscripción a cambios en tiempo real para todas las tablas relevantes
     const channel = supabase
-      .channel('issues-changes')
+      .channel('table-changes')
       .on(
         'postgres_changes',
         {
@@ -69,7 +69,19 @@ export const useMessages = () => {
           table: 'issues'
         },
         (payload) => {
-          console.log('Cambio detectado:', payload);
+          console.log('Cambio detectado en issues:', payload);
+          loadMessages();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issue_images'
+        },
+        (payload) => {
+          console.log('Cambio detectado en issue_images:', payload);
           loadMessages();
         }
       )
