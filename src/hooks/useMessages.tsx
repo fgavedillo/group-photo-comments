@@ -12,18 +12,10 @@ export const useMessages = () => {
     try {
       console.log('Iniciando carga de mensajes...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      
       const { data: issuesData, error: issuesError } = await supabase
         .from('issue_details')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name
-          )
-        `)
-        .order('timestamp', { ascending: true });
+        .select('*')
+        .order('timestamp', { ascending: false });
 
       if (issuesError) {
         console.error('Error al cargar mensajes:', issuesError);
@@ -39,17 +31,17 @@ export const useMessages = () => {
 
       const formattedMessages = issuesData.map(issue => ({
         id: issue.id.toString(),
-        username: `${issue.profiles?.first_name || ''} ${issue.profiles?.last_name || ''}`.trim() || 'Usuario',
-        timestamp: new Date(issue.timestamp),
-        message: issue.message,
+        username: issue.username || 'Usuario',
+        timestamp: new Date(issue.timestamp || Date.now()),
+        message: issue.message || '',
         imageUrl: issue.image_url || undefined,
-        status: issue.status,
-        area: issue.area,
-        responsable: issue.responsable,
-        securityImprovement: issue.security_improvement,
-        actionPlan: issue.action_plan,
-        assignedEmail: issue.assigned_email,
-        userId: issue.user_id
+        status: issue.status || 'en-estudio',
+        area: issue.area || undefined,
+        responsable: issue.responsable || undefined,
+        securityImprovement: issue.security_improvement || undefined,
+        actionPlan: issue.action_plan || undefined,
+        assignedEmail: issue.assigned_email || undefined,
+        userId: issue.user_id || undefined
       }));
 
       setMessages(formattedMessages);

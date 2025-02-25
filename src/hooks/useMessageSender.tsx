@@ -17,23 +17,10 @@ export const useMessageSender = (onMessageSent: () => void) => {
         throw new Error("No hay sesión activa");
       }
 
-      // Primero creamos la incidencia
-      const { data: issue, error: issueError } = await supabase
-        .from('issues')
-        .insert({
-          message,
-          user_id: session.user.id
-        })
-        .select()
-        .single();
-
-      if (issueError) {
-        console.error("Issue creation error:", issueError);
-        throw new Error(`Error al crear la incidencia: ${issueError.message}`);
-      }
-
-      // Si hay una imagen, la subimos y creamos el registro en issue_images
-      if (image && issue) {
+      // Primero subimos la imagen si existe
+      let imageUrl: string | undefined;
+      
+      if (image) {
         console.log("Processing image upload", { fileName: image.name });
         
         const timestamp = Date.now();
@@ -43,11 +30,7 @@ export const useMessageSender = (onMessageSent: () => void) => {
         // Subir la imagen al bucket
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('images')
-          .upload(safeFileName, image, {
-            cacheControl: '3600',
-            contentType: image.type,
-            upsert: false
-          });
+          .upload(safeFileName, image);
 
         if (uploadError) {
           console.error("Image upload error:", uploadError);
@@ -59,11 +42,32 @@ export const useMessageSender = (onMessageSent: () => void) => {
           .from('images')
           .getPublicUrl(safeFileName);
 
-        // Crear el registro en issue_images
+        imageUrl = publicUrl;
+        console.log("Image uploaded successfully", { publicUrl });
+      }
+
+      // Luego creamos la incidencia
+      const { data: issue, error: issueError } = await supabase
+        .from('issues')
+        .insert({
+          message,
+          user_id: session.user.id,
+          status: 'en-estudio'
+        })
+        .select()
+        .single();
+
+      if (issueError) {
+        console.error("Issue creation error:", issueError);
+        throw new Error(`Error al crear la incidencia: ${issueError.message}`);
+      }
+
+      // Si tenemos una imagen, creamos el registro en issue_images
+      if (imageUrl && issue) {
         const { error: imageRecordError } = await supabase
           .from('issue_images')
           .insert({
-            image_url: publicUrl,
+            image_url: imageUrl,
             issue_id: issue.id
           });
 
@@ -72,7 +76,7 @@ export const useMessageSender = (onMessageSent: () => void) => {
           throw new Error(`Error al registrar la imagen: ${imageRecordError.message}`);
         }
 
-        console.log("Image processed and saved successfully", { publicUrl });
+        console.log("Image record created successfully");
       }
 
       onMessageSent();
