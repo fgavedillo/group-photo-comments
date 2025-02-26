@@ -66,6 +66,7 @@ export const useIssues = () => {
     }
   };
 
+  // Suscripción a cambios en tiempo real
   useEffect(() => {
     loadIssues();
 
@@ -80,6 +81,7 @@ export const useIssues = () => {
         },
         (payload) => {
           console.log('Received realtime update:', payload);
+          // Recargar inmediatamente cuando hay cambios
           loadIssues();
         }
       )

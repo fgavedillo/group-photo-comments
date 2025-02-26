@@ -11,18 +11,17 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
   const handleStatusChange = async (issueId: number, status: Issue['status']) => {
     try {
       console.log('Updating status:', { issueId, status });
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('issues')
         .update({ status })
-        .eq('id', issueId)
-        .select();
+        .eq('id', issueId);
 
       if (error) {
-        console.error('Error updating status:', error);
         throw error;
       }
 
-      console.log('Status updated successfully:', data);
+      // Recargar las incidencias después de actualizar
+      await loadIssues();
       
       toast({
         title: "Estado actualizado",
@@ -33,6 +32,44 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
       toast({
         title: "Error",
         description: "No se pudo actualizar el estado",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAreaChange = async (issueId: number, area: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ area })
+        .eq('id', issueId);
+
+      if (error) throw error;
+      await loadIssues();
+    } catch (error) {
+      console.error('Error updating area:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el área",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleResponsableChange = async (issueId: number, responsable: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ responsable })
+        .eq('id', issueId);
+
+      if (error) throw error;
+      await loadIssues();
+    } catch (error) {
+      console.error('Error updating responsable:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el responsable",
         variant: "destructive"
       });
     }
@@ -56,28 +93,17 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
 
   const handleAddSecurityImprovement = async (issueId: number) => {
     try {
-      console.log('Adding security improvement:', { 
-        issueId, 
-        security_improvement: securityImprovements[issueId],
-        action_plan: actionPlans[issueId]
-      });
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('issues')
         .update({
           security_improvement: securityImprovements[issueId] || '',
           action_plan: actionPlans[issueId] || '',
           status: "en-curso"
         })
-        .eq('id', issueId)
-        .select();
+        .eq('id', issueId);
 
-      if (error) {
-        console.error('Error adding security improvement:', error);
-        throw error;
-      }
-
-      console.log('Security improvement added successfully:', data);
+      if (error) throw error;
+      await loadIssues();
       
       toast({
         title: "Situación actualizada",
@@ -93,84 +119,34 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     }
   };
 
+  const handleAssignedEmailChange = async (issueId: number, email: string) => {
+    try {
+      const { error } = await supabase
+        .from('issues')
+        .update({ assigned_email: email })
+        .eq('id', issueId);
+
+      if (error) throw error;
+      await loadIssues();
+    } catch (error) {
+      console.error('Error updating assigned email:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el correo asignado",
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     securityImprovements,
     actionPlans,
     handleStatusChange,
+    handleAreaChange,
+    handleResponsableChange,
     handleSecurityImprovementChange,
     handleActionPlanChange,
     handleAddSecurityImprovement,
-    handleAreaChange: async (issueId: number, area: string) => {
-      try {
-        console.log('Updating area:', { issueId, area });
-        const { data, error } = await supabase
-          .from('issues')
-          .update({ area })
-          .eq('id', issueId)
-          .select();
-
-        if (error) {
-          console.error('Error updating area:', error);
-          throw error;
-        }
-
-        console.log('Area updated successfully:', data);
-      } catch (error) {
-        console.error('Error updating area:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo actualizar el área",
-          variant: "destructive"
-        });
-      }
-    },
-    handleResponsableChange: async (issueId: number, responsable: string) => {
-      try {
-        console.log('Updating responsable:', { issueId, responsable });
-        const { data, error } = await supabase
-          .from('issues')
-          .update({ responsable })
-          .eq('id', issueId)
-          .select();
-
-        if (error) {
-          console.error('Error updating responsable:', error);
-          throw error;
-        }
-
-        console.log('Responsable updated successfully:', data);
-      } catch (error) {
-        console.error('Error updating responsable:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo actualizar el responsable",
-          variant: "destructive"
-        });
-      }
-    },
-    handleAssignedEmailChange: async (issueId: number, email: string) => {
-      try {
-        console.log('Updating assigned email:', { issueId, email });
-        const { data, error } = await supabase
-          .from('issues')
-          .update({ assigned_email: email })
-          .eq('id', issueId)
-          .select();
-
-        if (error) {
-          console.error('Error updating assigned email:', error);
-          throw error;
-        }
-
-        console.log('Assigned email updated successfully:', data);
-      } catch (error) {
-        console.error('Error updating assigned email:', error);
-        toast({
-          title: "Error",
-          description: "No se pudo actualizar el correo asignado",
-          variant: "destructive"
-        });
-      }
-    }
+    handleAssignedEmailChange,
   };
 };

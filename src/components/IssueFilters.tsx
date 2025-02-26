@@ -1,3 +1,4 @@
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,9 +69,12 @@ export const IssueFilters = ({
         <label className="text-sm font-medium">Filtrar por responsable:</label>
         <Input
           type="text"
-          placeholder="Buscar por nombre del responsable"
+          placeholder="Buscar por nombre o correo del responsable"
           value={responsableFilter}
-          onChange={(e) => onResponsableFilterChange(e.target.value)}
+          onChange={(e) => {
+            console.log('Filtrando por responsable:', e.target.value);
+            onResponsableFilterChange(e.target.value);
+          }}
           className="w-full"
         />
       </div>
