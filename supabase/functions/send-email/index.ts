@@ -16,10 +16,20 @@ serve(async (req) => {
   try {
     const { to, subject, content, attachments } = await req.json();
     
-    console.log("Received email request:", { to, subject, contentLength: content?.length });
+    console.log("Received email request:", { 
+      to, 
+      subject, 
+      contentLength: content?.length,
+      gmailPassword: !!Deno.env.get("GMAIL_APP_PASSWORD")
+    });
 
     if (!to || !subject || !content) {
       throw new Error("Missing required fields: to, subject, or content");
+    }
+
+    const gmailPassword = Deno.env.get("GMAIL_APP_PASSWORD");
+    if (!gmailPassword) {
+      throw new Error("Gmail password not configured");
     }
 
     const client = new SMTPClient({
@@ -29,17 +39,17 @@ serve(async (req) => {
         tls: true,
         auth: {
           username: "prevencionlingotes@gmail.com",
-          password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
+          password: gmailPassword,
         },
       },
     });
 
-    console.log("Attempting to send email...");
+    console.log("SMTP client configured, attempting to send email...");
 
     const emailResponse = await client.send({
       from: "Sistema de Incidencias <prevencionlingotes@gmail.com>",
       to: [to],
-      subject: `Sistema de Incidencias: ${subject}`,
+      subject: subject,
       html: content,
       attachments,
     });
@@ -48,7 +58,7 @@ serve(async (req) => {
 
     console.log("Email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify(emailResponse), {
+    return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -58,7 +68,11 @@ serve(async (req) => {
   } catch (error: any) {
     console.error("Error in send-email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack,
+        details: "Error sending email"
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

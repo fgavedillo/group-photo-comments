@@ -15,21 +15,28 @@ interface Attachment {
 
 export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[]) => {
   try {
-    console.log("Attempting to send email via Supabase function:", { to, subject });
+    console.log("Attempting to send email via Supabase function:", { 
+      to, 
+      subject,
+      contentLength: content?.length
+    });
     
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: { 
         to, 
         subject, 
         content, 
-        attachments,
-        from: "prevencionlingotes@gmail.com"
+        attachments
       }
     });
 
     if (error) {
       console.error("Supabase function error:", error);
       throw error;
+    }
+
+    if (!data) {
+      throw new Error("No response received from email function");
     }
 
     console.log("Email sent successfully:", data);
