@@ -1,21 +1,13 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import nodemailer from "npm:nodemailer";
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'prevencionlingotes@gmail.com',
-    pass: Deno.env.get("GMAIL_APP_PASSWORD"),
-  },
-});
-
-serve(async (req: Request) => {
+serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -30,13 +22,29 @@ serve(async (req: Request) => {
       throw new Error("Missing required fields: to, subject, or content");
     }
 
-    const emailResponse = await transporter.sendMail({
+    const client = new SMTPClient({
+      connection: {
+        hostname: "smtp.gmail.com",
+        port: 465,
+        tls: true,
+        auth: {
+          username: "prevencionlingotes@gmail.com",
+          password: Deno.env.get("GMAIL_APP_PASSWORD") || "",
+        },
+      },
+    });
+
+    console.log("Attempting to send email...");
+
+    const emailResponse = await client.send({
       from: "Sistema de Incidencias <prevencionlingotes@gmail.com>",
       to: [to],
       subject: `Sistema de Incidencias: ${subject}`,
       html: content,
-      attachments
+      attachments,
     });
+
+    await client.close();
 
     console.log("Email sent successfully:", emailResponse);
 
