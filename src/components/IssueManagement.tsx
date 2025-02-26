@@ -31,6 +31,7 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const [filteredMessages, setFilteredMessages] = useState<any[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [editingIssueId, setEditingIssueId] = useState<number | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const issueId = searchParams.get('issue_id');
@@ -55,15 +56,21 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     }
   }, [searchParams, messages]);
 
+  // Obtener el rol del usuario y su email
   useEffect(() => {
     const checkUserRole = async () => {
       try {
-        const { data, error } = await supabase.rpc('has_role', {
-          _role: 'admin'
-        });
+        const [roleResponse, userResponse] = await Promise.all([
+          supabase.rpc('has_role', { _role: 'admin' }),
+          supabase.auth.getUser()
+        ]);
         
-        if (error) throw error;
-        setIsAdmin(!!data);
+        if (roleResponse.error) throw roleResponse.error;
+        setIsAdmin(!!roleResponse.data);
+
+        if (userResponse.data?.user) {
+          setCurrentUserEmail(userResponse.data.user.email);
+        }
       } catch (error) {
         console.error('Error checking user role:', error);
         setIsAdmin(false);
@@ -73,47 +80,82 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     checkUserRole();
   }, []);
 
+  // Configurar suscripción a cambios en tiempo real
+  useEffect(() => {
+    const channel = supabase
+      .channel('issues-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues'
+        },
+        (payload) => {
+          console.log('Cambio detectado en issues:', payload);
+          loadIssues();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Estado de la suscripción a cambios en tiempo real:', status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadIssues]);
+
+  // Filtrar mensajes
   useEffect(() => {
     const filterAndSetMessages = async () => {
       if (!messages || !Array.isArray(messages)) {
-        console.log('No messages or invalid messages format');
+        console.log('No hay mensajes o formato inválido');
         setFilteredMessages([]);
         return;
       }
 
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
+        console.log('Filtrando mensajes:', {
+          totalMessages: messages.length,
+          selectedStates,
+          responsableFilter,
+          isAdmin,
+          currentUserEmail
+        });
+
         const filtered = messages.filter(message => {
           if (!message) return false;
           
           const status = message.status || 'en-estudio';
           const statusMatch = selectedStates.includes(status);
+          
           const responsableMatch = !responsableFilter || 
             (message.responsable && 
              message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
           
-          // If user is not admin, only show messages they're responsible for
-          if (!isAdmin && message.responsable && user?.email) {
-            return statusMatch && responsableMatch && message.responsable.toLowerCase() === user.email.toLowerCase();
+          // Si no es admin, solo mostrar mensajes asignados al usuario
+          if (!isAdmin && currentUserEmail) {
+            return statusMatch && 
+                   (message.responsable?.toLowerCase() === currentUserEmail.toLowerCase() ||
+                    message.assignedEmail?.toLowerCase() === currentUserEmail.toLowerCase());
           }
           
           return statusMatch && responsableMatch;
         });
 
-        console.log('Filtered messages:', filtered);
+        console.log('Mensajes filtrados:', filtered.length);
         setFilteredMessages(filtered);
       } catch (error) {
-        console.error('Error filtering messages:', error);
+        console.error('Error filtrando mensajes:', error);
         setFilteredMessages([]);
       }
     };
 
     filterAndSetMessages();
-  }, [messages, selectedStates, responsableFilter, isAdmin]);
+  }, [messages, selectedStates, responsableFilter, isAdmin, currentUserEmail]);
 
   const handleStateToggle = (state: string) => {
-    console.log('Toggling state:', state);
+    console.log('Cambiando estado:', state);
     setSelectedStates(prev => {
       if (prev.includes(state)) {
         if (prev.length === 1) return prev;

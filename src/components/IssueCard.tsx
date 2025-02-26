@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Issue } from "@/types/issue";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,11 +76,25 @@ const IssueCard = ({
     }
   }, [isEditing]);
 
+  // Actualizar el estado del formulario cuando cambia el mensaje
+  useEffect(() => {
+    setFormState({
+      status: message.status,
+      area: message.area || "",
+      responsable: message.responsable || "",
+      assigned_email: message.assignedEmail || "",
+      security_improvement: message.securityImprovement || "",
+      action_plan: message.actionPlan || ""
+    });
+  }, [message]);
+
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUpdating(true);
 
     try {
+      console.log('Actualizando incidencia:', { id: message.id, formState });
+      
       const { data, error } = await supabase
         .from('issues')
         .update({
@@ -95,10 +110,13 @@ const IssueCard = ({
 
       if (error) throw error;
 
+      // Actualizar el estado local inmediatamente
       onStatusChange(message.id, formState.status);
       onAreaChange(message.id, formState.area);
       onResponsableChange(message.id, formState.responsable);
       onAssignedEmailChange(message.id, formState.assigned_email);
+      onSecurityImprovementChange(message.id, formState.security_improvement);
+      onActionPlanChange(message.id, formState.action_plan);
 
       toast({
         title: "Cambios guardados",
