@@ -81,11 +81,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
         return;
       }
 
-      console.log('Current groupBy:', groupBy);
-      console.log('Selected states:', selectedStates);
-      console.log('Responsable filter:', responsableFilter);
-      console.log('All messages:', messages);
-
       try {
         const { data: { user } } = await supabase.auth.getUser();
         
@@ -97,8 +92,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
           const responsableMatch = !responsableFilter || 
             (message.responsable && 
              message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
-          
-          console.log(`Message ${message.id} - Status: ${status}, Status Match: ${statusMatch}, Responsable Match: ${responsableMatch}`);
           
           // If user is not admin, only show messages they're responsible for
           if (!isAdmin && message.responsable && user?.email) {
@@ -119,28 +112,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
     filterAndSetMessages();
   }, [messages, selectedStates, responsableFilter, isAdmin]);
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('issues-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'issues'
-        },
-        () => {
-          console.log('Issues table changed, refreshing data...');
-          loadIssues();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [loadIssues]);
-
   const handleStateToggle = (state: string) => {
     console.log('Toggling state:', state);
     setSelectedStates(prev => {
@@ -153,7 +124,6 @@ export const IssueManagement = ({ messages }: { messages: any[] }) => {
   };
 
   const groupedDates = getGroupedDates(filteredMessages, groupBy);
-  console.log('Grouped dates:', groupedDates);
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">

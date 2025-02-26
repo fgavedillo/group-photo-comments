@@ -95,7 +95,6 @@ const IssueCard = ({
 
       if (error) throw error;
 
-      // Actualizar el estado local inmediatamente
       onStatusChange(message.id, formState.status);
       onAreaChange(message.id, formState.area);
       onResponsableChange(message.id, formState.responsable);
