@@ -3,6 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
 
 interface IssueFiltersProps {
   groupBy: 'day' | 'week' | 'month';
@@ -28,6 +29,16 @@ export const IssueFilters = ({
   onStateToggle,
   onResponsableFilterChange
 }: IssueFiltersProps) => {
+  
+  // Depuración para verificar que los props están llegando correctamente
+  useEffect(() => {
+    console.log('IssueFilters - props:', {
+      groupBy,
+      selectedStates,
+      responsableFilter
+    });
+  }, [groupBy, selectedStates, responsableFilter]);
+
   return (
     <div className="flex flex-col gap-4 p-4 bg-white shadow-sm rounded-lg">
       <div className="space-y-2">
@@ -72,8 +83,9 @@ export const IssueFilters = ({
           placeholder="Buscar por nombre o correo del responsable"
           value={responsableFilter}
           onChange={(e) => {
-            console.log('Filtrando por responsable:', e.target.value);
-            onResponsableFilterChange(e.target.value);
+            const newValue = e.target.value;
+            console.log('Cambiando filtro de responsable a:', newValue);
+            onResponsableFilterChange(newValue);
           }}
           className="w-full"
         />

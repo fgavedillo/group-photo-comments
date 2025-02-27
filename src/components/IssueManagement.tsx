@@ -7,6 +7,7 @@ import { IssueGroupedView } from "./issues/IssueGroupedView";
 import { useIssueFiltering } from "./issues/useIssueFiltering";
 import { useEditingIssue } from "./issues/useEditingIssue";
 import { useRealTimeUpdates } from "./issues/useRealTimeUpdates";
+import { useEffect } from "react";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const { loadIssues } = useIssues();
@@ -48,6 +49,11 @@ const IssueManagementContent = ({
     filteredMessages,
     handleStateToggle
   } = useIssueFiltering(messages);
+  
+  // Monitorizar el estado del filtro
+  useEffect(() => {
+    console.log('IssueManagement - Estado del filtro de responsable:', responsableFilter);
+  }, [responsableFilter]);
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
@@ -57,7 +63,10 @@ const IssueManagementContent = ({
         responsableFilter={responsableFilter}
         onGroupByChange={setGroupBy}
         onStateToggle={handleStateToggle}
-        onResponsableFilterChange={setResponsableFilter}
+        onResponsableFilterChange={(value) => {
+          console.log('IssueManagement - Cambiando filtro de responsable a:', value);
+          setResponsableFilter(value);
+        }}
       />
       
       <IssueGroupedView
