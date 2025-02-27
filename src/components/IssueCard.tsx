@@ -61,6 +61,7 @@ const IssueCard = ({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(isEditing);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [localMessage, setLocalMessage] = useState(message);
   const [formState, setFormState] = useState({
     status: message.status,
     area: message.area || "",
@@ -76,8 +77,9 @@ const IssueCard = ({
     }
   }, [isEditing]);
 
-  // Actualizar el estado del formulario cuando cambia el mensaje
+  // Actualizar el estado local cuando cambia el mensaje externo
   useEffect(() => {
+    setLocalMessage(message);
     setFormState({
       status: message.status,
       area: message.area || "",
@@ -110,7 +112,18 @@ const IssueCard = ({
 
       if (error) throw error;
 
-      // Actualizar el estado local inmediatamente
+      // Actualizar el estado local inmediatamente para reflejar los cambios
+      setLocalMessage(prev => ({
+        ...prev,
+        status: formState.status,
+        area: formState.area,
+        responsable: formState.responsable,
+        assignedEmail: formState.assigned_email,
+        securityImprovement: formState.security_improvement,
+        actionPlan: formState.action_plan
+      }));
+
+      // Notificar a los componentes padre
       onStatusChange(message.id, formState.status);
       onAreaChange(message.id, formState.area);
       onResponsableChange(message.id, formState.responsable);
@@ -169,10 +182,10 @@ const IssueCard = ({
   };
 
   return (
-    <Card className={cn("w-[350px] flex-shrink-0 relative border", getStatusColor(message.status))}>
+    <Card className={cn("w-[350px] flex-shrink-0 relative border", getStatusColor(localMessage.status))}>
       <IssueHeader
-        username={message.username}
-        timestamp={message.timestamp}
+        username={localMessage.username}
+        timestamp={localMessage.timestamp}
         isEditDialogOpen={isEditDialogOpen}
         onEditDialogChange={setIsEditDialogOpen}
         isDeleteDialogOpen={isDeleteDialogOpen}
@@ -189,8 +202,8 @@ const IssueCard = ({
       </IssueHeader>
 
       <IssueContent
-        message={message}
-        imageUrl={message.imageUrl}
+        message={localMessage}
+        imageUrl={localMessage.imageUrl}
         onAssignedEmailChange={onAssignedEmailChange}
       />
     </Card>
