@@ -80,7 +80,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
           </div>
           
           <div style="padding: 20px; text-align: center;">
-            <a href="${window.location.origin}/issues?issue_id=${message.id}&action=edit" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Ver en la Plataforma</a>
+            <a href="${window.location.origin}/issues" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Ver en la Plataforma</a>
           </div>
           
           <div style="padding: 15px; background-color: #f1f5f9; border-radius: 0 0 6px 6px; font-size: 12px; color: #64748b; text-align: center;">
