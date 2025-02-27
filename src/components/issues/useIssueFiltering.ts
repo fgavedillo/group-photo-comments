@@ -33,9 +33,12 @@ export const useIssueFiltering = (messages: any[]) => {
           const status = message.status || 'en-estudio';
           const statusMatch = selectedStates.includes(status);
           
+          // Mejora del filtro de responsables: comprueba también email asignado y es case-insensitive
           const responsableMatch = !responsableFilter || 
-            (message.responsable && 
-             message.responsable.toLowerCase().includes(responsableFilter.toLowerCase()));
+            (
+              (message.responsable && message.responsable.toLowerCase().includes(responsableFilter.toLowerCase())) ||
+              (message.assignedEmail && message.assignedEmail.toLowerCase().includes(responsableFilter.toLowerCase()))
+            );
           
           // Si no es admin, solo mostrar mensajes asignados al usuario
           if (!isAdmin && currentUserEmail) {
