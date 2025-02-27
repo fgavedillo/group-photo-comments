@@ -2,7 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Issue } from "@/types/issue";
 import { format } from "date-fns";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
 interface IssueTableProps {
@@ -11,9 +11,43 @@ interface IssueTableProps {
 }
 
 export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
+  // Ref para controlar las actualizaciones
+  const isUpdatingRef = useRef(false);
+  const pendingUpdateRef = useRef(false);
+
+  // Función para manejar actualizaciones con debounce
+  const handleUpdate = () => {
+    if (isUpdatingRef.current) {
+      // Si estamos actualizando, marcar que hay una actualización pendiente
+      pendingUpdateRef.current = true;
+      return;
+    }
+
+    // Marcar que estamos actualizando
+    isUpdatingRef.current = true;
+    
+    // Actualizar los datos
+    console.log('Actualizando tabla de incidencias...');
+    onIssuesUpdate();
+    
+    // Después de un tiempo, permitir nuevas actualizaciones
+    setTimeout(() => {
+      isUpdatingRef.current = false;
+      
+      // Si hay actualizaciones pendientes, procesarlas
+      if (pendingUpdateRef.current) {
+        pendingUpdateRef.current = false;
+        handleUpdate();
+      }
+    }, 300);
+  };
+
   useEffect(() => {
-    const channel = supabase
-      .channel('issues-changes')
+    console.log('Configurando suscripción a cambios en tiempo real para la tabla de incidencias');
+    
+    // Canal principal para escuchar cambios en la tabla issues
+    const issuesChannel = supabase
+      .channel('table-issues-changes')
       .on(
         'postgres_changes',
         {
@@ -21,15 +55,38 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
           schema: 'public',
           table: 'issues'
         },
-        () => {
-          console.log('Issues table changed, refreshing data...');
-          onIssuesUpdate();
+        (payload) => {
+          console.log('Cambio detectado en issues (tabla):', payload);
+          handleUpdate();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Estado de la suscripción a issues (tabla):', status);
+      });
+      
+    // Canal adicional para escuchar cambios en la tabla issue_images
+    const imagesChannel = supabase
+      .channel('table-issue-images-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issue_images'
+        },
+        (payload) => {
+          console.log('Cambio detectado en issue_images (tabla):', payload);
+          handleUpdate();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Estado de la suscripción a issue_images (tabla):', status);
+      });
 
+    // Limpieza al desmontar
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(issuesChannel);
+      supabase.removeChannel(imagesChannel);
     };
   }, [onIssuesUpdate]);
 
@@ -80,4 +137,3 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
     </div>
   );
 };
-
