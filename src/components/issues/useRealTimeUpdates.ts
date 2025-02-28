@@ -7,16 +7,28 @@ export const useRealTimeUpdates = (loadIssues: () => void) => {
   const isUpdatingRef = useRef(false);
   // Ref para rastrear si hay actualizaciones pendientes
   const pendingUpdateRef = useRef(false);
+  // Ref para rastrear el último timestamp de actualización
+  const lastUpdateRef = useRef(Date.now());
 
   // Función para manejar actualizaciones con debounce
   const handleUpdate = () => {
+    const now = Date.now();
+    
+    // Evitar actualizaciones demasiado frecuentes (al menos 300ms entre cada una)
+    if (now - lastUpdateRef.current < 300) {
+      // Si estamos actualizando muy rápido, marcar que hay una actualización pendiente
+      pendingUpdateRef.current = true;
+      return;
+    }
+
     if (isUpdatingRef.current) {
       // Si estamos actualizando, marcar que hay una actualización pendiente
       pendingUpdateRef.current = true;
       return;
     }
 
-    // Marcar que estamos actualizando
+    // Actualizar timestamp y marcar que estamos actualizando
+    lastUpdateRef.current = now;
     isUpdatingRef.current = true;
     
     // Cargar las incidencias

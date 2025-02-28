@@ -16,7 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
 const Dashboard = () => {
-  const { messages, loadMessages } = useMessages();
+  const { messages, loadMessages, isLoading } = useMessages();
   const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -95,7 +95,13 @@ const Dashboard = () => {
 
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
             <div className="flex-1 overflow-auto">
-              <MessageList messages={messages} onMessageDelete={loadMessages} />
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+                </div>
+              ) : (
+                <MessageList messages={messages} onMessageDelete={loadMessages} />
+              )}
             </div>
             <MessageInput onSend={handleSendMessage} />
           </TabsContent>

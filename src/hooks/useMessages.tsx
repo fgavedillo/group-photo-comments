@@ -1,16 +1,18 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Message } from "@/types/message";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     try {
       console.log('Iniciando carga de mensajes...');
+      setIsLoading(true);
       
       const { data: issuesData, error: issuesError } = await supabase
         .from('issue_details')
@@ -24,6 +26,7 @@ export const useMessages = () => {
 
       if (!issuesData) {
         console.log('No se encontraron mensajes');
+        setMessages([]);
         return;
       }
 
@@ -52,8 +55,10 @@ export const useMessages = () => {
         description: "No se pudieron cargar los mensajes",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     loadMessages();
@@ -92,7 +97,7 @@ export const useMessages = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [loadMessages]);
 
-  return { messages, loadMessages };
+  return { messages, loadMessages, isLoading };
 };
