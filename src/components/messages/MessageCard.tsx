@@ -4,8 +4,8 @@ import { Card } from "../ui/card";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useState } from "react";
-import { decodeQuotedPrintable } from "@/utils/stringUtils";
 import { ImageModal } from "../ImageModal";
+import { MessageContent } from "./MessageContent";
 
 interface MessageCardProps {
   message: Message;
@@ -13,39 +13,6 @@ interface MessageCardProps {
 
 export const MessageCard = ({ message }: MessageCardProps) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  const renderMessageContent = (content: string) => {
-    if (!content) return null;
-    
-    const decodedContent = decodeQuotedPrintable(content);
-    
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    
-    const parts = decodedContent.split(urlRegex);
-    
-    const urls = decodedContent.match(urlRegex) || [];
-    
-    return (
-      <>
-        {parts.map((part, index) => {
-          if (urls.includes(part)) {
-            return (
-              <a 
-                key={index} 
-                href={part} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-blue-600 hover:underline"
-              >
-                {part}
-              </a>
-            );
-          }
-          return <span key={index}>{part}</span>;
-        })}
-      </>
-    );
-  };
 
   return (
     <>
@@ -71,7 +38,9 @@ export const MessageCard = ({ message }: MessageCardProps) => {
               {message.status}
             </span>
           </div>
-          <p className="text-sm text-foreground">{renderMessageContent(message.message)}</p>
+          <p className="text-sm text-foreground">
+            <MessageContent content={message.message} />
+          </p>
           {message.imageUrl && (
             <div className="mt-2">
               <img 
