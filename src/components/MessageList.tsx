@@ -161,9 +161,10 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
                   alt="Imagen adjunta" 
                   className="max-w-xs rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                   onClick={() => setSelectedImage(message.imageUrl)}
-                  onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                  onError={(e) => {
                     console.error('Error loading image:', message.imageUrl);
-                    e.currentTarget.src = '/placeholder.svg';
+                    const imgElement = e.currentTarget as HTMLImageElement;
+                    imgElement.src = '/placeholder.svg';
                   }}
                 />
               </div>
