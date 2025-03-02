@@ -1,4 +1,3 @@
-
 import { Message } from "@/types/message";
 import { ImageModal } from "./ImageModal";
 import { useState, useRef, useEffect } from "react";
@@ -7,7 +6,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
-import { decodeQuotedPrintable } from "@/utils/stringUtils";
+import { decodeQuotedPrintable, linkifyText } from "@/utils/stringUtils";
 
 interface MessageListProps {
   messages: Message[];
@@ -20,15 +19,12 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
   const [newMessagesCount, setNewMessagesCount] = useState(0);
   const [prevMessagesLength, setPrevMessagesLength] = useState(messages.length);
   
-  // Refs para gestionar el scroll
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isManualScrollingRef = useRef(false);
   const initialLoadDoneRef = useRef(false);
   
-  // Función mejorada para desplazarse al final de los mensajes
   const scrollToBottom = () => {
-    // Usar doble requestAnimationFrame para asegurar que el DOM está completamente actualizado
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (containerRef.current) {
@@ -40,13 +36,10 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     });
   };
 
-  // Auto-scroll inicial cuando se cargan los mensajes por primera vez
   useEffect(() => {
-    // Solo si los mensajes existen y no se ha hecho el scroll inicial todavía
     if (messages.length > 0 && !initialLoadDoneRef.current) {
       initialLoadDoneRef.current = true;
       
-      // Usar un timeout para asegurar que todo el DOM está renderizado
       const timeoutId = setTimeout(() => {
         scrollToBottom();
       }, 100);
@@ -55,84 +48,63 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     }
   }, [messages]);
 
-  // Monitorear los cambios en los mensajes para auto-scroll
   useEffect(() => {
-    // Si tenemos nuevos mensajes
     if (messages.length > prevMessagesLength) {
-      // Determinar si el usuario está cerca del final
       const container = containerRef.current;
       if (container) {
         const { scrollTop, scrollHeight, clientHeight } = container;
-        // Determinar si estamos al final con una tolerancia de 20px
         const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 20;
         
         if (isNearBottom && !isManualScrollingRef.current) {
-          // Si está cerca del final, hacer auto-scroll
           scrollToBottom();
         } else {
-          // Si no está cerca del final, mostrar indicador de nuevos mensajes
           setNewMessagesCount((prev) => prev + (messages.length - prevMessagesLength));
           setShowScrollButton(true);
         }
       }
     }
     
-    // Actualizar la referencia de la longitud de mensajes
     setPrevMessagesLength(messages.length);
   }, [messages, prevMessagesLength]);
 
-  // Manejar el evento de scroll para mostrar/ocultar el botón de scroll
   const handleScroll = () => {
     const container = containerRef.current;
     if (container) {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      // Más preciso - considerar que estamos al final con una tolerancia de 5px
       const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 5;
       
-      // Marcar que el usuario está scrolleando manualmente
       isManualScrollingRef.current = true;
       
-      // Si está cerca del final, ocultar el botón
       if (isNearBottom) {
         setShowScrollButton(false);
         setNewMessagesCount(0);
       } else if (messages.length > 0) {
-        // Si no está cerca del final y hay mensajes, mostrar el botón
         setShowScrollButton(true);
       }
       
-      // Resetear el estado de scrolling después de un tiempo
       clearTimeout(isManualScrollingRef.current as unknown as number);
       const timeoutId = setTimeout(() => {
         isManualScrollingRef.current = false;
       }, 100);
       
-      // Almacenar el ID del timeout
       isManualScrollingRef.current = timeoutId as unknown as boolean;
     }
   };
 
-  // Función para renderizar el contenido del mensaje con enlaces clickeables
   const renderMessageContent = (content: string) => {
     if (!content) return null;
     
-    // Decodificar el contenido para eliminar caracteres como =20
     const decodedContent = decodeQuotedPrintable(content);
     
-    // Expresión regular para detectar URLs
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     
-    // Dividir el texto en partes: texto normal y URLs
     const parts = decodedContent.split(urlRegex);
     
-    // Encontrar todas las URLs en el texto
     const urls = decodedContent.match(urlRegex) || [];
     
-    // Combinar las partes con los enlaces
     return (
       <>
         {parts.map((part, index) => {
-          // Si la parte coincide con una URL, renderizarla como enlace
           if (urls.includes(part)) {
             return (
               <a 
@@ -146,7 +118,6 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
               </a>
             );
           }
-          // De lo contrario, renderizar como texto normal
           return <span key={index}>{part}</span>;
         })}
       </>
@@ -192,7 +163,7 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
                   onClick={() => setSelectedImage(message.imageUrl)}
                   onError={(e) => {
                     console.error('Error loading image:', message.imageUrl);
-                    e.currentTarget.src = '/placeholder.svg';
+                    (e.currentTarget as HTMLImageElement).src = '/placeholder.svg';
                   }}
                 />
               </div>
@@ -211,10 +182,8 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
         </Card>
       ))}
       
-      {/* Elemento invisible para scroll to bottom */}
       <div ref={messagesEndRef} />
       
-      {/* Botón para volver al final de los mensajes */}
       {showScrollButton && (
         <Button
           onClick={scrollToBottom}
