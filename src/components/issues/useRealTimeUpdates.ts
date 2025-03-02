@@ -31,19 +31,22 @@ export const useRealTimeUpdates = (loadIssues: () => void) => {
     lastUpdateRef.current = now;
     isUpdatingRef.current = true;
     
-    // Cargar las incidencias
-    loadIssues();
-    
-    // Después de un tiempo, permitir nuevas actualizaciones
-    setTimeout(() => {
-      isUpdatingRef.current = false;
+    // Usar requestAnimationFrame para asegurar que la UI esté lista
+    requestAnimationFrame(() => {
+      // Cargar las incidencias
+      loadIssues();
       
-      // Si hay actualizaciones pendientes, procesarlas
-      if (pendingUpdateRef.current) {
-        pendingUpdateRef.current = false;
-        handleUpdate();
-      }
-    }, 300);
+      // Después de un tiempo, permitir nuevas actualizaciones
+      setTimeout(() => {
+        isUpdatingRef.current = false;
+        
+        // Si hay actualizaciones pendientes, procesarlas
+        if (pendingUpdateRef.current) {
+          pendingUpdateRef.current = false;
+          handleUpdate();
+        }
+      }, 300);
+    });
   };
 
   // Configurar suscripción a cambios en tiempo real

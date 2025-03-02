@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
 import { IssueTable } from "@/components/IssueTable";
-import { ReportsManagement } from "@/components/ReportsManagement";
 import { useMessages } from "@/hooks/useMessages";
 import { useMessageSender } from "@/hooks/useMessageSender";
 import { Issue } from "@/types/issue";
@@ -46,30 +45,27 @@ const Dashboard = () => {
         </h1>
         <Button variant="outline" size="sm" onClick={handleLogout}>
           <LogOut className="h-4 w-4 mr-2" />
-          Cerrar Sesión
+          <span className="hidden sm:inline">Cerrar Sesión</span>
         </Button>
       </header>
 
       <Tabs defaultValue="perfil" className="flex-1">
-        <div className="sticky top-[4.5rem] bg-white z-40 border-b">
+        <div className="sticky top-[4.5rem] bg-white z-40 border-b overflow-x-auto">
           <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
-            <TabsTrigger value="perfil">
+            <TabsTrigger value="perfil" className="px-2 py-1.5 sm:px-3 sm:py-2">
               Perfil
             </TabsTrigger>
-            <TabsTrigger value="kpis">
+            <TabsTrigger value="kpis" className="px-2 py-1.5 sm:px-3 sm:py-2">
               Dashboard
             </TabsTrigger>
-            <TabsTrigger value="chat">
+            <TabsTrigger value="chat" className="px-2 py-1.5 sm:px-3 sm:py-2">
               Chat
             </TabsTrigger>
-            <TabsTrigger value="issues">
-              Gestión de Incidencias
+            <TabsTrigger value="issues" className="px-2 py-1.5 sm:px-3 sm:py-2">
+              Gestión
             </TabsTrigger>
-            <TabsTrigger value="table">
-              Tabla de Incidencias
-            </TabsTrigger>
-            <TabsTrigger value="reports">
-              Gestión de Reportes
+            <TabsTrigger value="table" className="px-2 py-1.5 sm:px-3 sm:py-2">
+              Tabla
             </TabsTrigger>
           </TabsList>
         </div>
@@ -112,10 +108,6 @@ const Dashboard = () => {
 
           <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col">
             <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
-          </TabsContent>
-          
-          <TabsContent value="reports" className="h-full m-0 data-[state=active]:flex flex-col">
-            <ReportsManagement />
           </TabsContent>
         </div>
       </Tabs>

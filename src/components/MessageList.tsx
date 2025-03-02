@@ -19,23 +19,26 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
   const [newMessagesCount, setNewMessagesCount] = useState(0);
   const [prevMessagesLength, setPrevMessagesLength] = useState(messages.length);
   
-  // Ref para el contenedor de mensajes
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  // Refs para gestionar el scroll
   const containerRef = useRef<HTMLDivElement>(null);
-  const isScrollingRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isManualScrollingRef = useRef(false);
   
-  // Función para desplazarse al final de los mensajes
+  // Función mejorada para desplazarse al final de los mensajes
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-      setShowScrollButton(false);
-      setNewMessagesCount(0);
-    }
+    // Usar requestAnimationFrame para asegurar que el DOM está actualizado
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTop = containerRef.current.scrollHeight;
+        setShowScrollButton(false);
+        setNewMessagesCount(0);
+      }
+    });
   };
 
-  // Auto-scroll cuando se cargan los mensajes inicialmente
+  // Auto-scroll inicial cuando se cargan los mensajes por primera vez
   useEffect(() => {
-    if (messages.length > 0 && !isScrollingRef.current) {
+    if (messages.length > 0 && !isManualScrollingRef.current) {
       scrollToBottom();
     }
   }, []);
@@ -48,14 +51,15 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
       const container = containerRef.current;
       if (container) {
         const { scrollTop, scrollHeight, clientHeight } = container;
-        const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+        // Determinar si estamos al final con una tolerancia de 50px
+        const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 50;
         
         if (isNearBottom) {
           // Si está cerca del final, hacer auto-scroll
           scrollToBottom();
         } else {
           // Si no está cerca del final, mostrar indicador de nuevos mensajes
-          setNewMessagesCount(messages.length - prevMessagesLength);
+          setNewMessagesCount((prev) => prev + (messages.length - prevMessagesLength));
           setShowScrollButton(true);
         }
       }
@@ -70,9 +74,10 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     const container = containerRef.current;
     if (container) {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+      const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 10;
       
-      isScrollingRef.current = true;
+      // Marcar que el usuario está scrolleando manualmente
+      isManualScrollingRef.current = true;
       
       // Si está cerca del final, ocultar el botón
       if (isNearBottom) {
@@ -84,9 +89,13 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
       }
       
       // Resetear el estado de scrolling después de un tiempo
-      setTimeout(() => {
-        isScrollingRef.current = false;
+      clearTimeout(isManualScrollingRef.current as unknown as number);
+      const timeoutId = setTimeout(() => {
+        isManualScrollingRef.current = false;
       }, 100);
+      
+      // Almacenar el ID del timeout
+      isManualScrollingRef.current = timeoutId as unknown as boolean;
     }
   };
 
@@ -101,7 +110,7 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-primary">{message.username}</span>
+                <span className="font-medium text-primary">{message.username || 'Usuario'}</span>
                 <span className="text-sm text-muted-foreground">
                   {format(new Date(message.timestamp), "dd 'de' MMMM 'a las' HH:mm", { locale: es })}
                 </span>
@@ -151,7 +160,7 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
       {showScrollButton && (
         <Button
           onClick={scrollToBottom}
-          className="fixed bottom-20 right-6 rounded-full shadow-md animate-bounce z-50 flex items-center gap-1 p-2"
+          className="fixed bottom-20 right-6 rounded-full shadow-lg animate-bounce z-50 flex items-center gap-1 p-2"
           size="sm"
           variant="secondary"
         >

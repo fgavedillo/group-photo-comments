@@ -10,6 +10,7 @@ import Issues from "./pages/Issues";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import "./App.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

@@ -34,7 +34,7 @@ export const useMessages = () => {
 
       const formattedMessages = issuesData.map(issue => ({
         id: issue.id.toString(),
-        username: issue.username || 'Usuario',
+        username: issue.username || `${issue.first_name || ''} ${issue.last_name || ''}`.trim() || 'Usuario',
         timestamp: new Date(issue.timestamp || Date.now()),
         message: issue.message || '',
         imageUrl: issue.image_url || undefined,
