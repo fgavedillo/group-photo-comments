@@ -11,16 +11,22 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   
   const decodedContent = decodeQuotedPrintable(content);
   
+  // Define URL regex pattern for detecting links
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
+  // Extract all parts of the text (including URLs and non-URL text)
   const parts = decodedContent.split(urlRegex);
   
+  // Extract all URLs from the content
   const urls = decodedContent.match(urlRegex) || [];
   
   return (
     <>
       {parts.map((part, index) => {
-        if (urls.includes(part)) {
+        // Check if the current part is a URL
+        const isUrl = urls.includes(part);
+        
+        if (isUrl) {
           return (
             <a 
               key={index} 
