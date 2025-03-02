@@ -1,4 +1,3 @@
-
 import { Message } from "@/types/message";
 import { ImageModal } from "./ImageModal";
 import { useState, useRef, useEffect } from "react";
