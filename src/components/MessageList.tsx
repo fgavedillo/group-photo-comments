@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronDown } from "lucide-react";
 import { Button } from "./ui/button";
+import { decodeQuotedPrintable } from "@/utils/stringUtils";
 
 interface MessageListProps {
   messages: Message[];
@@ -23,25 +24,36 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
   const containerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const isManualScrollingRef = useRef(false);
+  const initialLoadDoneRef = useRef(false);
   
   // Función mejorada para desplazarse al final de los mensajes
   const scrollToBottom = () => {
-    // Usar requestAnimationFrame para asegurar que el DOM está actualizado
+    // Usar doble requestAnimationFrame para asegurar que el DOM está completamente actualizado
     requestAnimationFrame(() => {
-      if (containerRef.current) {
-        containerRef.current.scrollTop = containerRef.current.scrollHeight;
-        setShowScrollButton(false);
-        setNewMessagesCount(0);
-      }
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTop = containerRef.current.scrollHeight;
+          setShowScrollButton(false);
+          setNewMessagesCount(0);
+        }
+      });
     });
   };
 
   // Auto-scroll inicial cuando se cargan los mensajes por primera vez
   useEffect(() => {
-    if (messages.length > 0 && !isManualScrollingRef.current) {
-      scrollToBottom();
+    // Solo si los mensajes existen y no se ha hecho el scroll inicial todavía
+    if (messages.length > 0 && !initialLoadDoneRef.current) {
+      initialLoadDoneRef.current = true;
+      
+      // Usar un timeout para asegurar que todo el DOM está renderizado
+      const timeoutId = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, []);
+  }, [messages]);
 
   // Monitorear los cambios en los mensajes para auto-scroll
   useEffect(() => {
@@ -51,10 +63,10 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
       const container = containerRef.current;
       if (container) {
         const { scrollTop, scrollHeight, clientHeight } = container;
-        // Determinar si estamos al final con una tolerancia de 50px
-        const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 50;
+        // Determinar si estamos al final con una tolerancia de 20px
+        const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 20;
         
-        if (isNearBottom) {
+        if (isNearBottom && !isManualScrollingRef.current) {
           // Si está cerca del final, hacer auto-scroll
           scrollToBottom();
         } else {
@@ -74,7 +86,8 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     const container = containerRef.current;
     if (container) {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 10;
+      // Más preciso - considerar que estamos al final con una tolerancia de 5px
+      const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 5;
       
       // Marcar que el usuario está scrolleando manualmente
       isManualScrollingRef.current = true;
@@ -99,6 +112,47 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     }
   };
 
+  // Función para renderizar el contenido del mensaje con enlaces clickeables
+  const renderMessageContent = (content: string) => {
+    if (!content) return null;
+    
+    // Decodificar el contenido para eliminar caracteres como =20
+    const decodedContent = decodeQuotedPrintable(content);
+    
+    // Expresión regular para detectar URLs
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    
+    // Dividir el texto en partes: texto normal y URLs
+    const parts = decodedContent.split(urlRegex);
+    
+    // Encontrar todas las URLs en el texto
+    const urls = decodedContent.match(urlRegex) || [];
+    
+    // Combinar las partes con los enlaces
+    return (
+      <>
+        {parts.map((part, index) => {
+          // Si la parte coincide con una URL, renderizarla como enlace
+          if (urls.includes(part)) {
+            return (
+              <a 
+                key={index} 
+                href={part} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {part}
+              </a>
+            );
+          }
+          // De lo contrario, renderizar como texto normal
+          return <span key={index}>{part}</span>;
+        })}
+      </>
+    );
+  };
+
   return (
     <div 
       ref={containerRef} 
@@ -110,7 +164,11 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="font-medium text-primary">{message.username || 'Usuario'}</span>
+                <span className="font-medium text-primary">
+                  {message.username || 
+                   ((message.firstName || message.lastName) ? 
+                    `${message.firstName || ''} ${message.lastName || ''}`.trim() : 'Usuario')}
+                </span>
                 <span className="text-sm text-muted-foreground">
                   {format(new Date(message.timestamp), "dd 'de' MMMM 'a las' HH:mm", { locale: es })}
                 </span>
@@ -124,7 +182,7 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
                 {message.status}
               </span>
             </div>
-            <p className="text-sm text-foreground">{message.message}</p>
+            <p className="text-sm text-foreground">{renderMessageContent(message.message)}</p>
             {message.imageUrl && (
               <div className="mt-2">
                 <img 

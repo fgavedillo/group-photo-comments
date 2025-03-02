@@ -43,6 +43,12 @@
   transform: scale(1.01);
 }
 
+/* Estilos para enlaces en mensajes */
+.text-sm.text-foreground a {
+  @apply text-blue-600 hover:underline break-words;
+  word-break: break-all;
+}
+
 /* Mejoras para responsividad */
 @media (max-width: 640px) {
   .message-bubble {

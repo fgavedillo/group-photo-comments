@@ -12,4 +12,6 @@ export interface Message {
   actionPlan?: string;
   assignedEmail?: string;
   userId?: string;
+  firstName?: string;
+  lastName?: string;
 }

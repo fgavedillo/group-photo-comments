@@ -5,6 +5,7 @@ import { Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendEmail } from "@/lib/supabase";
 import { useState, useEffect } from "react";
+import { decodeQuotedPrintable } from "@/utils/stringUtils";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -37,6 +38,9 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
     }
 
     try {
+      // Decodificar el mensaje para eliminar caracteres de codificación
+      const decodedMessage = decodeQuotedPrintable(message);
+      
       // Formato mejorado para el correo electrónico
       const currentDate = new Date().toLocaleDateString('es-ES', {
         day: '2-digit',
@@ -58,7 +62,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
             
             <div style="background-color: white; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
               <h3 style="color: #1e293b; margin-top: 0;">Descripción de la Incidencia:</h3>
-              <p style="color: #334155; line-height: 1.6;">${message}</p>
+              <p style="color: #334155; line-height: 1.6;">${decodedMessage}</p>
             </div>
             
             ${imageUrl ? `

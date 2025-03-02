@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Message } from "@/types/message";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { decodeQuotedPrintable } from "@/utils/stringUtils";
 
 export const useMessages = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -32,20 +33,42 @@ export const useMessages = () => {
 
       console.log('Mensajes cargados:', issuesData);
 
-      const formattedMessages = issuesData.map(issue => ({
-        id: issue.id.toString(),
-        username: issue.username || `${issue.first_name || ''} ${issue.last_name || ''}`.trim() || 'Usuario',
-        timestamp: new Date(issue.timestamp || Date.now()),
-        message: issue.message || '',
-        imageUrl: issue.image_url || undefined,
-        status: issue.status || 'en-estudio',
-        area: issue.area || undefined,
-        responsable: issue.responsable || undefined,
-        securityImprovement: issue.security_improvement || undefined,
-        actionPlan: issue.action_plan || undefined,
-        assignedEmail: issue.assigned_email || undefined,
-        userId: issue.user_id || undefined
-      }));
+      const formattedMessages = issuesData.map(issue => {
+        // Obtener nombre completo, manejando valores nulos o vacíos
+        let username = issue.username;
+        const firstName = issue.first_name || '';
+        const lastName = issue.last_name || '';
+        
+        // Si no hay username pero hay first_name o last_name, construir username
+        if (!username && (firstName || lastName)) {
+          username = `${firstName} ${lastName}`.trim();
+        }
+        
+        // Si aún no hay username, usar valor por defecto
+        if (!username) {
+          username = 'Usuario';
+        }
+        
+        // Decodificar el mensaje para evitar problemas de codificación
+        const decodedMessage = issue.message ? decodeQuotedPrintable(issue.message) : '';
+        
+        return {
+          id: issue.id.toString(),
+          username,
+          firstName,
+          lastName,
+          timestamp: new Date(issue.timestamp || Date.now()),
+          message: decodedMessage,
+          imageUrl: issue.image_url || undefined,
+          status: issue.status || 'en-estudio',
+          area: issue.area || undefined,
+          responsable: issue.responsable || undefined,
+          securityImprovement: issue.security_improvement || undefined,
+          actionPlan: issue.action_plan || undefined,
+          assignedEmail: issue.assigned_email || undefined,
+          userId: issue.user_id || undefined
+        };
+      });
 
       setMessages(formattedMessages);
     } catch (error) {
