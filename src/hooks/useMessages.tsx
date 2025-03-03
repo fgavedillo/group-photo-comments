@@ -34,19 +34,19 @@ export const useMessages = () => {
       console.log('Mensajes cargados:', issuesData);
 
       const formattedMessages = issuesData.map(issue => {
-        // Obtener nombre completo, manejando valores nulos o vacíos
-        let username = issue.username;
-        const firstName = issue.first_name || '';
-        const lastName = issue.last_name || '';
+        // Priorizar el nombre que aparece en la gestión (responsable si existe)
+        let username = issue.responsable || issue.username;
         
-        // Si no hay username pero hay first_name o last_name, construir username
-        if (!username && (firstName || lastName)) {
-          username = `${firstName} ${lastName}`.trim();
-        }
-        
-        // Si aún no hay username, usar valor por defecto
+        // Si no hay username ni responsable, intentar construir desde first_name y last_name
         if (!username) {
-          username = 'Usuario';
+          const firstName = issue.first_name || '';
+          const lastName = issue.last_name || '';
+          
+          if (firstName || lastName) {
+            username = `${firstName} ${lastName}`.trim();
+          } else {
+            username = 'Usuario';
+          }
         }
         
         // Decodificar el mensaje para evitar problemas de codificación
@@ -55,8 +55,8 @@ export const useMessages = () => {
         return {
           id: issue.id.toString(),
           username,
-          firstName,
-          lastName,
+          firstName: issue.first_name,
+          lastName: issue.last_name,
           timestamp: new Date(issue.timestamp || Date.now()),
           message: decodedMessage,
           imageUrl: issue.image_url || undefined,

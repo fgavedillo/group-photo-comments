@@ -17,6 +17,10 @@ export const decodeQuotedPrintable = (text: string): string => {
   
   // Reemplazar saltos de línea codificados
   decoded = decoded.replace(/=\r\n/g, '');
+  decoded = decoded.replace(/=\n/g, '');
+  
+  // Eliminar completamente los caracteres '=20' que suelen aparecer al final de líneas
+  decoded = decoded.replace(/=20/g, ' ');
   
   // Reemplazar otros caracteres problemáticos comunes en emails
   decoded = decoded.replace(/&nbsp;/g, ' ');
@@ -26,13 +30,37 @@ export const decodeQuotedPrintable = (text: string): string => {
 
 /**
  * Detecta y convierte URLs en texto plano a enlaces HTML clickeables
+ * utilizando URLs absolutas con el dominio correcto
  */
 export const linkifyText = (text: string): string => {
   if (!text) return '';
+  
+  // Obtener el dominio base desde la ventana del navegador
+  const baseDomain = typeof window !== 'undefined' ? window.location.origin : '';
   
   // Expresión regular para detectar URLs
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
   // Reemplazar URLs con enlaces HTML
-  return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>');
+  const linkedText = text.replace(urlRegex, (url) => {
+    // Si la URL contiene incidencias.lingotes.com, reemplazarla con la URL correcta
+    let correctedUrl = url;
+    if (url.includes('incidencias.lingotes.com')) {
+      correctedUrl = url.replace('incidencias.lingotes.com', baseDomain.replace(/^https?:\/\//, ''));
+    }
+    
+    return `<a href="${correctedUrl}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${url}</a>`;
+  });
+  
+  return linkedText;
+};
+
+/**
+ * Crea una URL absoluta basada en la ruta actual
+ */
+export const getAbsoluteUrl = (path: string): string => {
+  const baseDomain = typeof window !== 'undefined' ? window.location.origin : '';
+  // Asegurarse de que la ruta comience con /
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseDomain}${normalizedPath}`;
 };

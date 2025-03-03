@@ -1,6 +1,7 @@
 
 import React from "react";
-import { decodeQuotedPrintable } from "@/utils/stringUtils";
+import { decodeQuotedPrintable, linkifyText } from "@/utils/stringUtils";
+import parse from "html-react-parser";
 
 interface MessageContentProps {
   content: string;
@@ -9,39 +10,12 @@ interface MessageContentProps {
 export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   if (!content) return null;
   
+  // Paso 1: Decodificar contenido quoted-printable para eliminar =20 y otros códigos
   const decodedContent = decodeQuotedPrintable(content);
   
-  // Define URL regex pattern for detecting links
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  // Paso 2: Convertir URLs en texto a enlaces HTML clickeables con URLs absolutas
+  const contentWithLinks = linkifyText(decodedContent);
   
-  // Extract all parts of the text (including URLs and non-URL text)
-  const parts = decodedContent.split(urlRegex);
-  
-  // Extract all URLs from the content
-  const urls: string[] = decodedContent.match(urlRegex) || [];
-  
-  return (
-    <>
-      {parts.map((part, index) => {
-        // Check if the current part is a URL
-        const isUrl = urls.includes(part);
-        
-        if (isUrl) {
-          return (
-            <a 
-              key={index} 
-              href={part} 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-blue-600 hover:underline"
-            >
-              {part}
-            </a>
-          );
-        }
-        return <span key={index}>{part}</span>;
-      })}
-    </>
-  );
+  // Paso 3: Parsear el HTML resultante a componentes React
+  return <>{parse(contentWithLinks)}</>;
 };
-

@@ -23,13 +23,18 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     handleScroll
   } = useScrollToBottom({ messages });
 
+  // Ordenar los mensajes para mostrar los más recientes primero
+  const sortedMessages = [...messages].sort((a, b) => 
+    new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
+
   return (
     <div 
       ref={containerRef} 
       className="flex-1 p-4 space-y-4 overflow-y-auto relative" 
       onScroll={handleScroll}
     >
-      {messages.map((message) => (
+      {sortedMessages.map((message) => (
         <MessageCard key={message.id} message={message} />
       ))}
       
