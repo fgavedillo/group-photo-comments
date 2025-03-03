@@ -9,10 +9,9 @@ interface MessageContentProps {
 export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   if (!content) return null;
   
-  // Get a fully cleaned version of the content
   const decodedContent = decodeQuotedPrintable(content);
   
-  // Define URL regex pattern for detecting links - improved to better capture domains
+  // Define URL regex pattern for detecting links
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
   // Extract all parts of the text (including URLs and non-URL text)
@@ -28,17 +27,15 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
         const isUrl = urls.includes(part);
         
         if (isUrl) {
-          // Fix URLs that might have encoding issues
-          const cleanUrl = part.replace(/=20/g, '');
           return (
             <a 
               key={index} 
-              href={cleanUrl} 
+              href={part} 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              {part.replace(/=20/g, '')}
+              {part}
             </a>
           );
         }
@@ -47,3 +44,4 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
     </>
   );
 };
+

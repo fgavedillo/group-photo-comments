@@ -48,10 +48,6 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
       
-      // Ensure correct URL format - use absolute URLs
-      const appBaseUrl = window.location.origin;
-      const platformLink = `${appBaseUrl}/issues`;
-      
       const emailContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
           <div style="background-color: #0f172a; padding: 15px; border-radius: 6px 6px 0 0;">
@@ -88,7 +84,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
           </div>
           
           <div style="padding: 20px; text-align: center;">
-            <a href="${platformLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Ver en la Plataforma</a>
+            <a href="${window.location.origin}/issues" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Ver en la Plataforma</a>
           </div>
           
           <div style="padding: 15px; background-color: #f1f5f9; border-radius: 0 0 6px 6px; font-size: 12px; color: #64748b; text-align: center;">
