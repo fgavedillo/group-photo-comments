@@ -23,13 +23,16 @@ export const MessageList = ({ messages, onMessageDelete }: MessageListProps) => 
     handleScroll
   } = useScrollToBottom({ messages });
 
+  // Create a reversed copy of messages to display newest first
+  const reversedMessages = [...messages].reverse();
+
   return (
     <div 
       ref={containerRef} 
       className="flex-1 p-4 space-y-4 overflow-y-auto relative" 
       onScroll={handleScroll}
     >
-      {messages.map((message) => (
+      {reversedMessages.map((message) => (
         <MessageCard key={message.id} message={message} />
       ))}
       
