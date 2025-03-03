@@ -18,7 +18,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   const parts = decodedContent.split(urlRegex);
   
   // Extract all URLs from the content
-  const urls = decodedContent.match(urlRegex) || [];
+  const urls: string[] = decodedContent.match(urlRegex) || [];
   
   return (
     <>
@@ -44,3 +44,4 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
     </>
   );
 };
+
