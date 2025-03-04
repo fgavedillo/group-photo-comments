@@ -1,137 +1,136 @@
 
-import { Issue, KPIData, DistributionData } from "./types.ts";
-import { getStatusColor, formatDate } from "./utils.ts";
+import { IssueReport, IssuesByStatus } from "./types.ts";
 
-const generateIssueRow = (issue: Issue): string => `
-  <tr style="border-bottom: 1px solid #eee;">
-    <td style="padding: 12px;">
-      <a href="${APP_URL}/?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: underline;">
-        ${issue.id}
-      </a>
-    </td>
-    <td style="padding: 12px;">
-      <a href="${APP_URL}/?issue_id=${issue.id}&action=edit" style="color: #3b82f6; text-decoration: none;">
-        ${issue.message}
-      </a>
-    </td>
-    <td style="padding: 12px;">${issue.security_improvement || '-'}</td>
-    <td style="padding: 12px;">
-      <span style="
-        background-color: ${getStatusColor(issue.status)};
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-      ">
-        ${issue.status}
-      </span>
-    </td>
-    <td style="padding: 12px;">${issue.area || '-'}</td>
-    <td style="padding: 12px;">${issue.responsable || '-'}</td>
-    <td style="padding: 12px;">
-      ${issue.issue_images?.[0]?.image_url ? 
-        `<img src="${issue.issue_images[0].image_url}" 
-              alt="Incidencia" 
-              style="width: 100px; height: 100px; object-fit: cover; border-radius: 4px;"
-        />` : 
-        '-'
-      }
-    </td>
-  </tr>
-`;
+// Get the base URL for the application - default to a placeholder if not running on a server
+const getBaseUrl = () => {
+  // In production, we should use the actual domain
+  return Deno.env.get("APP_URL") || "https://app.ejemplo.com";
+};
 
-const generateDistributionSection = (data: Record<string, number>, total: number): string => {
-  return Object.entries(data)
-    .map(([key, count]) => {
-      const percentage = ((count / total) * 100).toFixed(1);
+export function buildEmailHtml(report: IssueReport, isPersonalized: boolean = false): string {
+  const baseUrl = getBaseUrl();
+  
+  // Generate the header section
+  const headerHtml = `
+    <div style="background-color: #f8f9fa; padding: 20px; text-align: center; border-bottom: 3px solid #0066cc;">
+      <h1 style="color: #333; margin: 0; font-size: 24px;">
+        ${isPersonalized ? 'Reporte de Incidencias Asignadas' : 'Reporte Diario de Incidencias'}
+      </h1>
+      <p style="color: #666; margin: 10px 0 0;">Fecha: ${report.date}</p>
+      ${isPersonalized ? 
+        '<p style="color: #0066cc; font-weight: bold; margin: 10px 0 0;">Este reporte contiene solo las incidencias pendientes asignadas a usted</p>' : 
+        ''}
+    </div>
+  `;
+
+  // Generate summary section
+  const summaryHtml = `
+    <div style="padding: 20px; background-color: #fff; border-bottom: 1px solid #eee;">
+      <h2 style="color: #333; margin-top: 0;">Resumen</h2>
+      <p style="margin-bottom: 5px;"><strong>Total de incidencias:</strong> ${report.totalCount}</p>
+      ${Object.entries(report.issues).map(([status, issues]) => 
+        `<p style="margin-bottom: 5px;"><strong>${getStatusLabel(status)}:</strong> ${issues.length}</p>`
+      ).join('')}
+    </div>
+  `;
+
+  // Generate the issues by status sections
+  const issuesSectionHtml = Object.entries(report.issues)
+    .map(([status, issues]) => {
+      if (issues.length === 0) return '';
+      
       return `
-        <div style="margin-bottom: 12px;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-            <span>${key}</span>
-            <span>${percentage}%</span>
-          </div>
-          <div style="width: 100%; height: 8px; background-color: #f3f4f6; border-radius: 4px; overflow: hidden;">
-            <div style="width: ${percentage}%; height: 100%; background-color: #3b82f6;"></div>
+        <div style="padding: 20px; background-color: #fff; margin-top: 20px; border: 1px solid #eee; border-radius: 5px;">
+          <h2 style="color: #333; margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+            ${getStatusLabel(status)} (${issues.length})
+          </h2>
+          <div>
+            ${issues.map(issue => {
+              // Create a direct link to the issue using the base URL
+              const issueLink = `${baseUrl}/issues?id=${issue.id}`;
+              
+              return `
+                <div style="margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                  <h3 style="color: #0066cc; margin-bottom: 5px;">${issue.responsable || 'Sin asignar'}</h3>
+                  <p style="color: #666; margin-top: 0; font-size: 14px;">ID: ${issue.id} | Área: ${issue.area} | Fecha: ${new Date(issue.timestamp).toLocaleDateString()}</p>
+                  
+                  <div style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #0066cc; border-radius: 3px;">
+                    <p style="margin: 0; line-height: 1.5;">${issue.message}</p>
+                  </div>
+                  
+                  ${issue.imageUrl ? `
+                    <div style="margin: 15px 0;">
+                      <img src="${issue.imageUrl}" alt="Imagen de la incidencia" style="max-width: 100%; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                  ` : ''}
+                  
+                  ${issue.actionPlan ? `
+                    <div style="margin-top: 15px;">
+                      <p style="font-weight: bold; margin-bottom: 5px;">Plan de acción:</p>
+                      <p style="margin-top: 0; padding: 10px; background-color: #e8f4fc; border-radius: 3px;">${issue.actionPlan}</p>
+                    </div>
+                  ` : ''}
+                  
+                  ${issue.securityImprovement ? `
+                    <div style="margin-top: 15px;">
+                      <p style="font-weight: bold; margin-bottom: 5px;">Mejora de seguridad:</p>
+                      <p style="margin-top: 0; padding: 10px; background-color: #e8fcf4; border-radius: 3px;">${issue.securityImprovement}</p>
+                    </div>
+                  ` : ''}
+                  
+                  <div style="margin-top: 15px;">
+                    <a href="${issueLink}" style="display: inline-block; padding: 8px 15px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">Ver Detalles</a>
+                  </div>
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
       `;
     })
     .join('');
-};
 
-export const generateEmailContent = (
-  issues: Issue[],
-  kpis: KPIData,
-  distribution: DistributionData
-): string => {
-  const today = formatDate();
-  const issuesTable = kpis.activeIssues.map(generateIssueRow).join('');
-  const statusDistribution = generateDistributionSection(distribution.byStatus, kpis.total);
-  const areaDistribution = generateDistributionSection(distribution.byArea, kpis.total);
-
-  return `
-    <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto;">
-      <h1 style="color: #333;">Reporte Diario de Incidencias</h1>
-      
-      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-        <h2 style="color: #2c5282; margin-top: 0;">Buenos días,</h2>
-        <p style="color: #4a5568; line-height: 1.6;">
-          A continuación encontrará el reporte diario de incidencias correspondiente al ${today}. 
-          Este informe incluye todas las incidencias activas y sus indicadores clave.
-        </p>
-      </div>
-
-      <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px;">
-        <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0; color: #4a5568;">Total Incidencias</h3>
-          <p style="font-size: 24px; font-weight: bold; margin: 8px 0;">${kpis.total}</p>
-        </div>
-        <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0; color: #4a5568;">Incidencias Activas</h3>
-          <p style="font-size: 24px; font-weight: bold; margin: 8px 0;">${kpis.activeIssues.length}</p>
-        </div>
-        <div style="background: white; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <h3 style="margin: 0; color: #4a5568;">Con Imágenes</h3>
-          <p style="font-size: 24px; font-weight: bold; margin: 8px 0;">${kpis.withImages}</p>
-        </div>
-      </div>
-      
-      <h2 style="color: #2d3748; margin-top: 32px;">Incidencias Activas</h2>
-      <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-        <thead>
-          <tr style="background-color: #f8f8f8;">
-            <th style="padding: 12px; text-align: left;">ID</th>
-            <th style="padding: 12px; text-align: left;">Descripción</th>
-            <th style="padding: 12px; text-align: left;">Mejora de Seguridad</th>
-            <th style="padding: 12px; text-align: left;">Estado</th>
-            <th style="padding: 12px; text-align: left;">Área</th>
-            <th style="padding: 12px; text-align: left;">Responsable</th>
-            <th style="padding: 12px; text-align: left;">Imagen</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${issuesTable}
-        </tbody>
-      </table>
-
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 32px;">
-        <div style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <h3 style="color: #2d3748; margin-top: 0;">Estado de Incidencias</h3>
-          ${statusDistribution}
-        </div>
-
-        <div style="background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-          <h3 style="color: #2d3748; margin-top: 0;">Distribución por Área</h3>
-          ${areaDistribution}
-        </div>
-      </div>
-      
-      <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
-        <p style="color: #999; font-size: 0.9em;">
-          Este es un mensaje automático enviado a las 9:00 AM. 
-          Por favor, no responda a este correo.
-        </p>
-      </div>
+  // Generate the footer section
+  const footerHtml = `
+    <div style="padding: 20px; text-align: center; background-color: #f8f9fa; color: #666; font-size: 14px; margin-top: 20px;">
+      <p>Este es un correo automatizado, por favor no responda a este mensaje.</p>
+      <p>Para ver todas las incidencias, visite <a href="${baseUrl}/issues" style="color: #0066cc; text-decoration: underline;">el panel de incidencias</a>.</p>
     </div>
   `;
-};
+
+  // Combine all sections
+  return `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${isPersonalized ? 'Reporte de Incidencias Asignadas' : 'Reporte Diario de Incidencias'}</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; background-color: #f0f2f5;">
+      <div style="border: 1px solid #ddd; border-radius: 5px; overflow: hidden; background-color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        ${headerHtml}
+        ${summaryHtml}
+        ${issuesSectionHtml}
+        ${footerHtml}
+      </div>
+    </body>
+    </html>
+  `;
+}
+
+// Helper function to get a human-readable status label
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case "en-estudio":
+      return "En Estudio";
+    case "en-curso":
+      return "En Curso";
+    case "cerrada":
+      return "Cerradas";
+    case "denegado":
+      return "Denegadas";
+    default:
+      return status.charAt(0).toUpperCase() + status.slice(1);
+  }
+}

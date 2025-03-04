@@ -38,13 +38,13 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
     }
 
     try {
-      // Decodificar el mensaje para eliminar caracteres de codificación
+      // Decode the message to remove encoding characters
       const decodedMessage = decodeQuotedPrintable(message);
       
-      // Obtener URL absoluta para los enlaces
+      // Get absolute URL for links
       const issuesPageUrl = getAbsoluteUrl('/issues');
       
-      // Formato mejorado para el correo electrónico
+      // Improved format for the email
       const currentDate = new Date().toLocaleDateString('es-ES', {
         day: '2-digit',
         month: 'long',

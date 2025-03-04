@@ -34,10 +34,10 @@ export const useMessages = () => {
       console.log('Mensajes cargados:', issuesData);
 
       const formattedMessages = issuesData.map(issue => {
-        // Priorizar el nombre que aparece en la gestión (responsable si existe)
+        // Prioritize the name that appears in the management (responsable if it exists)
         let username = issue.responsable || issue.username;
         
-        // Si no hay username ni responsable, intentar construir desde first_name y last_name
+        // If no username or responsable, try to build from first_name and last_name
         if (!username) {
           const firstName = issue.first_name || '';
           const lastName = issue.last_name || '';
@@ -49,7 +49,7 @@ export const useMessages = () => {
           }
         }
         
-        // Decodificar el mensaje para evitar problemas de codificación
+        // Decode the message to avoid encoding issues
         const decodedMessage = issue.message ? decodeQuotedPrintable(issue.message) : '';
         
         return {
@@ -86,7 +86,7 @@ export const useMessages = () => {
   useEffect(() => {
     loadMessages();
 
-    // Configurar suscripción a cambios en tiempo real para todas las tablas relevantes
+    // Configure subscription to real-time changes for all relevant tables
     const channel = supabase
       .channel('table-changes')
       .on(

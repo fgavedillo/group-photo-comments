@@ -1,12 +1,12 @@
 
 /**
- * Decodifica texto en formato quoted-printable, eliminando caracteres como =20
- * que suelen aparecer en correos electrónicos
+ * Decodes text in quoted-printable format, removing characters like =20
+ * that commonly appear in emails
  */
 export const decodeQuotedPrintable = (text: string): string => {
   if (!text) return '';
   
-  // Reemplazar caracteres codificados comunes como =20 (espacio)
+  // Replace encoded characters like =20 (space)
   let decoded = text.replace(/=([0-9A-F]{2})/gi, (match, hex) => {
     try {
       return String.fromCharCode(parseInt(hex, 16));
@@ -15,35 +15,35 @@ export const decodeQuotedPrintable = (text: string): string => {
     }
   });
   
-  // Reemplazar saltos de línea codificados
+  // Replace encoded line breaks
   decoded = decoded.replace(/=\r\n/g, '');
   decoded = decoded.replace(/=\n/g, '');
   
-  // Eliminar completamente los caracteres '=20' que suelen aparecer al final de líneas
+  // Completely remove the '=20' characters that often appear at the end of lines
   decoded = decoded.replace(/=20/g, ' ');
   
-  // Reemplazar otros caracteres problemáticos comunes en emails
+  // Replace other problematic characters common in emails
   decoded = decoded.replace(/&nbsp;/g, ' ');
   
   return decoded;
 };
 
 /**
- * Detecta y convierte URLs en texto plano a enlaces HTML clickeables
- * utilizando URLs absolutas con el dominio correcto
+ * Detects and converts URLs in plain text to clickable HTML links
+ * using absolute URLs with the correct domain
  */
 export const linkifyText = (text: string): string => {
   if (!text) return '';
   
-  // Obtener el dominio base desde la ventana del navegador
+  // Get the base domain from the browser window
   const baseDomain = typeof window !== 'undefined' ? window.location.origin : '';
   
-  // Expresión regular para detectar URLs
+  // Regular expression to detect URLs
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
-  // Reemplazar URLs con enlaces HTML
+  // Replace URLs with HTML links
   const linkedText = text.replace(urlRegex, (url) => {
-    // Si la URL contiene incidencias.lingotes.com, reemplazarla con la URL correcta
+    // If the URL contains incidencias.lingotes.com, replace it with the correct URL
     let correctedUrl = url;
     if (url.includes('incidencias.lingotes.com')) {
       correctedUrl = url.replace('incidencias.lingotes.com', baseDomain.replace(/^https?:\/\//, ''));
@@ -56,11 +56,11 @@ export const linkifyText = (text: string): string => {
 };
 
 /**
- * Crea una URL absoluta basada en la ruta actual
+ * Creates an absolute URL based on the current path
  */
 export const getAbsoluteUrl = (path: string): string => {
   const baseDomain = typeof window !== 'undefined' ? window.location.origin : '';
-  // Asegurarse de que la ruta comience con /
+  // Make sure the path starts with /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseDomain}${normalizedPath}`;
 };

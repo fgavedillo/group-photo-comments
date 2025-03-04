@@ -9,15 +9,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 export const EmailForceTab = () => {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
+  const [isSendingFiltered, setIsSendingFiltered] = useState(false);
 
-  const handleSendEmail = async () => {
+  const handleSendEmail = async (filtered: boolean = false) => {
     try {
-      setIsSending(true);
-      console.log("Iniciando envío manual de correo programado");
+      if (filtered) {
+        setIsSendingFiltered(true);
+      } else {
+        setIsSending(true);
+      }
       
-      // Llamar a la función Edge de Supabase para enviar el correo
+      console.log(`Iniciando envío manual de correo ${filtered ? 'filtrado' : 'completo'}`);
+      
+      // Call the Edge Function to send the email
       const { data, error } = await supabase.functions.invoke('send-daily-report', {
-        body: { manual: true }
+        body: { 
+          manual: true,
+          filteredByUser: filtered // New parameter to filter by user's pending actions
+        }
       });
 
       if (error) {
@@ -28,7 +37,7 @@ export const EmailForceTab = () => {
       
       toast({
         title: "Correo enviado",
-        description: "Se ha enviado el correo programado manualmente con éxito"
+        description: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`
       });
     } catch (error) {
       console.error('Error al enviar correo:', error);
@@ -38,17 +47,21 @@ export const EmailForceTab = () => {
         variant: "destructive"
       });
     } finally {
-      setIsSending(false);
+      if (filtered) {
+        setIsSendingFiltered(false);
+      } else {
+        setIsSending(false);
+      }
     }
   };
 
   return (
-    <div className="p-4">
+    <div className="p-4 space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Envío Manual de Correo</CardTitle>
+          <CardTitle>Envío Manual de Correo Completo</CardTitle>
           <CardDescription>
-            Utilice esta opción para forzar el envío del correo programado con la información actual.
+            Utilice esta opción para forzar el envío del correo programado con toda la información actual.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -57,12 +70,36 @@ export const EmailForceTab = () => {
             actualizada de todas las incidencias registradas en el sistema.
           </p>
           <Button 
-            onClick={handleSendEmail} 
+            onClick={() => handleSendEmail(false)} 
             disabled={isSending}
             className="w-full sm:w-auto"
           >
             <Mail className="mr-2 h-4 w-4" />
-            {isSending ? "Enviando..." : "Enviar Correo Ahora"}
+            {isSending ? "Enviando..." : "Enviar Correo Completo"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Envío Manual de Correo Filtrado</CardTitle>
+          <CardDescription>
+            Utilice esta opción para enviar a cada usuario solo las acciones pendientes asignadas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Cada destinatario recibirá solo las incidencias pendientes donde esté asignado como responsable,
+            mejorando la relevancia de la información recibida.
+          </p>
+          <Button 
+            onClick={() => handleSendEmail(true)} 
+            disabled={isSendingFiltered}
+            className="w-full sm:w-auto"
+            variant="secondary"
+          >
+            <Mail className="mr-2 h-4 w-4" />
+            {isSendingFiltered ? "Enviando..." : "Enviar Correo Filtrado por Usuario"}
           </Button>
         </CardContent>
       </Card>
