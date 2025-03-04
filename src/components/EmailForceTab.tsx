@@ -1,23 +1,24 @@
 
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Mail, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
 
 export const EmailForceTab = () => {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   const [isSendingFiltered, setIsSendingFiltered] = useState(false);
   const [lastSendStatus, setLastSendStatus] = useState<{success: boolean; message: string} | null>(null);
+  const [detailedError, setDetailedError] = useState<string | null>(null);
 
   const handleSendEmail = async (filtered: boolean = false) => {
     try {
       // Limpiar estado anterior
       setLastSendStatus(null);
+      setDetailedError(null);
       
       if (filtered) {
         setIsSendingFiltered(true);
@@ -27,17 +28,46 @@ export const EmailForceTab = () => {
       
       console.log(`Iniciando envío manual de correo ${filtered ? 'filtrado' : 'completo'}`);
       
-      // Call the Edge Function to send the email
+      // Call the Edge Function to send the email with a longer timeout
       const { data, error } = await supabase.functions.invoke('send-daily-report', {
         body: { 
           manual: true,
-          filteredByUser: filtered // New parameter to filter by user's pending actions
+          filteredByUser: filtered // Parameter to filter by user's pending actions
+        },
+        // Aumentar el timeout para dar más tiempo a la función
+        options: {
+          timeout: 60000 // 60 segundos (ajustar según sea necesario)
         }
       });
 
       if (error) {
         console.error('Error en la respuesta de la función:', error);
-        throw new Error(`Error en el servidor: ${error.message || 'Desconocido'}`);
+        
+        // Extraer información detallada del error para mostrar al usuario
+        let errorMessage = `Error en el servidor: ${error.message || 'Desconocido'}`;
+        let detailedInfo = '';
+        
+        if (error.name === 'FunctionsFetchError') {
+          errorMessage = 'Error de conexión con el servidor. No se pudo establecer comunicación con la función.';
+          detailedInfo = `
+            Detalles técnicos:
+            - Tipo de error: ${error.name}
+            - Mensaje: ${error.message}
+            
+            Posibles causas:
+            - Problemas de red o conexión
+            - La función puede estar desactivada o en mantenimiento
+            - Tiempo de respuesta excedido (timeout)
+            
+            Recomendaciones:
+            - Verificar su conexión a internet
+            - Intentar nuevamente en unos minutos
+            - Contactar al administrador si el problema persiste
+          `;
+          setDetailedError(detailedInfo);
+        }
+        
+        throw new Error(errorMessage);
       }
 
       console.log("Respuesta del envío de correo:", data);
@@ -93,6 +123,16 @@ export const EmailForceTab = () => {
         </Alert>
       )}
       
+      {detailedError && !lastSendStatus?.success && (
+        <Alert variant="destructive" className="bg-red-50 border-red-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Información de diagnóstico</AlertTitle>
+          <AlertDescription className="whitespace-pre-line text-xs">
+            {detailedError}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Envío Manual de Correo Completo</CardTitle>
@@ -110,8 +150,17 @@ export const EmailForceTab = () => {
             disabled={isSending || isSendingFiltered}
             className="w-full sm:w-auto"
           >
-            <Mail className="mr-2 h-4 w-4" />
-            {isSending ? "Enviando..." : "Enviar Correo Completo"}
+            {isSending ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Enviar Correo Completo
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
@@ -134,8 +183,17 @@ export const EmailForceTab = () => {
             className="w-full sm:w-auto"
             variant="secondary"
           >
-            <Mail className="mr-2 h-4 w-4" />
-            {isSendingFiltered ? "Enviando..." : "Enviar Correo Filtrado por Usuario"}
+            {isSendingFiltered ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Enviando...
+              </>
+            ) : (
+              <>
+                <Mail className="mr-2 h-4 w-4" />
+                Enviar Correo Filtrado por Usuario
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
