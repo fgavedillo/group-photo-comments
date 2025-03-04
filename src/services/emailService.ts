@@ -29,8 +29,20 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
     // Preparar los headers
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
-    headers.append("Authorization", `Bearer ${supabase.auth.getSession()?.data?.session?.access_token || ''}`);
-    headers.append("apikey", supabase.supabaseKey);
+    
+    // Obtener la sesión actual de forma asíncrona
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token || '';
+    
+    // Usar el apiKey de forma segura obteniendo la URL y la key por separado
+    const apiKey = supabase.supabaseUrl.includes('supabase.co') 
+      ? (supabase as any).restUrl.match(/apikey=([^&]+)/)?.[1] || ''
+      : '';
+    
+    headers.append("Authorization", `Bearer ${accessToken}`);
+    if (apiKey) {
+      headers.append("apikey", apiKey);
+    }
     
     // Usar fetch directamente para tener más control sobre la solicitud
     const response = await fetch(functionUrl, {
