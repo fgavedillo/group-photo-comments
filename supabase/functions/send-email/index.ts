@@ -6,12 +6,12 @@ import { Logger } from "./logger.ts";
 import { sendEmailWithTimeout } from "./emailService.ts";
 
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Manejar CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Start timing and generate request ID if not provided
+  // Iniciar temporización y generar ID de solicitud
   const startTime = Date.now();
   let requestId: string;
   
@@ -20,60 +20,40 @@ serve(async (req) => {
     requestId = payload.requestId || `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     const logger = new Logger(requestId);
-    logger.info("Email function invoked");
+    logger.info("Función de email invocada");
     
-    // Validar los datos de la petición para logs completos
-    logger.info(`Solicitud recibida: 
-      - Destinatario: ${Array.isArray(payload.to) ? payload.to.join(', ') : payload.to}
-      - Asunto: ${payload.subject}
-      - HTML: ${payload.html ? 'Incluido' : 'No incluido'} (${payload.html?.length || 0} caracteres)
-      - Contenido texto: ${payload.content ? 'Incluido' : 'No incluido'} (${payload.content?.length || 0} caracteres)
-      - Adjuntos: ${payload.attachments?.length || 0}
-    `);
-    
-    // Validate required fields
+    // Validar campos requeridos
     if (!payload.to || !payload.subject || (!payload.content && !payload.html)) {
-      logger.error("Missing required fields in payload:", 
-        JSON.stringify({
-          hasTo: !!payload.to,
-          hasSubject: !!payload.subject,
-          hasContent: !!(payload.content || payload.html)
-        })
-      );
-      throw new Error("Missing required fields: to, subject, and content or html");
+      logger.error("Faltan campos requeridos");
+      throw new Error("Faltan campos requeridos: destinatario, asunto, y contenido o html");
     }
 
-    // Check if GMAIL_USER and GMAIL_APP_PASSWORD environment variables are set
+    // Verificar credenciales de Gmail
     const gmailUser = Deno.env.get("GMAIL_USER");
     const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
     
-    logger.info(`Verificando credenciales de Gmail:
-      - GMAIL_USER: ${gmailUser ? 'Configurado' : 'NO CONFIGURADO'}
-      - GMAIL_APP_PASSWORD: ${gmailPass ? 'Configurado' : 'NO CONFIGURADO'} (longitud: ${gmailPass?.length || 0})
-    `);
-    
     if (!gmailUser || !gmailPass) {
-      logger.error("Gmail credentials missing");
+      logger.error("Credenciales de Gmail no configuradas");
       throw new Error(
-        "Email configuration error: Gmail credentials missing. " +
-        "Please set GMAIL_USER and GMAIL_APP_PASSWORD in Supabase Edge Function secrets."
+        "Error de configuración: Credenciales de Gmail no configuradas. " +
+        "Configure GMAIL_USER y GMAIL_APP_PASSWORD en los secretos de la función Edge."
       );
     }
 
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
-    logger.info(`Preparing to send email to ${recipients.join(', ')}`);
+    logger.info(`Preparando envío a ${recipients.join(', ')}`);
     
-    // Send email with timeout handling
+    // Enviar email
     await sendEmailWithTimeout(payload, logger);
     
-    // Calculate elapsed time
+    // Calcular tiempo transcurrido
     const elapsedTime = Date.now() - startTime;
-    logger.info(`Email sent successfully to ${recipients.join(", ")} in ${elapsedTime}ms`);
+    logger.info(`Email enviado correctamente en ${elapsedTime}ms`);
 
-    // Return success response
+    // Devolver respuesta de éxito
     const response: EmailResponse = {
       success: true, 
-      message: "Email sent successfully",
+      message: "Email enviado correctamente",
       recipients: recipients,
       requestId: requestId,
       elapsedTime: `${elapsedTime}ms`
@@ -87,87 +67,23 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    // Use default request ID if we couldn't parse one from the payload
+    // Usar ID de solicitud predeterminado si no pudimos analizarlo
     requestId = requestId || `error-${Date.now()}`;
     const logger = new Logger(requestId);
     
-    // Calculate elapsed time for error case
+    // Calcular tiempo transcurrido para el caso de error
     const elapsedTime = Date.now() - startTime;
-    logger.error(`Error sending email (${elapsedTime}ms):`, error);
+    logger.error(`Error al enviar email (${elapsedTime}ms):`, error);
     
-    // Format user-friendly error message with more detailed diagnostics
-    let userMessage = "Email sending failed";
-    let detailedError = error.message;
-    let howToFix = "Por favor revisa los logs para más detalles.";
-    let errorCode = "UNKNOWN_ERROR";
-    
-    if (error.message && error.message.includes("Gmail authentication failed")) {
-      userMessage = "Autenticación de Gmail fallida";
-      detailedError = error.message;
-      errorCode = "AUTH_ERROR";
-      howToFix = `
-Para solucionar este problema:
-1. Verifique que el nombre de usuario de Gmail es correcto (prevencionlingotes@gmail.com)
-2. Asegúrese de tener habilitada la verificación en dos pasos: https://myaccount.google.com/security
-3. Cree una contraseña de aplicación específica: https://myaccount.google.com/apppasswords
-4. Use la contraseña de aplicación SIN ESPACIOS en la configuración (debe tener 16 caracteres)
-5. Actualice las variables de entorno en Supabase Edge Functions
-
-Guía paso a paso:
-a) Ir a la cuenta de Google -> Seguridad
-b) Verificación en dos pasos -> debe estar ACTIVADA
-c) Contraseñas de aplicación -> Crear nueva para "Otra aplicación personalizada"
-d) Copiar la contraseña generada SIN ESPACIOS
-e) Actualizar el secreto GMAIL_APP_PASSWORD en Supabase
-`;
-    } else if (error.message && error.message.includes("Email configuration error")) {
-      userMessage = "Error de configuración";
-      detailedError = error.message;
-      errorCode = "CONFIG_ERROR";
-      howToFix = "Configure las variables GMAIL_USER y GMAIL_APP_PASSWORD en los secretos de Supabase Edge Functions.";
-    } else if (error.message && error.message.includes("SMTP")) {
-      userMessage = "Error de conexión SMTP";
-      detailedError = error.message;
-      errorCode = "SMTP_ERROR";
-      howToFix = `
-Problema con la conexión SMTP a Gmail:
-1. Verifique que no hay restricciones de red que bloqueen la conexión SMTP
-2. Asegúrese de que la cuenta de Gmail no tenga restricciones adicionales de seguridad
-3. Confirme que la contraseña de aplicación es correcta y reciente
-`;
-    } else if (error.name === 'AbortError' || error.message?.includes('timed out')) {
-      userMessage = "Tiempo de espera agotado";
-      detailedError = "La operación de envío de correo excedió el tiempo máximo de espera";
-      errorCode = "TIMEOUT_ERROR";
-      howToFix = `
-El envío de correo tomó demasiado tiempo:
-1. Puede ser un problema temporal de conexión con Gmail
-2. Intente nuevamente más tarde
-3. Si el problema persiste, verifique la conexión a internet del servidor
-`;
-    }
-    
-    // Incluir información sobre el entorno para mejor diagnóstico
-    const environmentInfo = `
-Información del entorno:
-- Deno version: ${Deno.version.deno}
-- V8 version: ${Deno.version.v8}
-- TypeScript version: ${Deno.version.typescript}
-- Request ID: ${requestId}
-- User Agent: ${logger.getRequestInfo()?.userAgent || 'No disponible'}
-`;
-    
-    // Return detailed error response with improved diagnostic information
+    // Respuesta de error detallada
     const errorResponse: EmailResponse = {
       success: false,
-      message: userMessage,
+      message: "Error al enviar email: " + (error.message || "Error desconocido"),
       requestId: requestId,
       elapsedTime: `${elapsedTime}ms`,
       error: {
-        message: detailedError,
-        code: errorCode,
+        message: error.message || "Error desconocido",
         stack: error.stack,
-        details: howToFix + "\n\n" + environmentInfo
       }
     };
 

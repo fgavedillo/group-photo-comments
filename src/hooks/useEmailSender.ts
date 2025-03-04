@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendManualEmail } from "@/services/emailService";
 
@@ -10,36 +10,13 @@ export const useEmailSender = () => {
   const [lastSendStatus, setLastSendStatus] = useState<{success: boolean; message: string} | null>(null);
   const [detailedError, setDetailedError] = useState<string | null>(null);
   const [lastRequestId, setLastRequestId] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const maxRetries = 2; // Máximo número de reintentos automáticos
   
-  // Referencia para rastrear si el componente está montado
-  const isMounted = useRef(true);
-
-  // Actualizar la referencia cuando el componente se desmonte
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
-
-  const handleSendEmail = useCallback(async (filtered: boolean = false, isRetry: boolean = false) => {
+  const handleSendEmail = useCallback(async (filtered: boolean = false) => {
     try {
-      // Si es un reintento, incrementar el contador
-      if (isRetry) {
-        setRetryCount(prev => prev + 1);
-      } else {
-        // Si no es reintento, reiniciar contador
-        setRetryCount(0);
-      }
-      
-      // Clear previous state only on first attempt
-      if (!isRetry) {
-        setLastSendStatus(null);
-        setDetailedError(null);
-        setLastRequestId(null);
-      }
+      // Clear previous state
+      setLastSendStatus(null);
+      setDetailedError(null);
+      setLastRequestId(null);
       
       // Set loading state
       if (filtered) {
@@ -48,13 +25,10 @@ export const useEmailSender = () => {
         setIsSending(true);
       }
       
-      // Send the email with improved timeout handling
+      // Send the email
       const response = await sendManualEmail(filtered);
       
-      // Verificar si el componente sigue montado
-      if (!isMounted.current) return;
-      
-      // Almacenar ID de solicitud para referencia
+      // Store request ID if available
       if (response.data?.requestId || response.error?.context?.requestId) {
         setLastRequestId(response.data?.requestId || response.error?.context?.requestId);
       }
@@ -63,30 +37,6 @@ export const useEmailSender = () => {
         // Store error details if available
         if (response.error?.details) {
           setDetailedError(response.error.details);
-        }
-        
-        // Intentar nuevamente si es un error de red y no hemos excedido los reintentos
-        const isRetryableError = 
-          response.error?.code === 'CONNECTION_ERROR' || 
-          response.error?.code === 'NETWORK_ERROR' ||
-          response.error?.code === 'TIMEOUT_ERROR';
-          
-        if (isRetryableError && retryCount < maxRetries) {
-          toast({
-            title: "Reintentando conexión",
-            description: `Intento ${retryCount + 1} de ${maxRetries + 1}`,
-            duration: 3000
-          });
-          
-          // Esperar un poco antes de reintentar (backoff exponencial)
-          const backoffTime = Math.min(1000 * Math.pow(2, retryCount), 8000);
-          setTimeout(() => {
-            if (isMounted.current) {
-              handleSendEmail(filtered, true);
-            }
-          }, backoffTime);
-          
-          return;
         }
         
         throw new Error(response.error?.message || "Error desconocido");
@@ -106,9 +56,6 @@ export const useEmailSender = () => {
     } catch (error) {
       console.error('Error al enviar correo:', error);
       
-      // Verificar si el componente sigue montado
-      if (!isMounted.current) return;
-      
       // Store error
       setLastSendStatus({
         success: false,
@@ -122,16 +69,13 @@ export const useEmailSender = () => {
         duration: 5000
       });
     } finally {
-      // Verificar si el componente sigue montado
-      if (!isMounted.current) return;
-      
       if (filtered) {
         setIsSendingFiltered(false);
       } else {
         setIsSending(false);
       }
     }
-  }, [toast, retryCount]);
+  }, [toast]);
 
   return {
     isSending,
@@ -139,7 +83,7 @@ export const useEmailSender = () => {
     lastSendStatus,
     detailedError,
     lastRequestId,
-    retryCount,
+    retryCount: 0, // Mantenemos el campo pero sin funcionalidad de reintento
     handleSendEmail
   };
 };

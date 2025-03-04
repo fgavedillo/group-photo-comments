@@ -13,41 +13,16 @@ export async function sendEmailWithTimeout(
   
   // Validate credentials
   if (!gmailUser || !gmailPass) {
-    logger.error("Gmail credentials missing or invalid");
-    throw new Error("Email configuration error: Gmail credentials missing");
+    logger.error("Credenciales de Gmail no encontradas");
+    throw new Error("Error de configuración: Credenciales de Gmail no configuradas");
   }
 
-  try {
-    // Verify the format of Gmail user to ensure it's a valid email
-    if (!gmailUser.includes("@") || !gmailUser.includes(".")) {
-      logger.error(`Invalid Gmail username format: ${gmailUser}`);
-      throw new Error("Invalid Gmail username format. Must be a valid email address.");
-    }
-    
-    // Ensure App Password has no spaces (common mistake when copying from Google)
-    gmailPass = gmailPass.replace(/\s+/g, '');
-    
-    // Check if the password appears to be an App Password (typically 16 chars)
-    if (gmailPass.length !== 16) {
-      logger.error(`Warning: Gmail App Password length (${gmailPass.length}) is not the expected 16 characters`);
-    }
-
-    // Log redacted credentials for debugging (showing only partial info)
-    const redactedPass = gmailPass ? "*".repeat(Math.min(gmailPass.length, 8)) : "not set";
-    logger.info(`SMTP Configuration: 
-    - Server: smtp.gmail.com
-    - Port: 465
-    - User: ${gmailUser}
-    - Password: ${redactedPass.substring(0, 3)}*** (${gmailPass.length} chars)
-    - Using TLS: Yes
-    - Debug mode: Enabled`);
-  } catch (e) {
-    logger.error("Error validating Gmail credentials: ", e);
-    throw new Error(`Error validating Gmail credentials: ${e.message}`);
-  }
-
-  // Configure SMTP client with detailed logging
-  logger.info("Configuring SMTP client...");
+  // Eliminar espacios de la contraseña (error común)
+  gmailPass = gmailPass.replace(/\s+/g, '');
+  
+  logger.info(`Configurando cliente SMTP para ${gmailUser}`);
+  
+  // Configurar cliente SMTP
   const client = new SMTPClient({
     connection: {
       hostname: "smtp.gmail.com",
@@ -58,34 +33,14 @@ export async function sendEmailWithTimeout(
         password: gmailPass,
       },
     },
-    debug: true, // Enable debug mode for detailed logs
+    debug: true,
   });
 
   const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
+  logger.info(`Enviando email a: ${recipients.join(', ')}`);
   
-  // Log email payload size
-  logger.info(`Email payload:
-  - Recipients: ${recipients.length}
-  - Subject: ${payload.subject}
-  - Content length: ${payload.content?.length || 0} chars
-  - HTML length: ${payload.html?.length || 0} chars
-  - Attachments: ${payload.attachments?.length || 0}`);
-  
-  // Log each recipient individually
-  for (const recipient of recipients) {
-    logger.info(`Preparing to send to: ${recipient}`);
-  }
-  
-  // Create a promise with timeout
-  const timeout = 45000; // 45 seconds timeout (increased from 30)
-  const timeoutController = new AbortController();
-  const timeoutId = setTimeout(() => {
-    timeoutController.abort();
-  }, timeout);
-
   try {
-    // This will send the email
-    logger.info(`Intentando enviar email vía SMTP con timeout de ${timeout/1000}s...`);
+    // Enviar el email con un tiempo máximo de espera
     const result = await client.send({
       from: gmailUser,
       to: recipients,
@@ -100,73 +55,28 @@ export async function sendEmailWithTimeout(
       })),
     });
     
-    logger.info("SMTP send result:", result);
-  } catch (smtpError) {
-    // Clear the timeout
-    clearTimeout(timeoutId);
+    logger.info("Email enviado correctamente");
+  } catch (error) {
+    logger.error(`Error al enviar email: ${error.message}`, error);
     
-    // If the error was caused by the abort controller, it's a timeout
-    if (timeoutController.signal.aborted) {
-      logger.error(`SMTP send operation timed out after ${timeout/1000}s`);
-      throw new Error(`SMTP send operation timed out after ${timeout/1000}s`);
-    }
-    
-    // Log SMTP error details
-    logger.error("SMTP Error details:", {
-      name: smtpError.name,
-      message: smtpError.message,
-      code: smtpError.code,
-      stack: smtpError.stack,
-    });
-    
-    // Provide more helpful error messages for common SMTP errors
-    if (smtpError.message && smtpError.message.includes("Username and Password not accepted")) {
-      logger.error("Authentication failed: Gmail username and password not accepted", smtpError);
+    if (error.message && error.message.includes("Username and Password not accepted")) {
       throw new Error(
-        "Gmail authentication failed. Please check: \n" +
-        "1. Your Gmail username is correct\n" +
-        "2. You're using an App Password (not your regular password)\n" +
-        "3. 2-Step Verification is enabled for your Google account\n" +
-        "4. The App Password was generated specifically for this application\n" +
-        "5. The App Password was entered without spaces\n" +
-        "For more information: https://support.google.com/mail/?p=BadCredentials"
-      );
-    } else if (smtpError.message && (
-      smtpError.message.includes("Client was not authenticated") || 
-      smtpError.message.includes("Credentials rejected")
-    )) {
-      logger.error("Authentication failed with other error:", smtpError);
-      throw new Error(
-        "Gmail authentication failed. Your credentials were rejected. Please check:\n" +
-        "1. You have set up 2-Step Verification in your Google account\n" +
-        "2. You have created an App Password specifically for this application\n" +
-        "3. You are using the App Password (16-character code) not your Gmail password\n" +
-        "4. The App Password was entered exactly, without spaces\n" +
-        "Follow the guide at: https://support.google.com/accounts/answer/185833"
-      );
-    } else if (smtpError.message && smtpError.message.includes("Timeout")) {
-      logger.error("SMTP timeout error:", smtpError);
-      throw new Error(
-        "SMTP timeout. The server no respondió en el tiempo esperado. Esto puede deberse a:\n" +
-        "1. Problemas de conectividad a Internet\n" +
-        "2. Restricciones de firewall que bloquean la conexión SMTP\n" +
-        "3. El servidor SMTP de Gmail está experimentando problemas\n" +
-        "Intente nuevamente más tarde y verifique su conexión."
+        "Autenticación de Gmail fallida. Verifique:\n" +
+        "1. El nombre de usuario es correcto\n" +
+        "2. Está usando una contraseña de aplicación (no su contraseña normal)\n" +
+        "3. La verificación en dos pasos está habilitada para su cuenta\n" +
+        "4. La contraseña de aplicación se ingresó sin espacios"
       );
     }
     
-    logger.error("SMTP send error:", smtpError);
-    throw new Error(`SMTP error: ${smtpError.message}`);
+    throw error;
   } finally {
-    // Clear the timeout if not already cleared
-    clearTimeout(timeoutId);
-    
-    // Close the connection
+    // Cerrar la conexión
     try {
       await client.close();
-      logger.info("SMTP connection closed successfully");
+      logger.info("Conexión SMTP cerrada");
     } catch (closeError) {
-      logger.error("Error closing SMTP connection:", closeError);
+      logger.error("Error al cerrar conexión SMTP", closeError);
     }
   }
 }

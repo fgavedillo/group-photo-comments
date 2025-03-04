@@ -1,7 +1,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail } from "lucide-react";
+import { Mail, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendEmail } from "@/lib/supabase";
 import { useState, useEffect } from "react";
@@ -101,7 +101,6 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       `;
 
       console.log("Enviando correo a:", email);
-      console.log("Contenido HTML (longitud):", emailContent.length);
       
       await sendEmail(
         email,
