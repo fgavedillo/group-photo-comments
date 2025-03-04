@@ -18,3 +18,6 @@ export const MAX_EXECUTION_TIME = 25000; // 25 segundos
 
 // Configuración para las solicitudes
 export const REQUEST_TIMEOUT = 10000; // 10 segundos
+
+// URL completa para la función send-email
+export const SEND_EMAIL_FUNCTION_URL = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email";

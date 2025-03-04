@@ -22,79 +22,63 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
     
     // Medir tiempo de ejecución
     const startTime = performance.now();
+
+    // Call the Edge Function with the complete URL to avoid resolution issues
+    const functionUrl = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-daily-report";
     
-    // Call the Edge Function to send the email with retry logic
-    const { data, error } = await invokeWithRetry('send-daily-report', { 
-      manual: true,
-      filteredByUser: filtered,
-      requestId
+    // Preparar los headers
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Authorization", `Bearer ${supabase.auth.getSession()?.data?.session?.access_token || ''}`);
+    headers.append("apikey", supabase.supabaseKey);
+    
+    // Usar fetch directamente para tener más control sobre la solicitud
+    const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({ 
+        manual: true,
+        filteredByUser: filtered,
+        requestId
+      }),
     });
 
     const elapsedTime = performance.now() - startTime;
     console.log(`[ID:${requestId}] Tiempo de respuesta: ${elapsedTime.toFixed(2)}ms`);
 
-    if (error) {
-      console.error(`[ID:${requestId}] Error en la respuesta de la función:`, error);
+    if (!response.ok) {
+      console.error(`[ID:${requestId}] Error HTTP: ${response.status} ${response.statusText}`);
       
-      // Extract detailed error information
-      let errorMessage = `Error en el servidor: ${error.message || 'Desconocido'}`;
-      let detailedInfo = '';
-      let errorCode = error.name || 'UnknownError';
-      
-      if (error.name === 'FunctionsFetchError') {
-        errorMessage = 'Error de conexión con el servidor. No se pudo establecer comunicación con la función.';
-        errorCode = 'CONNECTION_ERROR';
-        detailedInfo = `
-          Detalles técnicos:
-          - Tipo de error: ${error.name}
-          - Mensaje: ${error.message}
-          - ID de solicitud: ${requestId}
-          - Tiempo transcurrido: ${elapsedTime.toFixed(2)}ms
-          
-          Posibles causas:
-          - Problemas de red o conexión
-          - La función puede estar desactivada o en mantenimiento
-          - Tiempo de respuesta excedido (timeout)
-          - CORS no configurado correctamente
-          
-          Recomendaciones:
-          - Verificar su conexión a internet
-          - Intentar nuevamente en unos minutos
-          - Solicitar al administrador verificar los logs de la función Edge
-        `;
-      } else if (error.name === 'FunctionsHttpError') {
-        const statusCode = error.context?.status;
-        errorMessage = `Error HTTP (${statusCode || 'desconocido'}): ${error.message}`;
-        errorCode = `HTTP_ERROR_${statusCode || 'UNKNOWN'}`;
-        detailedInfo = `
-          Detalles técnicos:
-          - Tipo de error: ${error.name}
-          - Mensaje: ${error.message}
-          - Código de estado: ${statusCode || 'No disponible'}
-          - ID de solicitud: ${requestId}
-          - Tiempo transcurrido: ${elapsedTime.toFixed(2)}ms
-          
-          El servidor Edge respondió con un error. Es posible que:
-          - La función encontró un problema interno
-          - Los parámetros enviados sean incorrectos
-          - Haya un problema con los permisos o credenciales
-          
-          Revise los logs del servidor para más detalles.
-        `;
-      } else if (error.name === 'FunctionsRelayError') {
-        errorMessage = `Error de relay: ${error.message}`;
-        errorCode = 'RELAY_ERROR';
-        detailedInfo = `
-          Detalles técnicos:
-          - Tipo de error: ${error.name}
-          - Mensaje: ${error.message}
-          - ID de solicitud: ${requestId}
-          - Tiempo transcurrido: ${elapsedTime.toFixed(2)}ms
-          
-          Hay un problema en la infraestructura que conecta su aplicación con la función Edge.
-          Esto puede deberse a problemas temporales en Supabase o configuraciones incorrectas.
-        `;
+      // Intentar leer el cuerpo del error, si está disponible
+      let errorBody;
+      try {
+        errorBody = await response.text();
+        console.error(`[ID:${requestId}] Cuerpo de la respuesta de error:`, errorBody);
+      } catch (readError) {
+        console.error(`[ID:${requestId}] No se pudo leer el cuerpo de la respuesta:`, readError);
       }
+      
+      // Construir mensaje de error basado en el código de estado
+      let errorMessage = `Error en el servidor: HTTP ${response.status}`;
+      let errorCode = `HTTP_ERROR_${response.status}`;
+      let detailedInfo = `
+        Detalles técnicos:
+        - Código de estado: ${response.status}
+        - Mensaje de estado: ${response.statusText}
+        - URL: ${functionUrl}
+        - ID de solicitud: ${requestId}
+        - Tiempo transcurrido: ${elapsedTime.toFixed(2)}ms
+        ${errorBody ? `- Respuesta: ${errorBody}` : ''}
+        
+        Posibles causas:
+        - Problemas de autenticación
+        - La función Edge encontró un error interno
+        - Error en los parámetros enviados
+        
+        Recomendaciones:
+        - Verificar las credenciales de autenticación
+        - Revisar los logs del servidor
+      `;
       
       return {
         success: false,
@@ -105,12 +89,15 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
           context: {
             requestId,
             elapsedTime: `${elapsedTime.toFixed(2)}ms`,
-            originalError: error
+            statusCode: response.status,
+            statusText: response.statusText
           }
         }
       };
     }
 
+    // Si llegamos aquí, la respuesta fue exitosa
+    const data = await response.json();
     console.log(`[ID:${requestId}] Respuesta del envío de correo:`, data);
     
     return {
@@ -124,43 +111,19 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
   } catch (error) {
     console.error('Error al enviar correo:', error);
     
+    // Detectar si es un error de conexión (fetch)
+    const isFetchError = error.name === 'TypeError' && error.message.includes('fetch');
+    const errorMessage = isFetchError
+      ? 'Error de conexión: No se pudo establecer comunicación con el servidor. Compruebe su conexión a internet o si el servidor está disponible.'
+      : error.message || 'No se pudo enviar el correo programado';
+    
     return {
       success: false,
       error: {
-        message: error.message || 'No se pudo enviar el correo programado',
-        code: 'CLIENT_ERROR',
+        message: errorMessage,
+        code: isFetchError ? 'CONNECTION_ERROR' : 'CLIENT_ERROR',
         context: { originalError: error }
       }
     };
   }
 };
-
-// Función auxiliar para invocar la función Edge con reintentos
-async function invokeWithRetry(functionName: string, payload: any, maxRetries = 2) {
-  let lastError = null;
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      // Si no es el primer intento, esperar antes de reintentar
-      if (attempt > 0) {
-        const retryDelay = attempt * 1000; // Incrementar el tiempo entre reintentos
-        console.log(`Reintentando llamada a ${functionName} en ${retryDelay}ms (intento ${attempt} de ${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, retryDelay));
-      }
-      
-      const response = await supabase.functions.invoke(functionName, { body: payload });
-      return response;
-    } catch (error) {
-      console.warn(`Error en intento ${attempt + 1}/${maxRetries + 1} llamando a ${functionName}:`, error);
-      lastError = error;
-      
-      // Si es el último intento, propagar el error
-      if (attempt === maxRetries) {
-        throw error;
-      }
-    }
-  }
-  
-  // Este código no debería ejecutarse, pero lo incluimos por seguridad
-  throw lastError;
-}
