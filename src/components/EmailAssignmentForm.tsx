@@ -17,6 +17,7 @@ interface EmailAssignmentFormProps {
 export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, imageUrl }: EmailAssignmentFormProps) => {
   const { toast } = useToast();
   const [email, setEmail] = useState(assignedEmail);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     setEmail(assignedEmail);
@@ -38,6 +39,8 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
     }
 
     try {
+      setIsSending(true);
+      
       // Decode the message to remove encoding characters
       const decodedMessage = decodeQuotedPrintable(message);
       
@@ -97,6 +100,9 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         </div>
       `;
 
+      console.log("Enviando correo a:", email);
+      console.log("Contenido HTML (longitud):", emailContent.length);
+      
       await sendEmail(
         email,
         "Nueva incidencia asignada - Acción requerida",
@@ -111,9 +117,11 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       console.error('Error sending email:', error);
       toast({
         title: "Error",
-        description: "No se pudo enviar el correo",
+        description: error.message || "No se pudo enviar el correo",
         variant: "destructive"
       });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -131,9 +139,19 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
           variant="outline" 
           onClick={handleSendEmail}
           className="shrink-0"
+          disabled={isSending}
         >
-          <Mail className="mr-2 h-4 w-4" />
-          Enviar
+          {isSending ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+              Enviando...
+            </>
+          ) : (
+            <>
+              <Mail className="mr-2 h-4 w-4" />
+              Enviar
+            </>
+          )}
         </Button>
       </div>
     </div>

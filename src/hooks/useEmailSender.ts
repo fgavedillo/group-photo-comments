@@ -1,5 +1,5 @@
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendManualEmail } from "@/services/emailService";
 
@@ -17,11 +17,12 @@ export const useEmailSender = () => {
   const isMounted = useRef(true);
 
   // Actualizar la referencia cuando el componente se desmonte
-  useState(() => {
+  useEffect(() => {
+    isMounted.current = true;
     return () => {
       isMounted.current = false;
     };
-  });
+  }, []);
 
   const handleSendEmail = useCallback(async (filtered: boolean = false, isRetry: boolean = false) => {
     try {
@@ -65,11 +66,12 @@ export const useEmailSender = () => {
         }
         
         // Intentar nuevamente si es un error de red y no hemos excedido los reintentos
-        const isNetworkError = 
+        const isRetryableError = 
           response.error?.code === 'CONNECTION_ERROR' || 
+          response.error?.code === 'NETWORK_ERROR' ||
           response.error?.code === 'TIMEOUT_ERROR';
           
-        if (isNetworkError && retryCount < maxRetries) {
+        if (isRetryableError && retryCount < maxRetries) {
           toast({
             title: "Reintentando conexión",
             description: `Intento ${retryCount + 1} de ${maxRetries + 1}`,
@@ -98,7 +100,8 @@ export const useEmailSender = () => {
       
       toast({
         title: "Correo enviado",
-        description: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`
+        description: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`,
+        duration: 5000
       });
     } catch (error) {
       console.error('Error al enviar correo:', error);
@@ -115,7 +118,8 @@ export const useEmailSender = () => {
       toast({
         title: "Error",
         description: error.message || "No se pudo enviar el correo programado",
-        variant: "destructive"
+        variant: "destructive",
+        duration: 5000
       });
     } finally {
       // Verificar si el componente sigue montado

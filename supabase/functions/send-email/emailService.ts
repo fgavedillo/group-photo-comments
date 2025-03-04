@@ -77,7 +77,7 @@ export async function sendEmailWithTimeout(
   }
   
   // Create a promise with timeout
-  const timeout = 30000; // 30 seconds timeout
+  const timeout = 45000; // 45 seconds timeout (increased from 30)
   const timeoutController = new AbortController();
   const timeoutId = setTimeout(() => {
     timeoutController.abort();
@@ -85,7 +85,7 @@ export async function sendEmailWithTimeout(
 
   try {
     // This will send the email
-    logger.info("Attempting to send email via SMTP...");
+    logger.info(`Intentando enviar email vía SMTP con timeout de ${timeout/1000}s...`);
     const result = await client.send({
       from: gmailUser,
       to: recipients,
@@ -107,9 +107,17 @@ export async function sendEmailWithTimeout(
     
     // If the error was caused by the abort controller, it's a timeout
     if (timeoutController.signal.aborted) {
-      logger.error("SMTP send operation timed out after 30s");
-      throw new Error("SMTP send operation timed out after 30s");
+      logger.error(`SMTP send operation timed out after ${timeout/1000}s`);
+      throw new Error(`SMTP send operation timed out after ${timeout/1000}s`);
     }
+    
+    // Log SMTP error details
+    logger.error("SMTP Error details:", {
+      name: smtpError.name,
+      message: smtpError.message,
+      code: smtpError.code,
+      stack: smtpError.stack,
+    });
     
     // Provide more helpful error messages for common SMTP errors
     if (smtpError.message && smtpError.message.includes("Username and Password not accepted")) {
@@ -135,6 +143,15 @@ export async function sendEmailWithTimeout(
         "3. You are using the App Password (16-character code) not your Gmail password\n" +
         "4. The App Password was entered exactly, without spaces\n" +
         "Follow the guide at: https://support.google.com/accounts/answer/185833"
+      );
+    } else if (smtpError.message && smtpError.message.includes("Timeout")) {
+      logger.error("SMTP timeout error:", smtpError);
+      throw new Error(
+        "SMTP timeout. The server no respondió en el tiempo esperado. Esto puede deberse a:\n" +
+        "1. Problemas de conectividad a Internet\n" +
+        "2. Restricciones de firewall que bloquean la conexión SMTP\n" +
+        "3. El servidor SMTP de Gmail está experimentando problemas\n" +
+        "Intente nuevamente más tarde y verifique su conexión."
       );
     }
     
