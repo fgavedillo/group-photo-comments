@@ -35,7 +35,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     }
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // Aumentado a 20 segundos
     
     try {
       const response = await fetch(functionUrl, {
@@ -45,7 +45,8 @@ export const sendEmail = async (to: string, subject: string, content: string, at
           to,
           subject,
           html: content,
-          attachments
+          attachments,
+          requestId: `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
         }),
         signal: controller.signal
       });
@@ -66,17 +67,22 @@ export const sendEmail = async (to: string, subject: string, content: string, at
           errorMessage += ` - ${errorText}`;
         }
         
+        console.error("Error de respuesta:", errorMessage);
         throw new Error(errorMessage);
       }
       
-      return await response.json();
+      const data = await response.json();
+      console.log("Respuesta del servicio de correo:", data);
+      return data;
     } catch (fetchError) {
       clearTimeout(timeoutId);
       
       if (fetchError.name === 'AbortError') {
-        throw new Error("La operación ha excedido el tiempo máximo de espera (15 segundos)");
+        console.error("Tiempo de espera excedido");
+        throw new Error("La operación ha excedido el tiempo máximo de espera (20 segundos)");
       }
       
+      console.error("Error en la solicitud fetch:", fetchError);
       throw fetchError;
     }
   } catch (error) {

@@ -16,28 +16,29 @@ serve(async (req) => {
   let requestId: string;
   
   try {
+    // Verificar las variables de entorno al inicio
+    const gmailUser = Deno.env.get("GMAIL_USER");
+    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
+    
+    if (!gmailUser || !gmailPass) {
+      throw new Error(
+        "Error de configuración: Variables de entorno GMAIL_USER y/o GMAIL_APP_PASSWORD no configuradas. " +
+        "Por favor, configure estas variables en los secretos de Supabase."
+      );
+    }
+    
+    // Procesar payload
     const payload = await req.json() as EmailPayload;
     requestId = payload.requestId || `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     const logger = new Logger(requestId);
     logger.info("Función de email invocada");
+    logger.info(`Variables de entorno: GMAIL_USER=${gmailUser}, GMAIL_APP_PASSWORD=*****`);
     
     // Validar campos requeridos
     if (!payload.to || !payload.subject || (!payload.content && !payload.html)) {
       logger.error("Faltan campos requeridos");
       throw new Error("Faltan campos requeridos: destinatario, asunto, y contenido o html");
-    }
-
-    // Verificar credenciales de Gmail
-    const gmailUser = Deno.env.get("GMAIL_USER");
-    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
-    
-    if (!gmailUser || !gmailPass) {
-      logger.error("Credenciales de Gmail no configuradas");
-      throw new Error(
-        "Error de configuración: Credenciales de Gmail no configuradas. " +
-        "Configure GMAIL_USER y GMAIL_APP_PASSWORD en los secretos de la función Edge."
-      );
     }
 
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
