@@ -75,7 +75,7 @@ export async function sendEmailWithTimeout(
         filename: attachment.filename,
         content: attachment.content,
         encoding: attachment.encoding || "base64",
-        contentType: attachment.type,
+        contentType: attachment.contentType || attachment.type,
       })),
     });
     
@@ -88,6 +88,19 @@ export async function sendEmailWithTimeout(
     if (timeoutController.signal.aborted) {
       logger.error("SMTP send operation timed out after 30s");
       throw new Error("SMTP send operation timed out after 30s");
+    }
+    
+    // Provide more helpful error messages for common SMTP errors
+    if (smtpError.message && smtpError.message.includes("Username and Password not accepted")) {
+      logger.error("Authentication failed: Gmail username and password not accepted", smtpError);
+      throw new Error(
+        "Gmail authentication failed. Please check: \n" +
+        "1. Your Gmail username is correct\n" +
+        "2. You're using an App Password (not your regular password)\n" +
+        "3. 2-Step Verification is enabled for your Google account\n" +
+        "4. The App Password was generated specifically for this application\n" +
+        "For more information: https://support.google.com/mail/?p=BadCredentials"
+      );
     }
     
     logger.error("SMTP send error:", smtpError);

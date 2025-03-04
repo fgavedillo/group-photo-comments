@@ -34,6 +34,18 @@ serve(async (req) => {
       throw new Error("Missing required fields: to, subject, and content or html");
     }
 
+    // Check if GMAIL_USER and GMAIL_APP_PASSWORD environment variables are set
+    const gmailUser = Deno.env.get("GMAIL_USER");
+    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
+    
+    if (!gmailUser || !gmailPass) {
+      logger.error("Gmail credentials missing");
+      throw new Error(
+        "Email configuration error: Gmail credentials missing. " +
+        "Please set GMAIL_USER and GMAIL_APP_PASSWORD in Supabase Edge Function secrets."
+      );
+    }
+
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
     logger.info(`Received email request for ${recipients.join(', ')}`);
     
@@ -69,16 +81,28 @@ serve(async (req) => {
     const elapsedTime = Date.now() - startTime;
     logger.error(`Error sending email (${elapsedTime}ms):`, error);
     
+    // Format user-friendly error message
+    let userMessage = "Email sending failed";
+    let detailedError = error.message;
+    
+    if (error.message && error.message.includes("Gmail authentication failed")) {
+      userMessage = "Gmail authentication failed";
+      detailedError = error.message;
+    } else if (error.message && error.message.includes("Email configuration error")) {
+      userMessage = "Configuration error";
+      detailedError = error.message;
+    }
+    
     // Return detailed error response
     const errorResponse: EmailResponse = {
       success: false,
-      message: "Email sending failed",
+      message: userMessage,
       requestId: requestId,
       elapsedTime: `${elapsedTime}ms`,
       error: {
-        message: error.message,
+        message: detailedError,
         stack: error.stack,
-        details: "Por favor revise los logs para más detalles."
+        details: "Please check the Gmail credentials and App Password configuration."
       }
     };
 
