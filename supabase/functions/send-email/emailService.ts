@@ -25,7 +25,7 @@ export async function sendEmailWithTimeout(
     }
 
     // Log redacted credentials for debugging (showing only partial info)
-    const redactedPass = gmailPass ? "*".repeat(Math.min(gmailPass.length, a)) : "not set";
+    const redactedPass = gmailPass ? "*".repeat(Math.min(gmailPass.length, 8)) : "not set";
     logger.info(`SMTP Configuration: 
     - Server: smtp.gmail.com
     - Port: 465
