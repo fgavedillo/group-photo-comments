@@ -35,7 +35,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     }
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // Reducido a 15 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     
     try {
       const response = await fetch(functionUrl, {

@@ -9,20 +9,19 @@ export async function sendEmailWithTimeout(
 ): Promise<void> {
   // Get environment variables for SMTP configuration
   const gmailUser = Deno.env.get("GMAIL_USER");
-  let gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
+  // Configurar la contraseña sin espacios desde el inicio
+  let gmailPass = Deno.env.get("GMAIL_APP_PASSWORD")?.replace(/\s+/g, '');
   
-  // Validate credentials
+  // Validar credenciales
   if (!gmailUser || !gmailPass) {
     logger.error("Credenciales de Gmail no encontradas");
     throw new Error("Error de configuración: Credenciales de Gmail no configuradas");
   }
 
-  // Eliminar espacios de la contraseña (error común)
-  gmailPass = gmailPass.replace(/\s+/g, '');
-  
   logger.info(`Configurando cliente SMTP para ${gmailUser}`);
+  logger.info(`Longitud de contraseña: ${gmailPass.length} caracteres`);
   
-  // Configurar cliente SMTP
+  // Configurar cliente SMTP con opciones adicionales de depuración
   const client = new SMTPClient({
     connection: {
       hostname: "smtp.gmail.com",
@@ -62,10 +61,10 @@ export async function sendEmailWithTimeout(
     if (error.message && error.message.includes("Username and Password not accepted")) {
       throw new Error(
         "Autenticación de Gmail fallida. Verifique:\n" +
-        "1. El nombre de usuario es correcto\n" +
-        "2. Está usando una contraseña de aplicación (no su contraseña normal)\n" +
+        "1. El correo utilizado es: " + gmailUser + "\n" +
+        "2. Está usando esta contraseña de aplicación (sin espacios): " + "*".repeat(gmailPass.length) + "\n" +
         "3. La verificación en dos pasos está habilitada para su cuenta\n" +
-        "4. La contraseña de aplicación se ingresó sin espacios"
+        "4. La contraseña tiene exactamente 16 caracteres sin espacios"
       );
     }
     
