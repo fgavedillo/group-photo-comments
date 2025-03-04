@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 
@@ -19,6 +18,7 @@ interface EmailPayload {
     encoding?: string;
     type?: string;
   }>;
+  requestId?: string;
 }
 
 serve(async (req) => {
@@ -27,21 +27,30 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Start timing
+  // Start timing and generate request ID if not provided
   const startTime = Date.now();
-  console.log(`[${new Date().toISOString()}] Email function invoked`);
-
+  let requestId: string;
+  
   try {
     const payload = await req.json() as EmailPayload;
+    requestId = payload.requestId || `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email function invoked`);
     
     // Validate required fields
     if (!payload.to || !payload.subject || (!payload.content && !payload.html)) {
-      console.error("Missing required fields in payload:", JSON.stringify(payload, null, 2));
+      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Missing required fields in payload:`, 
+        JSON.stringify({
+          hasTo: !!payload.to,
+          hasSubject: !!payload.subject,
+          hasContent: !!(payload.content || payload.html)
+        })
+      );
       throw new Error("Missing required fields: to, subject, and content or html");
     }
 
     const recipients = Array.isArray(payload.to) ? payload.to : [payload.to];
-    console.log(`[${new Date().toISOString()}] Received email request for ${recipients.join(', ')}`);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Received email request for ${recipients.join(', ')}`);
     
     // Get environment variables for SMTP configuration
     const gmailUser = Deno.env.get("GMAIL_USER");
@@ -49,12 +58,12 @@ serve(async (req) => {
     
     // Validate credentials
     if (!gmailUser || !gmailPass) {
-      console.error("[ERROR] Gmail credentials missing or invalid");
+      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Gmail credentials missing or invalid`);
       throw new Error("Email configuration error: Gmail credentials missing");
     }
 
     // Log configuration details (without sensitive info)
-    console.log(`[${new Date().toISOString()}] SMTP Configuration: 
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] SMTP Configuration: 
     - Server: smtp.gmail.com
     - Port: 465
     - User: ${gmailUser}
@@ -62,7 +71,7 @@ serve(async (req) => {
     - Debug mode: Enabled`);
 
     // Configure SMTP client with detailed logging
-    console.log(`[${new Date().toISOString()}] Configuring SMTP client...`);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Configuring SMTP client...`);
     const client = new SMTPClient({
       connection: {
         hostname: "smtp.gmail.com",
@@ -77,7 +86,7 @@ serve(async (req) => {
     });
 
     // Log email payload size
-    console.log(`[${new Date().toISOString()}] Email payload:
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email payload:
     - Recipients: ${recipients.length}
     - Subject: ${payload.subject}
     - Content length: ${payload.content?.length || 0} chars
@@ -86,57 +95,72 @@ serve(async (req) => {
     
     // Log each recipient individually
     for (const recipient of recipients) {
-      console.log(`[${new Date().toISOString()}] Preparing to send to: ${recipient}`);
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Preparing to send to: ${recipient}`);
     }
     
-    // Send email with timeout handling
+    // Send email with timeout handling and immediate timeout
     try {
-      console.log(`[${new Date().toISOString()}] Attempting to send email via SMTP...`);
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Attempting to send email via SMTP...`);
       
       // Create a promise with timeout
       const sendWithTimeout = async () => {
         const timeout = 30000; // 30 seconds timeout
-        const sendPromise = client.send({
-          from: gmailUser,
-          to: recipients,
-          subject: payload.subject,
-          content: payload.content,
-          html: payload.html,
-          attachments: payload.attachments?.map(attachment => ({
-            filename: attachment.filename,
-            content: attachment.content,
-            encoding: attachment.encoding || "base64",
-            contentType: attachment.type,
-          })),
-        });
-        
-        // Create a timeout promise
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error("SMTP send operation timed out after 30s")), timeout);
-        });
-        
-        // Race between the send operation and the timeout
-        return Promise.race([sendPromise, timeoutPromise]);
+        const timeoutController = new AbortController();
+        const timeoutId = setTimeout(() => {
+          timeoutController.abort();
+        }, timeout);
+
+        try {
+          // This will send the email
+          const result = await client.send({
+            from: gmailUser,
+            to: recipients,
+            subject: payload.subject,
+            content: payload.content,
+            html: payload.html,
+            attachments: payload.attachments?.map(attachment => ({
+              filename: attachment.filename,
+              content: attachment.content,
+              encoding: attachment.encoding || "base64",
+              contentType: attachment.type,
+            })),
+          });
+          
+          // Clear the timeout
+          clearTimeout(timeoutId);
+          return result;
+        } catch (error) {
+          // Clear the timeout
+          clearTimeout(timeoutId);
+          
+          // If the error was caused by the abort controller, it's a timeout
+          if (timeoutController.signal.aborted) {
+            throw new Error("SMTP send operation timed out after 30s");
+          }
+          
+          // Otherwise, rethrow the original error
+          throw error;
+        }
       };
       
       const result = await sendWithTimeout();
-      console.log(`[${new Date().toISOString()}] SMTP send result:`, result);
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] SMTP send result:`, result);
     } catch (smtpError) {
-      console.error(`[${new Date().toISOString()}] SMTP send error:`, smtpError);
+      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] SMTP send error:`, smtpError);
       throw new Error(`SMTP error: ${smtpError.message}`);
     }
 
     // Close the connection
     try {
       await client.close();
-      console.log(`[${new Date().toISOString()}] SMTP connection closed successfully`);
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] SMTP connection closed successfully`);
     } catch (closeError) {
-      console.error(`[${new Date().toISOString()}] Error closing SMTP connection:`, closeError);
+      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error closing SMTP connection:`, closeError);
     }
     
     // Calculate elapsed time
     const elapsedTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] Email sent successfully to ${recipients.join(", ")} in ${elapsedTime}ms`);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email sent successfully to ${recipients.join(", ")} in ${elapsedTime}ms`);
 
     // Return success response
     return new Response(
@@ -144,6 +168,7 @@ serve(async (req) => {
         success: true, 
         message: "Email sent successfully",
         recipients: recipients,
+        requestId: requestId,
         elapsedTime: `${elapsedTime}ms`
       }),
       {
@@ -152,9 +177,12 @@ serve(async (req) => {
       }
     );
   } catch (error) {
+    // Use default request ID if we couldn't parse one from the payload
+    requestId = requestId || `error-${Date.now()}`;
+    
     // Calculate elapsed time for error case
     const elapsedTime = Date.now() - startTime;
-    console.error(`[${new Date().toISOString()}] Error sending email (${elapsedTime}ms):`, error);
+    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error sending email (${elapsedTime}ms):`, error);
     
     // Return detailed error response
     return new Response(
@@ -163,6 +191,7 @@ serve(async (req) => {
         error: error.message,
         stack: error.stack,
         details: "Por favor revise los logs para más detalles.",
+        requestId: requestId,
         elapsedTime: `${elapsedTime}ms`
       }),
       {

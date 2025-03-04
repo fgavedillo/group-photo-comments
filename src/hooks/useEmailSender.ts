@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendManualEmail } from "@/services/emailService";
 
@@ -9,12 +9,14 @@ export const useEmailSender = () => {
   const [isSendingFiltered, setIsSendingFiltered] = useState(false);
   const [lastSendStatus, setLastSendStatus] = useState<{success: boolean; message: string} | null>(null);
   const [detailedError, setDetailedError] = useState<string | null>(null);
+  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
 
-  const handleSendEmail = async (filtered: boolean = false) => {
+  const handleSendEmail = useCallback(async (filtered: boolean = false) => {
     try {
       // Clear previous state
       setLastSendStatus(null);
       setDetailedError(null);
+      setLastRequestId(null);
       
       if (filtered) {
         setIsSendingFiltered(true);
@@ -23,6 +25,11 @@ export const useEmailSender = () => {
       }
       
       const response = await sendManualEmail(filtered);
+      
+      // Almacenar ID de solicitud para referencia
+      if (response.data?.requestId || response.error?.context?.requestId) {
+        setLastRequestId(response.data?.requestId || response.error?.context?.requestId);
+      }
       
       if (!response.success) {
         // Store error details if available
@@ -64,13 +71,14 @@ export const useEmailSender = () => {
         setIsSending(false);
       }
     }
-  };
+  }, [toast]);
 
   return {
     isSending,
     isSendingFiltered,
     lastSendStatus,
     detailedError,
+    lastRequestId,
     handleSendEmail
   };
 };

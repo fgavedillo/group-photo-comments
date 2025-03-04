@@ -14,13 +14,49 @@ export interface Issue {
   timestamp: string;
 }
 
-export interface KPIData {
-  total: number;
-  activeIssues: Issue[];
-  withImages: number;
+export interface ReportRow {
+  id: number;
+  message: string;
+  timestamp: string;
+  status: string;
+  area: string;
+  responsable: string;
+  actionPlan: string;
+  securityImprovement: string;
+  imageUrl: string | null;
+  assignedEmail: string | null;
 }
 
-export interface DistributionData {
-  byStatus: Record<string, number>;
-  byArea: Record<string, number>;
+export interface IssuesByStatus {
+  [key: string]: ReportRow[];
+}
+
+export interface IssueReport {
+  date: string;
+  issues: IssuesByStatus;
+  totalCount: number;
+}
+
+export interface SendDailyReportRequest {
+  manual?: boolean;
+  filteredByUser?: boolean;
+  requestId?: string;
+}
+
+export interface SendDailyReportResponse {
+  success: boolean;
+  message: string;
+  timestamp: string;
+  requestId?: string;
+  recipients?: string[];
+  stats?: {
+    totalEmails: number;
+    successCount: number;
+    failureCount: number;
+  };
+  error?: {
+    code: string;
+    message: string;
+    details?: string;
+  };
 }

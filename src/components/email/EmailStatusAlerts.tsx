@@ -5,9 +5,10 @@ import { AlertCircle, CheckCircle } from "lucide-react";
 interface EmailStatusAlertsProps {
   lastSendStatus: {success: boolean; message: string} | null;
   detailedError: string | null;
+  requestId?: string | null;
 }
 
-export const EmailStatusAlerts = ({ lastSendStatus, detailedError }: EmailStatusAlertsProps) => {
+export const EmailStatusAlerts = ({ lastSendStatus, detailedError, requestId }: EmailStatusAlertsProps) => {
   if (!lastSendStatus && !detailedError) return null;
   
   return (
@@ -24,6 +25,11 @@ export const EmailStatusAlerts = ({ lastSendStatus, detailedError }: EmailStatus
           </AlertTitle>
           <AlertDescription>
             {lastSendStatus.message}
+            {requestId && (
+              <div className="mt-2 text-xs opacity-80">
+                ID de solicitud: {requestId}
+              </div>
+            )}
           </AlertDescription>
         </Alert>
       )}

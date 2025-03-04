@@ -9,6 +9,7 @@ export const EmailForceTab = () => {
     isSendingFiltered,
     lastSendStatus,
     detailedError,
+    lastRequestId,
     handleSendEmail
   } = useEmailSender();
 
@@ -17,6 +18,7 @@ export const EmailForceTab = () => {
       <EmailStatusAlerts 
         lastSendStatus={lastSendStatus}
         detailedError={detailedError}
+        requestId={lastRequestId}
       />
       
       <EmailActionCard
