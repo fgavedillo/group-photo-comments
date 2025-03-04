@@ -2,8 +2,9 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Issue } from "@/types/issue";
 import { format } from "date-fns";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { ImageModal } from "./ImageModal";
 
 interface IssueTableProps {
   issues: Issue[];
@@ -11,6 +12,9 @@ interface IssueTableProps {
 }
 
 export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
+  // Estado para controlar la vista de imagen ampliada
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
   // Ref para controlar las actualizaciones
   const isUpdatingRef = useRef(false);
   const pendingUpdateRef = useRef(false);
@@ -126,7 +130,12 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
                   <img 
                     src={issue.imageUrl} 
                     alt="Incidencia" 
-                    className="w-16 h-16 object-cover rounded-md"
+                    className="w-16 h-16 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setSelectedImage(issue.imageUrl)}
+                    onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+                      console.error('Error loading image:', issue.imageUrl);
+                      e.currentTarget.src = '/placeholder.svg';
+                    }}
                   />
                 )}
               </TableCell>
@@ -134,6 +143,15 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
           ))}
         </TableBody>
       </Table>
+      
+      {/* Modal para visualizar imágenes */}
+      {selectedImage && (
+        <ImageModal
+          imageUrl={selectedImage}
+          isOpen={!!selectedImage}
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </div>
   );
 };

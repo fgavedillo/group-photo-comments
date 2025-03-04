@@ -5,14 +5,20 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 export const EmailForceTab = () => {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
   const [isSendingFiltered, setIsSendingFiltered] = useState(false);
+  const [lastSendStatus, setLastSendStatus] = useState<{success: boolean; message: string} | null>(null);
 
   const handleSendEmail = async (filtered: boolean = false) => {
     try {
+      // Limpiar estado anterior
+      setLastSendStatus(null);
+      
       if (filtered) {
         setIsSendingFiltered(true);
       } else {
@@ -30,10 +36,17 @@ export const EmailForceTab = () => {
       });
 
       if (error) {
-        throw error;
+        console.error('Error en la respuesta de la función:', error);
+        throw new Error(`Error en el servidor: ${error.message || 'Desconocido'}`);
       }
 
       console.log("Respuesta del envío de correo:", data);
+      
+      // Almacenar éxito
+      setLastSendStatus({
+        success: true,
+        message: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`
+      });
       
       toast({
         title: "Correo enviado",
@@ -41,9 +54,16 @@ export const EmailForceTab = () => {
       });
     } catch (error) {
       console.error('Error al enviar correo:', error);
+      
+      // Almacenar error
+      setLastSendStatus({
+        success: false,
+        message: `Error: ${error.message || 'No se pudo enviar el correo programado'}`
+      });
+      
       toast({
         title: "Error",
-        description: "No se pudo enviar el correo programado",
+        description: error.message || "No se pudo enviar el correo programado",
         variant: "destructive"
       });
     } finally {
@@ -57,6 +77,22 @@ export const EmailForceTab = () => {
 
   return (
     <div className="p-4 space-y-4">
+      {lastSendStatus && (
+        <Alert variant={lastSendStatus.success ? "default" : "destructive"}>
+          {lastSendStatus.success ? (
+            <CheckCircle className="h-4 w-4" />
+          ) : (
+            <AlertCircle className="h-4 w-4" />
+          )}
+          <AlertTitle>
+            {lastSendStatus.success ? "Envío exitoso" : "Error de envío"}
+          </AlertTitle>
+          <AlertDescription>
+            {lastSendStatus.message}
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <Card>
         <CardHeader>
           <CardTitle>Envío Manual de Correo Completo</CardTitle>
@@ -71,7 +107,7 @@ export const EmailForceTab = () => {
           </p>
           <Button 
             onClick={() => handleSendEmail(false)} 
-            disabled={isSending}
+            disabled={isSending || isSendingFiltered}
             className="w-full sm:w-auto"
           >
             <Mail className="mr-2 h-4 w-4" />
@@ -94,7 +130,7 @@ export const EmailForceTab = () => {
           </p>
           <Button 
             onClick={() => handleSendEmail(true)} 
-            disabled={isSendingFiltered}
+            disabled={isSendingFiltered || isSending}
             className="w-full sm:w-auto"
             variant="secondary"
           >

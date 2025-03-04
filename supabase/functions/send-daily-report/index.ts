@@ -17,62 +17,79 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Email sending function
+// Email sending function with improved error handling
 async function sendEmail(recipientEmail: string, subject: string, html: string) {
-  const gmailUser = Deno.env.get("GMAIL_USER");
-  const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
-
-  if (!gmailUser || !gmailPass) {
-    throw new Error("Gmail credentials not configured");
-  }
-
-  // Create the email payload
-  const email = {
-    from: EMAIL_SENDER,
-    to: recipientEmail,
-    subject: subject,
-    html: html,
-  };
-
   try {
+    const gmailUser = Deno.env.get("GMAIL_USER");
+    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
+
+    if (!gmailUser || !gmailPass) {
+      console.error("Gmail credentials not configured");
+      throw new Error("Gmail credentials not configured");
+    }
+
+    // Create the email payload
+    const email = {
+      from: EMAIL_SENDER,
+      to: recipientEmail,
+      subject: subject,
+      html: html,
+    };
+
+    console.log(`Attempting to send email to ${recipientEmail} with subject: ${subject}`);
+    
     // Call the send-email function
     const { data, error } = await supabase.functions.invoke("send-email", {
       body: email,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Error in send-email function for recipient ${recipientEmail}:`, error);
+      throw error;
+    }
+
+    if (!data) {
+      console.error(`No response received from email function for recipient ${recipientEmail}`);
+      throw new Error("No response received from email function");
+    }
+
     console.log(`Email sent successfully to ${recipientEmail}`);
     return data;
   } catch (error) {
-    console.error(`Error sending email to ${recipientEmail}:`, error);
+    console.error(`Error in sendEmail function for recipient ${recipientEmail}:`, error);
     throw error;
   }
 }
 
 // Function to fetch all issues
 async function fetchAllIssues(): Promise<ReportRow[]> {
-  const { data, error } = await supabase
-    .from("issue_details")
-    .select("*")
-    .order("timestamp", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("issue_details")
+      .select("*")
+      .order("timestamp", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching issues:", error);
+    if (error) {
+      console.error("Error fetching issues:", error);
+      throw error;
+    }
+
+    return (data || []).map((issue) => ({
+      id: issue.id,
+      message: issue.message || "",
+      timestamp: new Date(issue.timestamp).toISOString(),
+      status: issue.status || "en-estudio",
+      area: issue.area || "No especificada",
+      responsable: issue.responsable || "Sin asignar",
+      actionPlan: issue.action_plan || "",
+      securityImprovement: issue.security_improvement || "",
+      imageUrl: issue.image_url || null,
+      assignedEmail: issue.assigned_email || null,
+    }));
+  } catch (error) {
+    console.error("Error in fetchAllIssues:", error);
     throw error;
   }
-
-  return (data || []).map((issue) => ({
-    id: issue.id,
-    message: issue.message || "",
-    timestamp: new Date(issue.timestamp).toISOString(),
-    status: issue.status || "en-estudio",
-    area: issue.area || "No especificada",
-    responsable: issue.responsable || "Sin asignar",
-    actionPlan: issue.action_plan || "",
-    securityImprovement: issue.security_improvement || "",
-    imageUrl: issue.image_url || null,
-    assignedEmail: issue.assigned_email || null,
-  }));
 }
 
 // Group issues by assigned email
@@ -195,7 +212,11 @@ serve(async (req) => {
     console.error("Error:", error);
     
     return new Response(
-      JSON.stringify({ error: error.message || "Unknown error occurred" }),
+      JSON.stringify({ 
+        error: error.message || "Unknown error occurred",
+        stack: error.stack,
+        details: "Por favor revise los logs para más detalles."
+      }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,

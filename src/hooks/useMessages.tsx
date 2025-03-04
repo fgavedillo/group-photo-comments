@@ -31,13 +31,18 @@ export const useMessages = () => {
         return;
       }
 
-      console.log('Mensajes cargados:', issuesData);
+      console.log('Mensajes cargados:', issuesData.length);
 
       const formattedMessages = issuesData.map(issue => {
-        // Prioritize the name that appears in the management (responsable if it exists)
-        let username = issue.responsable || issue.username;
+        // Siempre priorizar el responsable como nombre principal si existe
+        let username = issue.responsable || '';
         
-        // If no username or responsable, try to build from first_name and last_name
+        // Si no hay responsable, intentar usar el username
+        if (!username) {
+          username = issue.username || '';
+        }
+        
+        // Si aún no hay nombre, intentar construirlo desde first_name y last_name
         if (!username) {
           const firstName = issue.first_name || '';
           const lastName = issue.last_name || '';
@@ -49,7 +54,7 @@ export const useMessages = () => {
           }
         }
         
-        // Decode the message to avoid encoding issues
+        // Decodificar el mensaje para evitar problemas de codificación
         const decodedMessage = issue.message ? decodeQuotedPrintable(issue.message) : '';
         
         return {
@@ -86,7 +91,7 @@ export const useMessages = () => {
   useEffect(() => {
     loadMessages();
 
-    // Configure subscription to real-time changes for all relevant tables
+    // Configurar suscripción a cambios en tiempo real para todas las tablas relevantes
     const channel = supabase
       .channel('table-changes')
       .on(
@@ -110,6 +115,18 @@ export const useMessages = () => {
         },
         (payload) => {
           console.log('Cambio detectado en issue_images:', payload);
+          loadMessages();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        (payload) => {
+          console.log('Cambio detectado en profiles:', payload);
           loadMessages();
         }
       )
