@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Mail, AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -28,15 +27,11 @@ export const EmailForceTab = () => {
       
       console.log(`Iniciando envío manual de correo ${filtered ? 'filtrado' : 'completo'}`);
       
-      // Call the Edge Function to send the email with a longer timeout
+      // Call the Edge Function to send the email without the unsupported options
       const { data, error } = await supabase.functions.invoke('send-daily-report', {
         body: { 
           manual: true,
           filteredByUser: filtered // Parameter to filter by user's pending actions
-        },
-        // Aumentar el timeout para dar más tiempo a la función
-        options: {
-          timeout: 60000 // 60 segundos (ajustar según sea necesario)
         }
       });
 

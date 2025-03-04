@@ -29,15 +29,13 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     // Añadimos un timeout más largo para darle tiempo a la función
     const startTime = performance.now();
     
+    // Remove the options property since it's not supported in the type definition
     const { data, error } = await supabase.functions.invoke('send-email', {
       body: { 
         to, 
         subject, 
         html: content, 
         attachments
-      },
-      options: {
-        timeout: 60000 // 60 segundos (ajustar según sea necesario)
       }
     });
 
