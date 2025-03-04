@@ -9,7 +9,7 @@ export async function sendEmailWithTimeout(
 ): Promise<void> {
   // Get environment variables for SMTP configuration
   const gmailUser = Deno.env.get("GMAIL_USER");
-  const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
+  let gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
   
   // Validate credentials
   if (!gmailUser || !gmailPass) {
@@ -22,6 +22,14 @@ export async function sendEmailWithTimeout(
     if (!gmailUser.includes("@") || !gmailUser.includes(".")) {
       logger.error(`Invalid Gmail username format: ${gmailUser}`);
       throw new Error("Invalid Gmail username format. Must be a valid email address.");
+    }
+    
+    // Ensure App Password has no spaces (common mistake when copying from Google)
+    gmailPass = gmailPass.replace(/\s+/g, '');
+    
+    // Check if the password appears to be an App Password (typically 16 chars)
+    if (gmailPass.length !== 16) {
+      logger.error(`Warning: Gmail App Password length (${gmailPass.length}) is not the expected 16 characters`);
     }
 
     // Log redacted credentials for debugging (showing only partial info)
