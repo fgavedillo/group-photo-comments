@@ -18,7 +18,7 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
     const { data, error } = await supabase.functions.invoke('send-daily-report', {
       body: { 
         manual: true,
-        filteredByUser: filtered // Parameter to filter by user's pending actions
+        filteredByUser: filtered
       }
     });
 
