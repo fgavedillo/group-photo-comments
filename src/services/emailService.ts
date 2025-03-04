@@ -34,10 +34,9 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token || '';
     
-    // Usar el apiKey de forma segura obteniendo la URL y la key por separado
-    const apiKey = supabase.supabaseUrl.includes('supabase.co') 
-      ? (supabase as any).restUrl.match(/apikey=([^&]+)/)?.[1] || ''
-      : '';
+    // Usar el apiKey de forma segura
+    // En lugar de acceder a propiedades protegidas, extraemos la key de la URL pública
+    const apiKey = process.env.SUPABASE_ANON_KEY || '';
     
     headers.append("Authorization", `Bearer ${accessToken}`);
     if (apiKey) {
