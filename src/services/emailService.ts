@@ -34,10 +34,8 @@ export const sendManualEmail = async (filtered: boolean = false): Promise<SendEm
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData?.session?.access_token || '';
     
-    // Usar el apiKey de forma segura
-    // En lugar de acceder a propiedades protegidas, usamos la variable de entorno
-    const apiKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-                   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I';
+    // Usar un apiKey directamente - evitamos usar process.env que no está disponible en el navegador
+    const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I';
     
     headers.append("Authorization", `Bearer ${accessToken}`);
     if (apiKey) {
