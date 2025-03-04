@@ -1,4 +1,3 @@
-
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -74,11 +73,6 @@ const Dashboard = () => {
           </TabsList>
         </div>
         
-        {/* MessageInput colocado justo debajo del menú de tabs */}
-        <div className="border-b border-gray-100 shadow-sm">
-          <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
-        </div>
-        
         <div className="flex-1 overflow-auto">
           <TabsContent value="perfil" className="h-full m-0 p-4">
             <div className="max-w-md mx-auto space-y-4">
@@ -99,6 +93,10 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
+            <div className="border-b border-gray-100 shadow-sm">
+              <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
+            </div>
+            
             <div className="flex-1 overflow-auto">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
@@ -108,7 +106,6 @@ const Dashboard = () => {
                 <MessageList messages={messages} onMessageDelete={loadMessages} />
               )}
             </div>
-            {/* Eliminado MessageInput de aquí ya que ahora está en la parte superior */}
           </TabsContent>
           
           <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col">
