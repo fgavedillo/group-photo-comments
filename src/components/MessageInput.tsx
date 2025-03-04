@@ -6,9 +6,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface MessageInputProps {
   onSend: (message: string, image?: File) => void;
+  className?: string;
 }
 
-export const MessageInput = ({ onSend }: MessageInputProps) => {
+export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
   const [message, setMessage] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -76,27 +77,7 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white border-t border-gray-100 p-4">
-      {imagePreview && (
-        <div className="mb-4 relative">
-          <img 
-            src={imagePreview} 
-            alt="Vista previa" 
-            className="w-32 h-32 object-cover rounded-lg"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setImagePreview(null);
-              setSelectedImage(null);
-            }}
-            className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
-          >
-            ×
-          </button>
-        </div>
-      )}
-      
+    <form onSubmit={handleSubmit} className={`bg-white p-4 ${className}`}>
       <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-4 py-2">
         <button
           type="button"
@@ -135,6 +116,26 @@ export const MessageInput = ({ onSend }: MessageInputProps) => {
           <Send size={20} />
         </button>
       </div>
+      
+      {imagePreview && (
+        <div className="mt-4 relative">
+          <img 
+            src={imagePreview} 
+            alt="Vista previa" 
+            className="w-32 h-32 object-cover rounded-lg"
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setImagePreview(null);
+              setSelectedImage(null);
+            }}
+            className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </form>
   );
 };

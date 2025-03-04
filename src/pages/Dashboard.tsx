@@ -50,6 +50,11 @@ const Dashboard = () => {
         </Button>
       </header>
 
+      {/* Message input moved to top of page, right below header */}
+      <div className="border-b border-gray-100 shadow-sm">
+        <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
+      </div>
+
       <Tabs defaultValue="perfil" className="flex-1">
         <div className="sticky top-[4.5rem] bg-white z-40 border-b overflow-x-auto">
           <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
@@ -103,7 +108,7 @@ const Dashboard = () => {
                 <MessageList messages={messages} onMessageDelete={loadMessages} />
               )}
             </div>
-            <MessageInput onSend={handleSendMessage} />
+            {/* Removed MessageInput from here as it's now at the top of the page */}
           </TabsContent>
           
           <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col">
