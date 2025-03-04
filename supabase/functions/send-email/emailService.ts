@@ -17,13 +17,26 @@ export async function sendEmailWithTimeout(
     throw new Error("Email configuration error: Gmail credentials missing");
   }
 
-  // Log configuration details (without sensitive info)
-  logger.info(`SMTP Configuration: 
-  - Server: smtp.gmail.com
-  - Port: 465
-  - User: ${gmailUser}
-  - Using TLS: Yes
-  - Debug mode: Enabled`);
+  try {
+    // Verify the format of Gmail user to ensure it's a valid email
+    if (!gmailUser.includes("@") || !gmailUser.includes(".")) {
+      logger.error(`Invalid Gmail username format: ${gmailUser}`);
+      throw new Error("Invalid Gmail username format. Must be a valid email address.");
+    }
+
+    // Log redacted credentials for debugging (showing only partial info)
+    const redactedPass = gmailPass ? "*".repeat(Math.min(gmailPass.length, a)) : "not set";
+    logger.info(`SMTP Configuration: 
+    - Server: smtp.gmail.com
+    - Port: 465
+    - User: ${gmailUser}
+    - Password: ${redactedPass.substring(0, 3)}*** (${gmailPass.length} chars)
+    - Using TLS: Yes
+    - Debug mode: Enabled`);
+  } catch (e) {
+    logger.error("Error validating Gmail credentials: ", e);
+    throw new Error(`Error validating Gmail credentials: ${e.message}`);
+  }
 
   // Configure SMTP client with detailed logging
   logger.info("Configuring SMTP client...");
@@ -99,7 +112,21 @@ export async function sendEmailWithTimeout(
         "2. You're using an App Password (not your regular password)\n" +
         "3. 2-Step Verification is enabled for your Google account\n" +
         "4. The App Password was generated specifically for this application\n" +
+        "5. The App Password was entered without spaces\n" +
         "For more information: https://support.google.com/mail/?p=BadCredentials"
+      );
+    } else if (smtpError.message && (
+      smtpError.message.includes("Client was not authenticated") || 
+      smtpError.message.includes("Credentials rejected")
+    )) {
+      logger.error("Authentication failed with other error:", smtpError);
+      throw new Error(
+        "Gmail authentication failed. Your credentials were rejected. Please check:\n" +
+        "1. You have set up 2-Step Verification in your Google account\n" +
+        "2. You have created an App Password specifically for this application\n" +
+        "3. You are using the App Password (16-character code) not your Gmail password\n" +
+        "4. The App Password was entered exactly, without spaces\n" +
+        "Follow the guide at: https://support.google.com/accounts/answer/185833"
       );
     }
     

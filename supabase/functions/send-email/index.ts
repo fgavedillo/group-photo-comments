@@ -84,13 +84,25 @@ serve(async (req) => {
     // Format user-friendly error message
     let userMessage = "Email sending failed";
     let detailedError = error.message;
+    let howToFix = "Please check the logs for more details.";
     
     if (error.message && error.message.includes("Gmail authentication failed")) {
       userMessage = "Gmail authentication failed";
       detailedError = error.message;
+      howToFix = `
+Para solucionar este problema:
+1. Verifique que el nombre de usuario de Gmail es correcto
+2. Asegúrese de tener habilitada la verificación en dos pasos: https://myaccount.google.com/security
+3. Cree una contraseña de aplicación específica: https://myaccount.google.com/apppasswords
+4. Use la contraseña de aplicación SIN ESPACIOS en la configuración
+5. Actualice las variables de entorno en Supabase Edge Functions:
+   - GMAIL_USER = su_correo@gmail.com
+   - GMAIL_APP_PASSWORD = contraseñadeaplicacionsin espacios
+`;
     } else if (error.message && error.message.includes("Email configuration error")) {
       userMessage = "Configuration error";
       detailedError = error.message;
+      howToFix = "Configure las variables GMAIL_USER y GMAIL_APP_PASSWORD en los secretos de Supabase Edge Functions.";
     }
     
     // Return detailed error response
@@ -102,7 +114,7 @@ serve(async (req) => {
       error: {
         message: detailedError,
         stack: error.stack,
-        details: "Please check the Gmail credentials and App Password configuration."
+        details: howToFix
       }
     };
 
