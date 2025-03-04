@@ -33,7 +33,7 @@ serve(async (req) => {
     
     const logger = new Logger(requestId);
     logger.info("Función de email invocada");
-    logger.info(`Variables de entorno: GMAIL_USER=${gmailUser}, GMAIL_APP_PASSWORD=*****`);
+    logger.info(`Variables de entorno encontradas: GMAIL_USER=${gmailUser}, GMAIL_APP_PASSWORD=****`);
     
     // Validar campos requeridos
     if (!payload.to || !payload.subject || (!payload.content && !payload.html)) {
@@ -79,12 +79,13 @@ serve(async (req) => {
     // Respuesta de error detallada
     const errorResponse: EmailResponse = {
       success: false,
-      message: "Error al enviar email: " + (error.message || "Error desconocido"),
+      message: `Error al enviar email: ${error.message || "Error desconocido"}`,
       requestId: requestId,
       elapsedTime: `${elapsedTime}ms`,
       error: {
         message: error.message || "Error desconocido",
         stack: error.stack,
+        details: typeof error === 'object' ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error)
       }
     };
 

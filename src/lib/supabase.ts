@@ -35,7 +35,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     }
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000); // Aumentado a 20 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // Aumentado a 30 segundos
     
     try {
       const response = await fetch(functionUrl, {
@@ -61,6 +61,8 @@ export const sendEmail = async (to: string, subject: string, content: string, at
           const errorData = JSON.parse(errorText);
           if (errorData.error?.message) {
             errorMessage = errorData.error.message;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
           }
         } catch (e) {
           // Si no podemos parsear como JSON, usamos el texto plano
@@ -79,7 +81,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
       
       if (fetchError.name === 'AbortError') {
         console.error("Tiempo de espera excedido");
-        throw new Error("La operación ha excedido el tiempo máximo de espera (20 segundos)");
+        throw new Error("La operación ha excedido el tiempo máximo de espera (30 segundos)");
       }
       
       console.error("Error en la solicitud fetch:", fetchError);

@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendManualEmail } from "@/services/emailService";
 
@@ -10,13 +10,25 @@ export const useEmailSender = () => {
   const [lastSendStatus, setLastSendStatus] = useState<{success: boolean; message: string} | null>(null);
   const [detailedError, setDetailedError] = useState<string | null>(null);
   const [lastRequestId, setLastRequestId] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const [maxRetries] = useState<number>(3);
   
-  const handleSendEmail = useCallback(async (filtered: boolean = false) => {
+  const resetStatus = useCallback(() => {
+    setLastSendStatus(null);
+    setDetailedError(null);
+    setLastRequestId(null);
+  }, []);
+  
+  const handleSendEmail = useCallback(async (filtered: boolean = false, isRetry: boolean = false) => {
     try {
-      // Clear previous state
-      setLastSendStatus(null);
-      setDetailedError(null);
-      setLastRequestId(null);
+      // Reset retry count for new requests
+      if (!isRetry) {
+        resetStatus();
+        setRetryCount(0);
+      } else {
+        // For retries, increment the count
+        setRetryCount(prev => prev + 1);
+      }
       
       // Set loading state
       if (filtered) {
@@ -48,6 +60,9 @@ export const useEmailSender = () => {
         message: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`
       });
       
+      // Reset retry count on success
+      setRetryCount(0);
+      
       toast({
         title: "Correo enviado",
         description: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`,
@@ -75,7 +90,7 @@ export const useEmailSender = () => {
         setIsSending(false);
       }
     }
-  }, [toast]);
+  }, [toast, resetStatus]);
 
   return {
     isSending,
@@ -83,7 +98,8 @@ export const useEmailSender = () => {
     lastSendStatus,
     detailedError,
     lastRequestId,
-    retryCount: 0, // Mantenemos el campo pero sin funcionalidad de reintento
-    handleSendEmail
+    retryCount,
+    handleSendEmail,
+    resetStatus
   };
 };

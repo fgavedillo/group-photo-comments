@@ -12,29 +12,31 @@ interface EmailStatusAlertsProps {
 export const EmailStatusAlerts = ({ 
   lastSendStatus, 
   detailedError, 
-  requestId
+  requestId,
+  retryCount
 }: EmailStatusAlertsProps) => {
-  if (!lastSendStatus && !detailedError) return null;
+  // Si no hay estado de envío ni error detallado, mostrar guía de diagnóstico
+  if (!lastSendStatus && !detailedError) {
+    return (
+      <Alert variant="default" className="bg-blue-50 border-blue-200">
+        <Info className="h-4 w-4" />
+        <AlertTitle>Información de diagnóstico</AlertTitle>
+        <AlertDescription>
+          Para enviar correos, asegúrese de que:
+          <ul className="list-disc pl-5 mt-2 text-sm">
+            <li>Ha iniciado sesión en la aplicación</li>
+            <li>La función Edge 'send-email' está publicada</li>
+            <li>Las variables GMAIL_USER y GMAIL_APP_PASSWORD están correctamente configuradas en Supabase</li>
+            <li>La cuenta de Gmail tiene habilitada la verificación en dos pasos</li>
+            <li>Está usando una contraseña de aplicación válida para Gmail (16 caracteres sin espacios)</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
+    );
+  }
   
   return (
     <div className="space-y-4">
-      {!lastSendStatus && !detailedError && (
-        <Alert variant="default" className="bg-blue-50 border-blue-200">
-          <Info className="h-4 w-4" />
-          <AlertTitle>Información de diagnóstico</AlertTitle>
-          <AlertDescription>
-            Para enviar correos, asegúrese de que:
-            <ul className="list-disc pl-5 mt-2 text-sm">
-              <li>Ha iniciado sesión en la aplicación</li>
-              <li>La función Edge 'send-email' está publicada</li>
-              <li>Las variables GMAIL_USER y GMAIL_APP_PASSWORD están correctamente configuradas en Supabase</li>
-              <li>La cuenta de Gmail tiene habilitada la verificación en dos pasos</li>
-              <li>Está usando una contraseña de aplicación válida para Gmail (16 caracteres sin espacios)</li>
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
-      
       {lastSendStatus && (
         <Alert variant={lastSendStatus.success ? "default" : "destructive"} 
                className={lastSendStatus.success ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}>
@@ -45,6 +47,11 @@ export const EmailStatusAlerts = ({
           )}
           <AlertTitle>
             {lastSendStatus.success ? "Envío exitoso" : "Error de envío"}
+            {retryCount && retryCount > 0 && !lastSendStatus.success && (
+              <span className="ml-2 text-xs"> 
+                (Intento {retryCount}/3)
+              </span>
+            )}
           </AlertTitle>
           <AlertDescription>
             {lastSendStatus.message}
