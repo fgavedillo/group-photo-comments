@@ -60,3 +60,14 @@ export interface SendDailyReportResponse {
     details?: string;
   };
 }
+
+export interface KPIData {
+  total: number;
+  activeIssues: ReportRow[];
+  withImages: number;
+}
+
+export interface DistributionData {
+  byStatus: Record<string, number>;
+  byArea: Record<string, number>;
+}

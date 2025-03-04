@@ -1,5 +1,5 @@
 
-import { Issue, KPIData, DistributionData } from "./types.ts";
+import { Issue, ReportRow, IssuesByStatus, KPIData, DistributionData } from "./types.ts";
 
 export const getStatusColor = (status: string): string => {
   const statusColors: Record<string, string> = {
@@ -10,8 +10,8 @@ export const getStatusColor = (status: string): string => {
   return statusColors[status] || '#FF0000';
 };
 
-export const formatDate = (): string => {
-  return new Date().toLocaleDateString('es-ES', {
+export const formatDate = (date = new Date()): string => {
+  return date.toLocaleDateString('es-ES', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
@@ -42,3 +42,14 @@ export const getDistributionData = (issues: Issue[]): DistributionData => {
 
   return { byStatus, byArea };
 };
+
+export function groupIssuesByStatus(issues: ReportRow[]): IssuesByStatus {
+  return issues.reduce((acc: IssuesByStatus, issue) => {
+    const status = issue.status || 'unknown';
+    if (!acc[status]) {
+      acc[status] = [];
+    }
+    acc[status].push(issue);
+    return acc;
+  }, {});
+}
