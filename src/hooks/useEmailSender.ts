@@ -11,6 +11,7 @@ export const useEmailSender = () => {
   const [detailedError, setDetailedError] = useState<string | null>(null);
   const [lastRequestId, setLastRequestId] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState<number>(0);
+  const [lastSendConfiguration, setLastSendConfiguration] = useState<{filtered: boolean} | null>(null);
   const [maxRetries] = useState<number>(3);
   
   const resetStatus = useCallback(() => {
@@ -19,12 +20,20 @@ export const useEmailSender = () => {
     setLastRequestId(null);
   }, []);
   
+  const handleRetry = useCallback(() => {
+    if (lastSendConfiguration && retryCount < maxRetries) {
+      handleSendEmail(lastSendConfiguration.filtered, true);
+    }
+  }, [retryCount, lastSendConfiguration, maxRetries]);
+  
   const handleSendEmail = useCallback(async (filtered: boolean = false, isRetry: boolean = false) => {
     try {
       // Reset retry count for new requests
       if (!isRetry) {
         resetStatus();
         setRetryCount(0);
+        // Save configuration for potential retries
+        setLastSendConfiguration({ filtered });
       } else {
         // For retries, increment the count
         setRetryCount(prev => prev + 1);
@@ -100,6 +109,7 @@ export const useEmailSender = () => {
     lastRequestId,
     retryCount,
     handleSendEmail,
+    handleRetry,
     resetStatus
   };
 };

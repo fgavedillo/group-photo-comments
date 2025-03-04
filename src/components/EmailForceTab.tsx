@@ -11,7 +11,8 @@ export const EmailForceTab = () => {
     detailedError,
     lastRequestId,
     retryCount,
-    handleSendEmail
+    handleSendEmail,
+    handleRetry
   } = useEmailSender();
 
   return (
@@ -21,6 +22,7 @@ export const EmailForceTab = () => {
         detailedError={detailedError}
         requestId={lastRequestId}
         retryCount={retryCount}
+        onRetry={handleRetry}
       />
       
       <EmailActionCard
