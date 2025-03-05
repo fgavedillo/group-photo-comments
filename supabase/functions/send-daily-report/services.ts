@@ -1,144 +1,122 @@
 
-import { ReportRow, SendDailyReportResponse } from "./types.ts";
-import { corsHeaders } from "./config.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { corsHeaders, SEND_EMAIL_FUNCTION_URL, REQUEST_TIMEOUT } from "./config.ts";
+import { ReportRow } from "./types.ts";
 
-// Create Supabase client
-const supabaseUrl = Deno.env.get("SUPABASE_URL") as string;
-const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") as string;
+// Create a Supabase client
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") || "",
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+);
 
-// Initialize Supabase client
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Function to fetch all issues from the database
+// Fetch all issues from the database
 export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
+  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetching all issues from the database`);
+  
   try {
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetching issues from database...`);
-    const startTime = Date.now();
-    
-    const { data, error } = await supabase
-      .from("issue_details")
-      .select("*")
-      .order("timestamp", { ascending: false });
-
-    const elapsedTime = Date.now() - startTime;
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Database query completed in ${elapsedTime}ms`);
-
+    // Fetch all issues with their related images
+    const { data: issues, error } = await supabase
+      .from("issues")
+      .select(`
+        id,
+        message,
+        timestamp,
+        status,
+        area,
+        responsable,
+        action_plan,
+        security_improvement,
+        assigned_email,
+        issue_images(image_url)
+      `)
+      .order("id", { ascending: false });
+      
     if (error) {
       console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error fetching issues:`, error);
-      throw error;
+      throw new Error(`Error fetching issues: ${error.message}`);
     }
-
-    if (!data || data.length === 0) {
-      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] No issues found in database`);
-      return [];
-    }
-
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Retrieved ${data.length} issues from database`);
-
-    return (data || []).map((issue) => ({
+    
+    // Transform the data for the report
+    const reportRows: ReportRow[] = issues.map(issue => ({
       id: issue.id,
-      message: issue.message || "",
-      timestamp: new Date(issue.timestamp).toISOString(),
-      status: issue.status || "en-estudio",
-      area: issue.area || "No especificada",
-      responsable: issue.responsable || "Sin asignar",
+      message: issue.message,
+      timestamp: issue.timestamp,
+      status: issue.status,
+      area: issue.area || "",
+      responsable: issue.responsable || "",
       actionPlan: issue.action_plan || "",
       securityImprovement: issue.security_improvement || "",
-      imageUrl: issue.image_url || null,
+      imageUrl: issue.issue_images?.length > 0 ? issue.issue_images[0].image_url : null,
       assignedEmail: issue.assigned_email || null,
     }));
+    
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetched ${reportRows.length} issues`);
+    
+    return reportRows;
   } catch (error) {
     console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error in fetchAllIssues:`, error);
     throw error;
   }
 }
 
-// Email sending function with improved error handling
-export async function sendEmail(recipientEmail: string, subject: string, html: string, requestId: string) {
+// Send email using the send-email Edge Function
+export async function sendEmail(
+  to: string, 
+  subject: string, 
+  html: string, 
+  requestId: string,
+  cc?: string[]
+): Promise<void> {
+  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Sending email to ${to}`);
+  
   try {
-    const gmailUser = Deno.env.get("GMAIL_USER");
-    const gmailPass = Deno.env.get("GMAIL_APP_PASSWORD");
-
-    if (!gmailUser || !gmailPass) {
-      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Gmail credentials not configured`);
-      throw new Error("Gmail credentials not configured");
-    }
-
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Attempting to send email to ${recipientEmail} with subject: ${subject}`);
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] HTML content length: ${html.length} characters`);
+    // Prepare headers
+    const headers = new Headers();
+    headers.set("Content-Type", "application/json");
+    headers.set("Authorization", `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`);
     
-    // Create the email payload
-    const email = {
-      to: recipientEmail,
-      subject: subject,
-      html: html,
-      requestId: requestId
+    // Add CORS headers
+    for (const [key, value] of Object.entries(corsHeaders)) {
+      headers.set(key, value);
+    }
+    
+    // Set up timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    // Email payload
+    const payload = {
+      to,
+      subject,
+      html,
+      cc,
+      requestId: `email-${requestId}-${Date.now()}`
     };
-
-    // Call the send-email function with improved error handling
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Invoking send-email function`);
-    const functionStartTime = Date.now();
     
-    const { data, error } = await supabase.functions.invoke("send-email", {
-      body: email,
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Sending email request to Edge Function`);
+    
+    // Send the request
+    const response = await fetch(SEND_EMAIL_FUNCTION_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
     });
-
-    const functionElapsedTime = Date.now() - functionStartTime;
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] send-email function call completed in ${functionElapsedTime}ms`);
-
-    if (error) {
-      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error in send-email function for recipient ${recipientEmail}:`, error);
-      throw error;
+    
+    // Clear the timeout
+    clearTimeout(timeoutId);
+    
+    // Check for errors
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error response from send-email function:`, errorText);
+      throw new Error(`Error sending email: HTTP ${response.status} - ${errorText}`);
     }
-
-    if (!data) {
-      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] No response received from email function for recipient ${recipientEmail}`);
-      throw new Error("No response received from email function");
-    }
-
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email sent successfully to ${recipientEmail}`);
-    return data;
+    
+    // Success
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email sent successfully`);
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error in sendEmail function for recipient ${recipientEmail}:`, error);
+    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error in sendEmail:`, error);
     throw error;
   }
-}
-
-// Create standardized error response
-export function createErrorResponse(error: any, requestId: string, elapsedTime: number): Response {
-  // Check if this is an abort error from the timeout
-  const isTimeoutError = error.name === 'AbortError' || 
-                        error.message?.includes('timed out') ||
-                        error.aborted;
-  
-  // Prepare detailed error information
-  const errorInfo = {
-    message: error.message || "Unknown error occurred",
-    stack: error.stack || "No stack trace available",
-    name: error.name || "Error",
-    isTimeout: isTimeoutError,
-    ...(error.cause ? { cause: JSON.stringify(error.cause) } : {})
-  };
-  
-  // Return detailed error response
-  return new Response(
-    JSON.stringify({ 
-      success: false, 
-      error: {
-        code: isTimeoutError ? "TIMEOUT_ERROR" : "EXECUTION_ERROR",
-        message: isTimeoutError 
-          ? `La operación excedió el tiempo límite de ${25000/1000} segundos` 
-          : errorInfo.message,
-        details: errorInfo.stack
-      },
-      requestId,
-      timestamp: new Date().toISOString(),
-      elapsedTime: `${elapsedTime}ms`
-    }),
-    {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: isTimeoutError ? 408 : 500,
-    }
-  );
 }

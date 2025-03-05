@@ -75,12 +75,13 @@ export async function generateAndSendReport(
           // Generate HTML for this user
           const html = buildEmailHtml(userReport, true);
           
-          // Send personalized email
+          // Send personalized email with CC to francisco.garcia@lingotes.com
           await sendEmail(
             email,
             `Reporte de Incidencias Asignadas (${formatDate(new Date())})`,
             html,
-            requestId
+            requestId,
+            ["francisco.garcia@lingotes.com"] // Add CC to francisco.garcia@lingotes.com
           );
           
           recipients.push(email);

@@ -6,7 +6,8 @@ export const RECIPIENT_EMAILS = [
   // Añadir más destinatarios si es necesario
 ];
 
-export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <prevencionlingotes@gmail.com>";
+// Cambio del remitente para mostrar el nombre del sistema
+export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <francisco.garcia@lingotes.com>";
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

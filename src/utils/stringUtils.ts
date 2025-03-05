@@ -11,7 +11,7 @@ export const decodeQuotedPrintable = (text: string): string => {
     try {
       return String.fromCharCode(parseInt(hex, 16));
     } catch (e) {
-      return match;
+      return '';
     }
   });
   
@@ -19,11 +19,14 @@ export const decodeQuotedPrintable = (text: string): string => {
   decoded = decoded.replace(/=\r\n/g, '');
   decoded = decoded.replace(/=\n/g, '');
   
-  // Completely remove all instances of =20 characters
+  // Completely remove all instances of =20 characters and any = followed by whitespace
   decoded = decoded.replace(/=20+/g, ' ');
+  decoded = decoded.replace(/=\s*/g, '');
   
   // Replace other problematic characters common in emails
   decoded = decoded.replace(/&nbsp;/g, ' ');
+  decoded = decoded.replace(/null/g, '');
+  decoded = decoded.replace(/undefined/g, '');
   
   // Clean up excessive whitespace
   decoded = decoded.replace(/\s+/g, ' ').trim();
