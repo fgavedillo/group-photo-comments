@@ -21,7 +21,7 @@ export const useEmailSender = () => {
     setLastRequestId(null);
   }, []);
   
-  const checkEdgeFunctionStatus = useCallback(async () => {
+  const checkEdgeFunctionStatus = useCallback(async (): Promise<boolean> => {
     try {
       console.log("Verificando disponibilidad de la función Edge...");
       setConnectionStatus('checking');

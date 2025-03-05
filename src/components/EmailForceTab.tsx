@@ -1,4 +1,3 @@
-
 import { EmailStatusAlerts } from "@/components/email/EmailStatusAlerts";
 import { EmailActionCard } from "@/components/email/EmailActionCard";
 import { useEmailSender } from "@/hooks/useEmailSender";
@@ -24,10 +23,11 @@ export const EmailForceTab = () => {
   
   const [isCheckingConnection, setIsCheckingConnection] = useState(false);
   
-  const handleCheckConnection = async () => {
+  const handleCheckConnection = async (): Promise<boolean> => {
     setIsCheckingConnection(true);
     try {
-      await checkEdgeFunctionStatus();
+      const result = await checkEdgeFunctionStatus();
+      return result;
     } finally {
       setIsCheckingConnection(false);
     }
