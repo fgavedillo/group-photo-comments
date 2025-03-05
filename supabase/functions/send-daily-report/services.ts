@@ -9,6 +9,25 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
 );
 
+// Function to create error response with corsHeaders
+export function createErrorResponse(error: any, requestId: string, elapsedTime: number) {
+  return new Response(
+    JSON.stringify({
+      success: false,
+      error: {
+        message: error.message || "Error desconocido procesando la solicitud",
+        details: error.stack || "No hay detalles adicionales disponibles",
+        requestId: requestId
+      },
+      elapsedTime: `${elapsedTime}ms`
+    }),
+    {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    }
+  );
+}
+
 // Fetch all issues from the database
 export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
   console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetching all issues from the database`);
