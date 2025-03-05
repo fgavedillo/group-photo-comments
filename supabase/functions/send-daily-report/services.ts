@@ -92,7 +92,7 @@ export async function sendEmail(
     // Prepare headers
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
-    headers.set("Authorization", `Bearer ${Deno.env.get("SUPABASE_ANON_KEY")}`);
+    headers.set("apikey", Deno.env.get("SUPABASE_ANON_KEY") || "");
     
     // Add CORS headers
     for (const [key, value] of Object.entries(corsHeaders)) {
