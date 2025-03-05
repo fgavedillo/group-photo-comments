@@ -1,14 +1,9 @@
 
+// Class to handle logging with context and request IDs
 export class Logger {
-  private requestId: string;
-  
-  constructor(requestId: string) {
-    this.requestId = requestId;
-  }
-  
-  info(message: string, data?: any): void {
+  log(message: string, data?: any): void {
     const timestamp = new Date().toISOString();
-    const formattedMessage = `[${timestamp}] [RequestID:${this.requestId}] ${message}`;
+    const formattedMessage = `[${timestamp}] ${message}`;
     
     if (data) {
       console.log(formattedMessage, data);
@@ -19,7 +14,7 @@ export class Logger {
   
   error(message: string, error?: any): void {
     const timestamp = new Date().toISOString();
-    const formattedMessage = `[${timestamp}] [RequestID:${this.requestId}] ${message}`;
+    const formattedMessage = `[${timestamp}] ${message}`;
     
     if (error) {
       console.error(formattedMessage, error);
@@ -28,3 +23,6 @@ export class Logger {
     }
   }
 }
+
+// Export a singleton instance
+export const logger = new Logger();

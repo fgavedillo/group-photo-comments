@@ -12,12 +12,24 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
   try {
     logger.log(`[${requestId}] Connecting to SMTP server...`);
     
+    // Retrieve credentials from environment
+    const username = Deno.env.get("GMAIL_USER");
+    const password = Deno.env.get("GMAIL_APP_PASSWORD");
+    
+    // Validate credentials
+    if (!username || !password) {
+      throw new Error("GMAIL_USER or GMAIL_APP_PASSWORD environment variables are not set");
+    }
+    
+    logger.log(`[${requestId}] Using email: ${username}`);
+    logger.log(`[${requestId}] Password length: ${password.length} characters`);
+    
     // Connect to Gmail SMTP
     await client.connectTLS({
       hostname: "smtp.gmail.com",
       port: 465,
-      username: Deno.env.get("GMAIL_USER"),
-      password: Deno.env.get("GMAIL_PASSWORD"),
+      username: username,
+      password: password,
     });
     
     // Start measuring time for performance tracking
@@ -28,7 +40,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
     
     // Configure email
     const sendConfig: any = {
-      from: Deno.env.get("GMAIL_USER") || "",
+      from: username,
       to: to,
       subject: subject,
     };
@@ -84,7 +96,25 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       logger.error(`[${requestId}] Error cerrando conexión SMTP:`, closeError);
     }
     
-    // Re-throw the error
-    throw error;
+    // Format a more helpful error message
+    let errorMessage = error.message || "Error desconocido al enviar correo";
+    let detailedError = error.stack || errorMessage;
+    
+    // Check for common Gmail authentication issues
+    if (errorMessage.includes("Username and Password not accepted")) {
+      errorMessage = "Autenticación de Gmail fallida: credenciales no aceptadas";
+      detailedError = `Error de autenticación con Gmail. Verifique que:
+1. La cuenta tenga verificación en dos pasos activada
+2. Esté usando una contraseña de aplicación válida (16 caracteres sin espacios)
+3. La contraseña de aplicación sea correcta y esté actualizada
+4. El correo electrónico en GMAIL_USER sea correcto
+
+Error original: ${error.message}`;
+    }
+    
+    // Re-throw with enhanced information
+    const enhancedError = new Error(errorMessage);
+    enhancedError.stack = detailedError;
+    throw enhancedError;
   }
 }

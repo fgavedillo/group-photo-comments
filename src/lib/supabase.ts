@@ -18,7 +18,7 @@ interface Attachment {
   type: string;
 }
 
-export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[]) => {
+export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[], cc?: string[]) => {
   try {
     console.log("Enviando correo a:", to);
     
@@ -35,19 +35,32 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     }
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // Aumentado a 30 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+    
+    const requestId = `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     try {
+      console.log(`[${requestId}] Enviando solicitud a ${functionUrl}`);
+      
+      const payload = {
+        to,
+        subject,
+        html: content,
+        requestId,
+        attachments
+      };
+      
+      // Add CC if provided
+      if (cc && cc.length > 0) {
+        payload.cc = cc;
+      }
+      
+      console.log(`[${requestId}] Payload:`, JSON.stringify(payload));
+      
       const response = await fetch(functionUrl, {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({
-          to,
-          subject,
-          html: content,
-          attachments,
-          requestId: `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-        }),
+        body: JSON.stringify(payload),
         signal: controller.signal
       });
       
@@ -69,12 +82,12 @@ export const sendEmail = async (to: string, subject: string, content: string, at
           errorMessage += ` - ${errorText}`;
         }
         
-        console.error("Error de respuesta:", errorMessage);
+        console.error(`[${requestId}] Error de respuesta:`, errorMessage);
         throw new Error(errorMessage);
       }
       
       const data = await response.json();
-      console.log("Respuesta del servicio de correo:", data);
+      console.log(`[${requestId}] Respuesta del servicio de correo:`, data);
       return data;
     } catch (fetchError) {
       clearTimeout(timeoutId);
