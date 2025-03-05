@@ -3,7 +3,38 @@
 import { corsHeaders, handleCors } from './cors.ts';
 import { logger } from './logger.ts';
 import { validateEmailPayload } from './types.ts';
-import { sendEmailWithGmail } from './emailService.ts';
+import { sendEmail } from './emailService.ts';
+
+// Función para enviar emails usando Gmail
+export async function sendEmailWithGmail(emailData: any) {
+  const requestId = emailData.requestId || `req-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+  
+  try {
+    const result = await sendEmail({
+      ...emailData,
+      requestId
+    });
+    
+    return {
+      success: true,
+      message: result.message || "Email enviado correctamente",
+      requestId,
+      ...result
+    };
+  } catch (error) {
+    logger.error(`[${requestId}] Error en sendEmailWithGmail:`, error);
+    return {
+      success: false,
+      message: error.message || "Error al enviar el email",
+      error: {
+        code: "EMAIL_SEND_FAILED",
+        message: error.message,
+        details: error.stack
+      },
+      requestId
+    };
+  }
+}
 
 // Handle incoming requests
 Deno.serve(async (req) => {
