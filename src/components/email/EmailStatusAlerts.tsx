@@ -91,6 +91,7 @@ export const EmailStatusAlerts = ({
             <li>Ha iniciado sesión en la aplicación</li>
             <li>La función Edge 'send-email' está publicada y activa</li>
             <li>Las variables GMAIL_USER y GMAIL_APP_PASSWORD están correctamente configuradas en Supabase</li>
+            <li>La contraseña de aplicación no tiene espacios (debe ser exactamente 16 caracteres)</li>
             <li>La cuenta de Gmail tiene habilitada la verificación en dos pasos</li>
             <li>Está usando una contraseña de aplicación válida para Gmail (16 caracteres sin espacios)</li>
             <li>El dominio desde donde se hace la petición está permitido en la configuración CORS</li>

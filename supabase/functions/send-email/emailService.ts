@@ -15,6 +15,9 @@ function validateCredentials(username: string | undefined, password: string | un
     throw new Error("GMAIL_APP_PASSWORD no está configurado");
   }
   
+  // Eliminar espacios en la contraseña - esto es crítico ya que la API puede fallar con espacios
+  password = password.replace(/\s+/g, '');
+  
   if (password.length !== 16) {
     logger.error(`[${requestId}] La contraseña de aplicación debe tener exactamente 16 caracteres (longitud actual: ${password.length})`);
     throw new Error("La contraseña de aplicación debe tener exactamente 16 caracteres");
@@ -38,14 +41,19 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
     
     // Obtener credenciales del entorno
     const username = Deno.env.get("GMAIL_USER");
-    const password = Deno.env.get("GMAIL_APP_PASSWORD");
+    let password = Deno.env.get("GMAIL_APP_PASSWORD");
+    
+    // Eliminar espacios en la contraseña - muchos errores vienen de aquí
+    if (password) {
+      password = password.replace(/\s+/g, '');
+    }
     
     // Validar credenciales
     validateCredentials(username, password, requestId);
     
     // Información de diagnóstico sobre las credenciales
     logger.log(`[${requestId}] Usando email: ${username}`);
-    logger.log(`[${requestId}] Longitud de la contraseña: ${password!.length} caracteres`);
+    logger.log(`[${requestId}] Longitud de la contraseña: ${password.length} caracteres`);
     
     // Conectar a Gmail SMTP con timeout
     logger.log(`[${requestId}] Conectando al servidor SMTP...`);
@@ -70,7 +78,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       if (connectError.message?.includes("Socket") || connectError.message?.includes("network")) {
         throw new Error(`Error de red conectando a smtp.gmail.com:465 - ${connectError.message}`);
       } else if (connectError.message?.includes("auth") || connectError.message?.includes("535")) {
-        throw new Error(`Error de autenticación: Credenciales no aceptadas por Gmail. Verifique su usuario y contraseña de aplicación`);
+        throw new Error(`Error de autenticación: Credenciales no aceptadas por Gmail. Verifique su usuario y contraseña de aplicación (asegúrese de que no tenga espacios)`);
       } else {
         throw connectError;
       }
