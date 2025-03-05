@@ -3,35 +3,78 @@ import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 import { logger } from "./logger.ts";
 import { SendEmailRequest } from "./types.ts";
 
-// Inicializar cliente SMTP con credenciales de variables de entorno
-const client = new SmtpClient();
+// Función para validar credenciales de correo
+function validateCredentials(username: string | undefined, password: string | undefined, requestId: string): void {
+  if (!username) {
+    logger.error(`[${requestId}] GMAIL_USER no está configurado en las variables de entorno`);
+    throw new Error("GMAIL_USER no está configurado");
+  }
+  
+  if (!password) {
+    logger.error(`[${requestId}] GMAIL_APP_PASSWORD no está configurado en las variables de entorno`);
+    throw new Error("GMAIL_APP_PASSWORD no está configurado");
+  }
+  
+  if (password.length !== 16) {
+    logger.error(`[${requestId}] La contraseña de aplicación debe tener exactamente 16 caracteres (longitud actual: ${password.length})`);
+    throw new Error("La contraseña de aplicación debe tener exactamente 16 caracteres");
+  }
+  
+  // Verificar formato básico de email
+  if (!username.includes('@')) {
+    logger.error(`[${requestId}] GMAIL_USER no parece ser una dirección de correo válida: ${username}`);
+    throw new Error("GMAIL_USER no parece ser una dirección de correo válida");
+  }
+  
+  logger.log(`[${requestId}] Credenciales validadas correctamente`);
+}
 
 export async function sendEmail(request: SendEmailRequest): Promise<any> {
   const { to, subject, html, cc, text, attachments, requestId } = request;
+  const client = new SmtpClient();
   
   try {
-    logger.log(`[${requestId}] Conectando al servidor SMTP...`);
+    logger.log(`[${requestId}] Iniciando envío de correo a ${to}`);
     
     // Obtener credenciales del entorno
     const username = Deno.env.get("GMAIL_USER");
     const password = Deno.env.get("GMAIL_APP_PASSWORD");
     
     // Validar credenciales
-    if (!username || !password) {
-      logger.error(`[${requestId}] Variables de entorno GMAIL_USER o GMAIL_APP_PASSWORD no configuradas`);
-      throw new Error("Variables de entorno GMAIL_USER o GMAIL_APP_PASSWORD no configuradas");
-    }
+    validateCredentials(username, password, requestId);
     
+    // Información de diagnóstico sobre las credenciales
     logger.log(`[${requestId}] Usando email: ${username}`);
-    logger.log(`[${requestId}] Longitud de la contraseña: ${password.length} caracteres`);
+    logger.log(`[${requestId}] Longitud de la contraseña: ${password!.length} caracteres`);
     
-    // Conectar a Gmail SMTP
-    await client.connectTLS({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: username,
-      password: password,
-    });
+    // Conectar a Gmail SMTP con timeout
+    logger.log(`[${requestId}] Conectando al servidor SMTP...`);
+    
+    try {
+      const connectTimeout = setTimeout(() => {
+        throw new Error("Tiempo de espera excedido al conectar con el servidor SMTP");
+      }, 15000); // 15 segundos de timeout
+      
+      await client.connectTLS({
+        hostname: "smtp.gmail.com",
+        port: 465,
+        username: username!,
+        password: password!,
+      });
+      
+      clearTimeout(connectTimeout);
+      logger.log(`[${requestId}] Conexión SMTP establecida correctamente`);
+    } catch (connectError) {
+      logger.error(`[${requestId}] Error conectando al servidor SMTP:`, connectError);
+      
+      if (connectError.message?.includes("Socket") || connectError.message?.includes("network")) {
+        throw new Error(`Error de red conectando a smtp.gmail.com:465 - ${connectError.message}`);
+      } else if (connectError.message?.includes("auth") || connectError.message?.includes("535")) {
+        throw new Error(`Error de autenticación: Credenciales no aceptadas por Gmail. Verifique su usuario y contraseña de aplicación`);
+      } else {
+        throw connectError;
+      }
+    }
     
     // Comenzar a medir el tiempo para seguimiento de rendimiento
     const startTime = Date.now();
@@ -68,8 +111,19 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       }));
     }
     
-    // Enviar el correo
-    const result = await client.send(sendConfig);
+    // Enviar el correo con timeout
+    let result;
+    try {
+      const sendTimeout = setTimeout(() => {
+        throw new Error("Tiempo de espera excedido al enviar el correo");
+      }, 30000); // 30 segundos de timeout
+      
+      result = await client.send(sendConfig);
+      clearTimeout(sendTimeout);
+    } catch (sendError) {
+      logger.error(`[${requestId}] Error durante el envío del correo:`, sendError);
+      throw new Error(`Error enviando correo: ${sendError.message}`);
+    }
     
     // Calcular cuánto tiempo tardó
     const elapsed = Date.now() - startTime;
@@ -102,12 +156,13 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       logger.error(`[${requestId}] Error cerrando conexión SMTP:`, closeError);
     }
     
-    // Formatear un mensaje de error más útil
+    // Mejorar el mensaje de error para errores comunes
     let errorMessage = error.message || "Error desconocido al enviar correo";
     let detailedError = error.stack || errorMessage;
     
     // Verificar problemas comunes de autenticación de Gmail
-    if (errorMessage.includes("Username and Password not accepted")) {
+    if (errorMessage.includes("Username and Password not accepted") || 
+        errorMessage.includes("535-5.7.8")) {
       errorMessage = "Autenticación de Gmail fallida: credenciales no aceptadas";
       detailedError = `Error de autenticación con Gmail. Verifique que:
 1. La cuenta tenga verificación en dos pasos activada

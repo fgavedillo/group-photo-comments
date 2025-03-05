@@ -4,7 +4,9 @@ import { EmailActionCard } from "@/components/email/EmailActionCard";
 import { useEmailSender } from "@/hooks/useEmailSender";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Mail, UserCheck } from "lucide-react";
+import { Mail, UserCheck, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export const EmailForceTab = () => {
   const {
@@ -14,9 +16,22 @@ export const EmailForceTab = () => {
     detailedError,
     lastRequestId,
     retryCount,
+    connectionStatus,
     handleSendEmail,
-    handleRetry
+    handleRetry,
+    checkEdgeFunctionStatus
   } = useEmailSender();
+  
+  const [isCheckingConnection, setIsCheckingConnection] = useState(false);
+  
+  const handleCheckConnection = async () => {
+    setIsCheckingConnection(true);
+    try {
+      await checkEdgeFunctionStatus();
+    } finally {
+      setIsCheckingConnection(false);
+    }
+  };
 
   return (
     <div className="p-4 space-y-6">
@@ -25,7 +40,9 @@ export const EmailForceTab = () => {
         detailedError={detailedError}
         requestId={lastRequestId}
         retryCount={retryCount}
+        connectionStatus={connectionStatus}
         onRetry={handleRetry}
+        onCheckConnection={handleCheckConnection}
       />
       
       <Card className="border-none shadow-md bg-gradient-to-r from-blue-50 to-white">
@@ -63,6 +80,25 @@ export const EmailForceTab = () => {
               highlight={true}
             />
           </div>
+          
+          {connectionStatus === 'unavailable' || connectionStatus === 'error' ? (
+            <div className="mt-4 flex justify-center">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={handleCheckConnection}
+                disabled={isCheckingConnection}
+              >
+                {isCheckingConnection ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4" />
+                )}
+                {isCheckingConnection ? "Verificando conexión..." : "Verificar disponibilidad del servidor"}
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
       
@@ -78,6 +114,7 @@ export const EmailForceTab = () => {
           <li>El correo filtrado se envía solo a usuarios con incidencias pendientes asignadas.</li>
           <li>Los correos tienen un diseño mejorado con imagenes optimizadas y formato más visual.</li>
           <li>Los correos incluyen enlaces directos a las incidencias para fácil acceso.</li>
+          <li>Si encuentra problemas, verifique que las variables GMAIL_USER y GMAIL_APP_PASSWORD estén correctamente configuradas en Supabase.</li>
         </ul>
       </div>
     </div>

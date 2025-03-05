@@ -1,6 +1,6 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle, Info, RefreshCw } from "lucide-react";
+import { AlertCircle, CheckCircle, Info, RefreshCw, AlertTriangle, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface EmailStatusAlertsProps {
@@ -8,7 +8,9 @@ interface EmailStatusAlertsProps {
   detailedError: string | null;
   requestId?: string | null;
   retryCount?: number;
+  connectionStatus?: 'checking' | 'available' | 'unavailable' | 'error';
   onRetry?: () => void;
+  onCheckConnection?: () => Promise<boolean>;
 }
 
 export const EmailStatusAlerts = ({ 
@@ -16,8 +18,67 @@ export const EmailStatusAlerts = ({
   detailedError, 
   requestId,
   retryCount,
-  onRetry
+  connectionStatus,
+  onRetry,
+  onCheckConnection
 }: EmailStatusAlertsProps) => {
+  // Mostrar estado de conexión si está disponible
+  if (connectionStatus && !lastSendStatus) {
+    let alertVariant: "default" | "destructive" | "warning" = "default";
+    let icon = <Info className="h-4 w-4" />;
+    let title = "Estado de la conexión";
+    let description = "";
+    
+    switch (connectionStatus) {
+      case 'checking':
+        alertVariant = "default";
+        icon = <Server className="h-4 w-4 animate-pulse" />;
+        title = "Verificando conexión";
+        description = "Comprobando la disponibilidad del servidor de correo...";
+        break;
+      case 'available':
+        alertVariant = "default";
+        icon = <CheckCircle className="h-4 w-4 text-green-500" />;
+        title = "Servidor disponible";
+        description = "La conexión con el servidor de correo está activa y funcionando correctamente.";
+        break;
+      case 'unavailable':
+        alertVariant = "warning";
+        icon = <AlertTriangle className="h-4 w-4" />;
+        title = "Servidor no responde";
+        description = "El servidor de correo no está respondiendo. Esto puede ser temporal o indicar un problema de configuración.";
+        break;
+      case 'error':
+        alertVariant = "destructive";
+        icon = <AlertCircle className="h-4 w-4" />;
+        title = "Error de conexión";
+        description = "No se pudo establecer conexión con el servidor de correo. Verifique su conexión a internet y la configuración del servidor.";
+        break;
+    }
+    
+    return (
+      <Alert variant={alertVariant} className={connectionStatus === 'available' ? "bg-green-50 border-green-200" : ""}>
+        {icon}
+        <AlertTitle>{title}</AlertTitle>
+        <AlertDescription>
+          {description}
+          {(connectionStatus === 'unavailable' || connectionStatus === 'error') && onCheckConnection && (
+            <div className="mt-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-1 flex items-center gap-1 bg-white hover:bg-white/80"
+                onClick={() => onCheckConnection()}
+              >
+                <RefreshCw className="h-3 w-3" /> Verificar nuevamente
+              </Button>
+            </div>
+          )}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
   // Si no hay estado de envío ni error detallado, mostrar guía de diagnóstico
   if (!lastSendStatus && !detailedError) {
     return (
@@ -42,7 +103,9 @@ export const EmailStatusAlerts = ({
   // Detectar si el error está relacionado con autenticación de Gmail
   const isGmailAuthError = detailedError && 
     (detailedError.includes("Username and Password not accepted") || 
-     detailedError.includes("Autenticación de Gmail fallida"));
+     detailedError.includes("Autenticación de Gmail fallida") ||
+     detailedError.includes("contraseña de aplicación") ||
+     detailedError.includes("535-5.7.8"));
   
   // Detectar errores de CORS
   const isCorsError = detailedError &&
@@ -50,7 +113,10 @@ export const EmailStatusAlerts = ({
   
   // Detectar errores de conexión
   const isConnectionError = detailedError &&
-    (detailedError.includes("Failed to fetch") || detailedError.includes("Network Error"));
+    (detailedError.includes("Failed to fetch") || 
+     detailedError.includes("Network Error") ||
+     detailedError.includes("tiempo de espera") ||
+     detailedError.includes("Tiempo de espera excedido"));
   
   return (
     <div className="space-y-4">
@@ -77,7 +143,7 @@ export const EmailStatusAlerts = ({
                 ID de solicitud: {requestId}
               </div>
             )}
-            {!lastSendStatus.success && onRetry && (
+            {!lastSendStatus.success && onRetry && retryCount !== undefined && retryCount < 3 && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -104,6 +170,16 @@ export const EmailStatusAlerts = ({
                   <li>Asegúrese de que la verificación en dos pasos esté activada en su cuenta de Gmail</li>
                   <li>Confirme que está utilizando una contraseña de aplicación generada específicamente para esta aplicación</li>
                   <li>Recuerde que la contraseña de aplicación es diferente de la contraseña normal de Gmail</li>
+                  <li>
+                    Para generar una nueva contraseña de aplicación:
+                    <ol className="list-decimal pl-5 mt-1 text-[10px]">
+                      <li>Vaya a su cuenta de Google</li>
+                      <li>Seleccione "Seguridad"</li>
+                      <li>En "Iniciar sesión en Google", seleccione "Verificación en 2 pasos"</li>
+                      <li>Al final de la página, seleccione "Contraseñas de aplicación"</li>
+                      <li>Copie la contraseña generada (sin espacios) y actualice el secreto en Supabase</li>
+                    </ol>
+                  </li>
                   <li><a 
                       href="https://support.google.com/mail/?p=BadCredentials" 
                       target="_blank" 
@@ -140,6 +216,7 @@ export const EmailStatusAlerts = ({
                   <li>Verifique su conexión a internet</li>
                   <li>La función Edge podría estar inactiva o no responder</li>
                   <li>La URL de la función Edge podría ser incorrecta</li>
+                  <li>Si el problema persiste, verifique que la función esté publicada y activa en Supabase</li>
                 </ul>
                 <p className="mt-2 pt-2 border-t border-red-200">Detalles técnicos:</p>
                 <pre className="bg-red-50/50 p-2 rounded text-[10px] overflow-auto max-h-32">

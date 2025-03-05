@@ -15,3 +15,15 @@ export interface SendEmailRequest {
   requestId: string;
   cc?: string[];
 }
+
+export interface SendEmailResponse {
+  success: boolean;
+  message?: string;
+  elapsed?: string;
+  messageId?: string;
+  error?: {
+    message: string;
+    code: string;
+    details?: string;
+  };
+}
