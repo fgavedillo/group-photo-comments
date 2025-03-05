@@ -5,19 +5,24 @@ import { sendEmail } from "./emailService.ts";
 import { corsHeaders } from "./cors.ts";
 import { SendEmailRequest } from "./types.ts";
 
-// Create the request handler
+// Crear el manejador de solicitudes
 const handler = async (req: Request): Promise<Response> => {
-  // Handle preflight OPTIONS request
+  // Manejar solicitud preflight OPTIONS
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json"
+      } 
+    });
   }
 
   try {
-    // Parse the request body
+    // Analizar el cuerpo de la solicitud
     const body = await req.json();
     const { to, subject, html, cc, text, attachments, requestId = `req-${Date.now()}` } = body;
     
-    // Validate required fields
+    // Validar campos requeridos
     if (!to) {
       throw new Error("Campo 'to' es obligatorio");
     }
@@ -32,27 +37,27 @@ const handler = async (req: Request): Promise<Response> => {
     
     logger.log(`[${requestId}] Solicitud de envío de correo recibida: ${to}, Asunto: ${subject}`);
     
-    // Add CC processing
+    // Procesamiento de CC
     const emailRequest: SendEmailRequest = {
       to,
       subject,
       requestId
     };
     
-    // Add HTML or text content
+    // Agregar contenido HTML o texto
     if (html) emailRequest.html = html;
     if (text) emailRequest.text = text;
     
-    // Add CC if provided
+    // Agregar CC si se proporciona
     if (cc) emailRequest.cc = Array.isArray(cc) ? cc : [cc];
     
-    // Add attachments if provided
+    // Agregar archivos adjuntos si se proporcionan
     if (attachments) emailRequest.attachments = attachments;
     
-    // Send the email
+    // Enviar el correo
     const result = await sendEmail(emailRequest);
     
-    // Return success
+    // Devolver éxito
     return new Response(JSON.stringify(result), {
       status: 200,
       headers: {
@@ -63,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error) {
     logger.error("Error en función send-email:", error);
     
-    // Return error
+    // Devolver error
     return new Response(
       JSON.stringify({
         error: {
@@ -82,5 +87,5 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-// Start the server
+// Iniciar el servidor
 serve(handler);

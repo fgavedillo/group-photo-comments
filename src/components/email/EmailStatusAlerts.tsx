@@ -28,10 +28,11 @@ export const EmailStatusAlerts = ({
           Para enviar correos, asegúrese de que:
           <ul className="list-disc pl-5 mt-2 text-sm">
             <li>Ha iniciado sesión en la aplicación</li>
-            <li>La función Edge 'send-email' está publicada</li>
+            <li>La función Edge 'send-email' está publicada y activa</li>
             <li>Las variables GMAIL_USER y GMAIL_APP_PASSWORD están correctamente configuradas en Supabase</li>
             <li>La cuenta de Gmail tiene habilitada la verificación en dos pasos</li>
             <li>Está usando una contraseña de aplicación válida para Gmail (16 caracteres sin espacios)</li>
+            <li>El dominio desde donde se hace la petición está permitido en la configuración CORS</li>
           </ul>
         </AlertDescription>
       </Alert>
@@ -42,6 +43,14 @@ export const EmailStatusAlerts = ({
   const isGmailAuthError = detailedError && 
     (detailedError.includes("Username and Password not accepted") || 
      detailedError.includes("Autenticación de Gmail fallida"));
+  
+  // Detectar errores de CORS
+  const isCorsError = detailedError &&
+    (detailedError.includes("CORS") || detailedError.includes("Access-Control-Allow-Origin"));
+  
+  // Detectar errores de conexión
+  const isConnectionError = detailedError &&
+    (detailedError.includes("Failed to fetch") || detailedError.includes("Network Error"));
   
   return (
     <div className="space-y-4">
@@ -104,6 +113,33 @@ export const EmailStatusAlerts = ({
                       Más información en el centro de ayuda de Google
                     </a>
                   </li>
+                </ul>
+                <p className="mt-2 pt-2 border-t border-red-200">Detalles técnicos:</p>
+                <pre className="bg-red-50/50 p-2 rounded text-[10px] overflow-auto max-h-32">
+                  {detailedError}
+                </pre>
+              </div>
+            ) : isCorsError ? (
+              <div className="space-y-3">
+                <p className="font-medium">Error de políticas CORS</p>
+                <ul className="list-disc pl-5 mt-2">
+                  <li>La función Edge no está configurada correctamente para aceptar solicitudes de este origen</li>
+                  <li>Verifique que la función Edge tenga los encabezados CORS correctamente configurados</li>
+                  <li>Asegúrese de que la función Edge esté publicada y activa</li>
+                </ul>
+                <p className="mt-2 pt-2 border-t border-red-200">Detalles técnicos:</p>
+                <pre className="bg-red-50/50 p-2 rounded text-[10px] overflow-auto max-h-32">
+                  {detailedError}
+                </pre>
+              </div>
+            ) : isConnectionError ? (
+              <div className="space-y-3">
+                <p className="font-medium">Error de conexión</p>
+                <ul className="list-disc pl-5 mt-2">
+                  <li>No se pudo establecer conexión con la función Edge</li>
+                  <li>Verifique su conexión a internet</li>
+                  <li>La función Edge podría estar inactiva o no responder</li>
+                  <li>La URL de la función Edge podría ser incorrecta</li>
                 </ul>
                 <p className="mt-2 pt-2 border-t border-red-200">Detalles técnicos:</p>
                 <pre className="bg-red-50/50 p-2 rounded text-[10px] overflow-auto max-h-32">

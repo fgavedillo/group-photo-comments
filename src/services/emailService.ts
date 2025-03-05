@@ -2,7 +2,7 @@
 import { callApi, ApiResponse } from './api/apiClient';
 
 /**
- * Interface for email sending response
+ * Interfaz para la respuesta del envío de email
  */
 interface EmailSendResponse {
   success: boolean;
@@ -13,27 +13,28 @@ interface EmailSendResponse {
 }
 
 /**
- * Send a manual email report (filtered or full)
+ * Envía un reporte por correo manual (filtrado o completo)
  */
 export const sendManualEmail = async (filtered: boolean = false): Promise<ApiResponse<EmailSendResponse>> => {
   try {
-    console.log(`Starting manual email send (${filtered ? 'filtered' : 'full'})`);
+    console.log(`Iniciando envío de correo manual (${filtered ? 'filtrado' : 'completo'})`);
     
-    // Function URL
+    // URL de la función
     const functionUrl = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-daily-report";
     
-    // Send request with appropriate timeout
+    // Enviar solicitud con timeout apropiado
     return await callApi<EmailSendResponse>(
       functionUrl,
       'POST',
       { 
         manual: true,
         filteredByUser: filtered,
+        requestId: `manual-email-${Date.now()}`
       },
-      { timeout: 60000 } // 60 second timeout
+      { timeout: 60000 } // 60 segundos de timeout
     );
   } catch (error) {
-    console.error('General error in email sending:', error);
+    console.error('Error general en el envío de correo:', error);
     
     return {
       success: false,

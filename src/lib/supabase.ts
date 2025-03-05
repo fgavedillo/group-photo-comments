@@ -11,21 +11,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-interface Attachment {
-  filename: string;
-  content: string;
-  encoding: string;
-  type: string;
-}
-
-// Define a consistent interface for email payloads to prevent type errors
-interface EmailPayload {
+// Definir una interfaz consistente para las cargas útiles de correo electrónico para evitar errores de tipo
+export interface EmailPayload {
   to: string;
   subject: string;
   html: string;
   requestId: string;
   attachments?: Attachment[];
   cc?: string[];
+}
+
+interface Attachment {
+  filename: string;
+  content: string;
+  encoding: string;
+  type: string;
 }
 
 export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[], cc?: string[]) => {
@@ -52,7 +52,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     try {
       console.log(`[${requestId}] Enviando solicitud a ${functionUrl}`);
       
-      // Create the payload using our interface
+      // Crear la carga útil usando nuestra interfaz
       const payload: EmailPayload = {
         to,
         subject,
@@ -61,7 +61,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
         attachments
       };
       
-      // Add CC if provided
+      // Agregar CC si se proporciona
       if (cc && cc.length > 0) {
         payload.cc = cc;
       }

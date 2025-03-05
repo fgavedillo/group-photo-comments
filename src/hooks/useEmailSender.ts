@@ -22,6 +22,7 @@ export const useEmailSender = () => {
   
   const checkEdgeFunctionStatus = useCallback(async () => {
     try {
+      console.log("Verificando disponibilidad de la función Edge...");
       const response = await fetch("https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email", {
         method: "OPTIONS",
         headers: {
@@ -29,7 +30,7 @@ export const useEmailSender = () => {
         }
       });
       
-      console.log("Edge Function status check:", {
+      console.log("Verificación de estado de la función Edge:", {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok
@@ -37,14 +38,14 @@ export const useEmailSender = () => {
       
       return response.ok;
     } catch (error) {
-      console.error("Error checking Edge Function status:", error);
+      console.error("Error verificando el estado de la función Edge:", error);
       return false;
     }
   }, []);
   
   useEffect(() => {
     checkEdgeFunctionStatus().then(isAvailable => {
-      console.log("Edge Function availability:", isAvailable ? "✅ Available" : "❌ Not available");
+      console.log("Disponibilidad de la función Edge:", isAvailable ? "✅ Disponible" : "❌ No disponible");
     });
   }, [checkEdgeFunctionStatus]);
   
@@ -70,11 +71,11 @@ export const useEmailSender = () => {
     }
     
     try {
-      console.log(`Starting email send (${filtered ? 'filtered' : 'full'}) - Retry ${retryCount}`);
+      console.log(`Iniciando envío de correo (${filtered ? 'filtrado' : 'completo'}) - Intento ${retryCount}`);
       
       const isEdgeFunctionAvailable = await checkEdgeFunctionStatus();
       if (!isEdgeFunctionAvailable) {
-        console.warn("Edge Function may not be available. Continuing anyway...");
+        console.warn("La función Edge podría no estar disponible. Continuando de todos modos...");
       }
       
       const response = await sendManualEmail(filtered);

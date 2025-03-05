@@ -3,28 +3,29 @@ import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 import { logger } from "./logger.ts";
 import { SendEmailRequest } from "./types.ts";
 
-// Initialize SMTP client with credentials from environment variables
+// Inicializar cliente SMTP con credenciales de variables de entorno
 const client = new SmtpClient();
 
 export async function sendEmail(request: SendEmailRequest): Promise<any> {
   const { to, subject, html, cc, text, attachments, requestId } = request;
   
   try {
-    logger.log(`[${requestId}] Connecting to SMTP server...`);
+    logger.log(`[${requestId}] Conectando al servidor SMTP...`);
     
-    // Retrieve credentials from environment
+    // Obtener credenciales del entorno
     const username = Deno.env.get("GMAIL_USER");
     const password = Deno.env.get("GMAIL_APP_PASSWORD");
     
-    // Validate credentials
+    // Validar credenciales
     if (!username || !password) {
-      throw new Error("GMAIL_USER or GMAIL_APP_PASSWORD environment variables are not set");
+      logger.error(`[${requestId}] Variables de entorno GMAIL_USER o GMAIL_APP_PASSWORD no configuradas`);
+      throw new Error("Variables de entorno GMAIL_USER o GMAIL_APP_PASSWORD no configuradas");
     }
     
-    logger.log(`[${requestId}] Using email: ${username}`);
-    logger.log(`[${requestId}] Password length: ${password.length} characters`);
+    logger.log(`[${requestId}] Usando email: ${username}`);
+    logger.log(`[${requestId}] Longitud de la contraseña: ${password.length} caracteres`);
     
-    // Connect to Gmail SMTP
+    // Conectar a Gmail SMTP
     await client.connectTLS({
       hostname: "smtp.gmail.com",
       port: 465,
@@ -32,32 +33,32 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       password: password,
     });
     
-    // Start measuring time for performance tracking
+    // Comenzar a medir el tiempo para seguimiento de rendimiento
     const startTime = Date.now();
     
-    // Send the email
-    logger.log(`[${requestId}] Sending email to ${to}${cc ? ` with CC: ${cc.join(', ')}` : ''}...`);
+    // Enviar el correo
+    logger.log(`[${requestId}] Enviando correo a ${to}${cc ? ` con CC: ${cc.join(', ')}` : ''}...`);
     
-    // Configure email
+    // Configurar correo
     const sendConfig: any = {
       from: username,
       to: to,
       subject: subject,
     };
     
-    // Add CC if provided
+    // Agregar CC si se proporciona
     if (cc && cc.length > 0) {
       sendConfig.cc = cc;
     }
     
-    // Add either HTML or text content
+    // Agregar contenido HTML o texto
     if (html) {
       sendConfig.html = html;
     } else if (text) {
       sendConfig.content = text;
     }
     
-    // Add attachments if provided
+    // Agregar archivos adjuntos si se proporcionan
     if (attachments && attachments.length > 0) {
       sendConfig.attachments = attachments.map(attachment => ({
         contentType: attachment.type,
@@ -67,19 +68,24 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       }));
     }
     
-    // Send the email
+    // Enviar el correo
     const result = await client.send(sendConfig);
     
-    // Calculate how long it took
+    // Calcular cuánto tiempo tardó
     const elapsed = Date.now() - startTime;
     
-    // Log success
+    // Registrar éxito
     logger.log(`[${requestId}] Email enviado correctamente en ${elapsed}ms`);
     
-    // Close the connection
-    await client.close();
+    // Cerrar la conexión
+    try {
+      await client.close();
+    } catch (closeError) {
+      logger.error(`[${requestId}] Error no crítico cerrando conexión SMTP:`, closeError);
+      // No propagamos este error ya que el email ya se envió
+    }
     
-    // Return success result
+    // Devolver resultado exitoso
     return { 
       success: true, 
       message: `Email enviado correctamente a ${to}`,
@@ -89,18 +95,18 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
   } catch (error) {
     logger.error(`[${requestId}] Error enviando email:`, error);
     
-    // Try to close the client connection on error
+    // Intentar cerrar la conexión del cliente en caso de error
     try {
       await client.close();
     } catch (closeError) {
       logger.error(`[${requestId}] Error cerrando conexión SMTP:`, closeError);
     }
     
-    // Format a more helpful error message
+    // Formatear un mensaje de error más útil
     let errorMessage = error.message || "Error desconocido al enviar correo";
     let detailedError = error.stack || errorMessage;
     
-    // Check for common Gmail authentication issues
+    // Verificar problemas comunes de autenticación de Gmail
     if (errorMessage.includes("Username and Password not accepted")) {
       errorMessage = "Autenticación de Gmail fallida: credenciales no aceptadas";
       detailedError = `Error de autenticación con Gmail. Verifique que:
@@ -112,7 +118,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
 Error original: ${error.message}`;
     }
     
-    // Re-throw with enhanced information
+    // Re-lanzar con información mejorada
     const enhancedError = new Error(errorMessage);
     enhancedError.stack = detailedError;
     throw enhancedError;
