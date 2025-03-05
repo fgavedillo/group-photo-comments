@@ -6,3 +6,6 @@ verify_jwt = true
 
 [functions.send-email]
 verify_jwt = false
+
+[functions.send-daily-report]
+verify_jwt = false

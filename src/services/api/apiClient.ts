@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 
 /**
@@ -30,14 +29,8 @@ export async function createRequestHeaders(): Promise<Headers> {
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
   
-  // Get current session for authentication
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData?.session?.access_token || '';
-  
-  // Add authentication headers
-  if (accessToken) {
-    headers.append("Authorization", `Bearer ${accessToken}`);
-  }
+  // Ya no necesitamos añadir el token de autenticación para estas funciones
+  // ya que están configuradas con verify_jwt = false
   
   // Use the anon key for API access
   const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I';

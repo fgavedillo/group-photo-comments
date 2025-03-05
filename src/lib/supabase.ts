@@ -38,11 +38,8 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     headers.append("Content-Type", "application/json");
     headers.append("apikey", supabaseAnonKey);
     
-    const { data: sessionData } = await supabase.auth.getSession();
-    const accessToken = sessionData?.session?.access_token;
-    if (accessToken) {
-      headers.append("Authorization", `Bearer ${accessToken}`);
-    }
+    // Eliminamos la verificación de autenticación ya que la función ahora no requiere JWT
+    // La clave anónima es suficiente para acceder a la función
     
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
