@@ -106,6 +106,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       `;
 
       console.log("Enviando correo a:", email);
+      console.log("Con asunto: Nueva incidencia asignada - Acción requerida");
       
       await sendEmail(
         email,

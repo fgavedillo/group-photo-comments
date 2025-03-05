@@ -3,7 +3,7 @@ import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 import { logger } from "./logger.ts";
 import { SendEmailRequest } from "./types.ts";
 
-// Función para validar credenciales de correo
+// Function to validate credentials
 function validateCredentials(username: string | undefined, password: string | undefined, requestId: string): void {
   if (!username) {
     logger.error(`[${requestId}] GMAIL_USER no está configurado en las variables de entorno`);
@@ -15,7 +15,7 @@ function validateCredentials(username: string | undefined, password: string | un
     throw new Error("GMAIL_APP_PASSWORD no está configurado");
   }
   
-  // Eliminar espacios en la contraseña - esto es crítico ya que la API puede fallar con espacios
+  // Remove spaces in password - this is critical as the API may fail with spaces
   password = password.trim().replace(/\s+/g, '');
   
   if (password.length !== 16) {
@@ -23,7 +23,7 @@ function validateCredentials(username: string | undefined, password: string | un
     throw new Error("La contraseña de aplicación debe tener exactamente 16 caracteres");
   }
   
-  // Verificar formato básico de email
+  // Verify basic email format
   if (!username.includes('@')) {
     logger.error(`[${requestId}] GMAIL_USER no parece ser una dirección de correo válida: ${username}`);
     throw new Error("GMAIL_USER no parece ser una dirección de correo válida");
@@ -38,99 +38,94 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
   try {
     logger.log(`[${requestId}] Iniciando envío de correo a ${to}`);
     
-    // Obtener credenciales del entorno
+    // Get credentials from environment
     const username = Deno.env.get("GMAIL_USER");
     let password = Deno.env.get("GMAIL_APP_PASSWORD");
     
-    // Eliminar espacios en la contraseña - muchos errores vienen de aquí
+    // Remove spaces in password - many errors come from here
     if (password) {
       password = password.trim().replace(/\s+/g, '');
     }
     
-    // Validar credenciales
+    // Validate credentials
     validateCredentials(username, password, requestId);
     
-    // Información de diagnóstico sobre las credenciales
+    // Diagnostic information about credentials
     logger.log(`[${requestId}] Usando email: ${username}`);
     logger.log(`[${requestId}] Longitud de la contraseña: ${password.length} caracteres`);
     
-    // Comenzar a medir el tiempo para seguimiento de rendimiento
+    // Start measuring time for performance tracking
     const startTime = Date.now();
     
-    // En lugar de usar la biblioteca SMTP con problemas, usaremos la API de Gmail
-    // directamente a través de una solicitud HTTP
-    const emailUrl = 'https://smtps.gmail.com/send';
-    
-    // Cambio de estrategia: Vamos a usar Resend.com como servicio de correo
-    // ya que Gmail SMTP está dando problemas con Deno
-    logger.log(`[${requestId}] Usando servicio alternativo para envío de correo...`);
-    
-    // Configurar parámetros para el correo
-    const emailContent: any = {
-      from: username,
-      to: to,
-      subject: subject,
-    };
-    
-    // Agregar contenido HTML o texto
-    if (html) emailContent.html = html;
-    if (text) emailContent.text = text;
-    
-    // Agregar CC si se proporciona
-    if (cc && cc.length > 0) {
-      emailContent.cc = cc;
+    try {
+      // Using the updated SMTP client that doesn't rely on Deno.writeAll
+      logger.log(`[${requestId}] Configurando cliente SMTP...`);
+      
+      const client = new SmtpClient();
+      
+      logger.log(`[${requestId}] Conectando a Gmail...`);
+      
+      await client.connectTLS({
+        hostname: "smtp.gmail.com",
+        port: 465,
+        username: username!,
+        password: password!,
+      });
+      
+      logger.log(`[${requestId}] Conexión establecida, enviando correo...`);
+      
+      // Prepare email content
+      const mailOptions = {
+        from: username!,
+        to: [to],
+        subject: subject,
+        content: text || "",
+        html: html || undefined,
+      };
+      
+      // Add CC if provided
+      if (cc && cc.length > 0) {
+        mailOptions.to = [...mailOptions.to, ...cc];
+      }
+      
+      // Send the email
+      logger.log(`[${requestId}] Enviando email con opciones:`, JSON.stringify({
+        from: username,
+        to: mailOptions.to,
+        subject,
+        hasHtml: !!html,
+        hasText: !!text,
+      }));
+      
+      const result = await client.send(mailOptions);
+      await client.close();
+      
+      // Calculate how long it took
+      const elapsed = Date.now() - startTime;
+      
+      // Log success
+      logger.log(`[${requestId}] Email enviado correctamente en ${elapsed}ms`);
+      
+      // Return successful result
+      return { 
+        success: true, 
+        message: `Email enviado correctamente a ${to}`,
+        elapsed: `${elapsed}ms`,
+        messageId: result?.messageId
+      };
+    } catch (smtpError) {
+      logger.error(`[${requestId}] Error en el cliente SMTP:`, smtpError);
+      throw smtpError;
     }
-    
-    // Usar una solución alternativa más simple para enviar correos
-    // Este es un enfoque que no dependerá de Deno.writeAll
-    const tls = { servername: "smtp.gmail.com" };
-    const client = new SmtpClient({ connection: { hostname: "smtp.gmail.com", port: 465, tls: true } });
-    
-    logger.log(`[${requestId}] Conectando a Gmail usando nuevo método...`);
-    
-    await client.connect({
-      hostname: "smtp.gmail.com",
-      port: 465,
-      username: username!,
-      password: password!,
-    });
-    
-    logger.log(`[${requestId}] Conexión establecida, enviando correo...`);
-    
-    const mailOptions = {
-      from: username!,
-      to: to,
-      subject: subject,
-      content: text || "",
-      html: html || undefined,
-    };
-    
-    // Enviar el correo
-    const result = await client.send(mailOptions);
-    await client.close();
-    
-    // Calcular cuánto tiempo tardó
-    const elapsed = Date.now() - startTime;
-    
-    // Registrar éxito
-    logger.log(`[${requestId}] Email enviado correctamente en ${elapsed}ms`);
-    
-    // Devolver resultado exitoso
-    return { 
-      success: true, 
-      message: `Email enviado correctamente a ${to}`,
-      elapsed: `${elapsed}ms`,
-      messageId: result.messageId
-    };
     
   } catch (error) {
     logger.error(`[${requestId}] Error enviando email:`, error);
     
-    // Mejorar el mensaje de error para errores comunes
+    // Improve error message for common errors
     let errorMessage = error.message || "Error desconocido al enviar correo";
     let detailedError = error.stack || errorMessage;
     
-    // Verificar problemas comunes de autenticación de Gmail
+    // Check for common Gmail authentication issues
     if (errorMessage.includes("Username and Password not accepted") || 
         errorMessage.includes("535-5.7.8")) {
       errorMessage = "Autenticación de Gmail fallida: credenciales no aceptadas";
@@ -143,7 +138,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
 Error original: ${error.message}`;
     }
     
-    // Re-lanzar con información mejorada
+    // Re-throw with improved information
     const enhancedError = new Error(errorMessage);
     enhancedError.stack = detailedError;
     throw enhancedError;

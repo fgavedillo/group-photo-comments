@@ -113,6 +113,7 @@ export async function sendEmail(
     };
     
     console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Sending email request to Edge Function`);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Using URL: ${SEND_EMAIL_FUNCTION_URL}`);
     
     // Send the request
     const response = await fetch(SEND_EMAIL_FUNCTION_URL, {
@@ -129,7 +130,15 @@ export async function sendEmail(
     if (!response.ok) {
       const errorText = await response.text();
       console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error response from send-email function:`, errorText);
-      throw new Error(`Error sending email: HTTP ${response.status} - ${errorText}`);
+      
+      try {
+        // Try to parse as JSON to get more details
+        const errorData = JSON.parse(errorText);
+        throw new Error(`Error sending email: HTTP ${response.status} - ${errorData.error?.message || errorText}`);
+      } catch (parseError) {
+        // If parsing fails, use the raw response
+        throw new Error(`Error sending email: HTTP ${response.status} - ${errorText}`);
+      }
     }
     
     // Success

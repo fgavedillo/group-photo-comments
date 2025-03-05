@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Definir una interfaz consistente para las cargas útiles de correo electrónico para evitar errores de tipo
+// Define a consistent interface for email payloads to avoid type errors
 export interface EmailPayload {
   to: string;
   subject: string;
@@ -31,6 +31,7 @@ interface Attachment {
 export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[], cc?: string[]) => {
   try {
     console.log("Enviando correo a:", to);
+    console.log("Asunto:", subject);
     
     const functionUrl = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email";
     
@@ -38,17 +39,17 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     headers.append("Content-Type", "application/json");
     headers.append("apikey", supabaseAnonKey);
     
-    // No añadimos encabezados de autorización - la función Edge no requiere verificación de JWT
+    // We don't add authorization headers - the Edge Function doesn't require JWT verification
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
     
     const requestId = `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     try {
       console.log(`[${requestId}] Enviando solicitud a ${functionUrl}`);
       
-      // Crear la carga útil usando nuestra interfaz
+      // Create the payload using our interface
       const payload: EmailPayload = {
         to,
         subject,
@@ -57,7 +58,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
         attachments
       };
       
-      // Agregar CC si se proporciona
+      // Add CC if provided
       if (cc && cc.length > 0) {
         payload.cc = cc;
       }
@@ -85,7 +86,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
             errorMessage = errorData.message;
           }
         } catch (e) {
-          // Si no podemos parsear como JSON, usamos el texto plano
+          // If we can't parse as JSON, use plain text
           errorMessage += ` - ${errorText}`;
         }
         
