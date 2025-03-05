@@ -44,7 +44,7 @@ export function buildEmailHtml(report: IssueReport, isPersonalized: boolean = fa
     </div>
   `;
 
-  // Generate the issues by status sections with improved card styling
+  // Generate the issues by status sections with improved card styling and smaller images
   const issuesSectionHtml = Object.entries(report.issues)
     .map(([status, issues]) => {
       if (issues.length === 0) return '';
@@ -56,52 +56,52 @@ export function buildEmailHtml(report: IssueReport, isPersonalized: boolean = fa
             ${getStatusLabel(status)} <span style="color: #666; font-size: 16px; margin-left: 5px;">(${issues.length})</span>
           </h2>
           
-          <div style="display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 15px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 15px;">
             ${issues.map(issue => {
               // Create a direct link to the issue using the base URL
               const issueLink = `${baseUrl}/issues?id=${issue.id}`;
               
               return `
-                <div style="border: 1px solid #eee; border-radius: 8px; padding: 20px; background-color: #fafafa; transition: transform 0.2s; position: relative;">
-                  <div style="position: absolute; top: 15px; right: 15px; background-color: #f0f0f0; border-radius: 15px; padding: 3px 10px; font-size: 12px; color: #666;">
+                <div style="border: 1px solid #eee; border-radius: 8px; padding: 15px; background-color: #fafafa; transition: transform 0.2s; position: relative; height: 100%;">
+                  <div style="position: absolute; top: 10px; right: 10px; background-color: #f0f0f0; border-radius: 15px; padding: 2px 8px; font-size: 11px; color: #666;">
                     ID: ${issue.id}
                   </div>
                   
-                  <h3 style="color: #0066cc; margin-bottom: 5px; font-size: 18px;">${issue.responsable || 'Sin asignar'}</h3>
-                  <p style="color: #666; margin-top: 0; font-size: 13px;">Área: ${issue.area} | Fecha: ${new Date(issue.timestamp).toLocaleDateString()}</p>
+                  <h3 style="color: #0066cc; margin-bottom: 5px; font-size: 16px; margin-top: 0;">${issue.responsable || 'Sin asignar'}</h3>
+                  <p style="color: #666; margin-top: 0; font-size: 12px;">Área: ${issue.area} | Fecha: ${new Date(issue.timestamp).toLocaleDateString()}</p>
                   
-                  <div style="margin: 15px 0; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #0066cc; border-radius: 3px;">
-                    <p style="margin: 0; line-height: 1.5; color: #333;">${issue.message}</p>
+                  <div style="margin: 10px 0; padding: 10px; background-color: #f8f9fa; border-left: 3px solid #0066cc; border-radius: 3px; font-size: 13px;">
+                    <p style="margin: 0; line-height: 1.4; color: #333;">${issue.message?.replace(/=20/g, '')}</p>
                   </div>
                   
                   ${issue.imageUrl ? `
-                    <div style="margin: 15px 0; text-align: center;">
-                      <img src="${issue.imageUrl}" alt="Imagen de la incidencia" style="max-width: 100%; height: auto; max-height: 180px; border: 1px solid #ddd; border-radius: 4px; object-fit: contain;">
+                    <div style="margin: 10px 0; text-align: center;">
+                      <img src="${issue.imageUrl}" alt="Imagen de la incidencia" style="max-width: 100%; height: auto; max-height: 140px; border: 1px solid #ddd; border-radius: 4px; object-fit: contain;">
                     </div>
                   ` : ''}
                   
                   ${issue.actionPlan ? `
-                    <div style="margin-top: 15px;">
-                      <p style="font-weight: bold; margin-bottom: 5px; color: #555; display: flex; align-items: center;">
-                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #4caf50; border-radius: 50%; margin-right: 8px;"></span>
+                    <div style="margin-top: 10px;">
+                      <p style="font-weight: bold; margin-bottom: 3px; color: #555; font-size: 12px; display: flex; align-items: center;">
+                        <span style="display: inline-block; width: 6px; height: 6px; background-color: #4caf50; border-radius: 50%; margin-right: 6px;"></span>
                         Plan de acción:
                       </p>
-                      <p style="margin-top: 0; padding: 10px; background-color: #e8f4fc; border-radius: 3px;">${issue.actionPlan}</p>
+                      <p style="margin-top: 0; padding: 8px; background-color: #e8f4fc; border-radius: 3px; font-size: 12px;">${issue.actionPlan?.replace(/=20/g, '')}</p>
                     </div>
                   ` : ''}
                   
                   ${issue.securityImprovement ? `
-                    <div style="margin-top: 15px;">
-                      <p style="font-weight: bold; margin-bottom: 5px; color: #555; display: flex; align-items: center;">
-                        <span style="display: inline-block; width: 8px; height: 8px; background-color: #ff9800; border-radius: 50%; margin-right: 8px;"></span>
+                    <div style="margin-top: 10px;">
+                      <p style="font-weight: bold; margin-bottom: 3px; color: #555; font-size: 12px; display: flex; align-items: center;">
+                        <span style="display: inline-block; width: 6px; height: 6px; background-color: #ff9800; border-radius: 50%; margin-right: 6px;"></span>
                         Mejora de seguridad:
                       </p>
-                      <p style="margin-top: 0; padding: 10px; background-color: #e8fcf4; border-radius: 3px;">${issue.securityImprovement}</p>
+                      <p style="margin-top: 0; padding: 8px; background-color: #e8fcf4; border-radius: 3px; font-size: 12px;">${issue.securityImprovement?.replace(/=20/g, '')}</p>
                     </div>
                   ` : ''}
                   
-                  <div style="margin-top: 20px; text-align: center;">
-                    <a href="${issueLink}" style="display: inline-block; padding: 10px 20px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; transition: background-color 0.2s;">Ver Detalles</a>
+                  <div style="margin-top: 15px; text-align: center;">
+                    <a href="${issueLink}" style="display: inline-block; padding: 8px 16px; background-color: #0066cc; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 12px; transition: background-color 0.2s;">Ver Detalles</a>
                   </div>
                 </div>
               `;

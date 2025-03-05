@@ -15,7 +15,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({ content }) => {
   
   // Step 2: Clean up any remaining =20 codes that might not have been properly decoded
   const cleanedContent = decodedContent
-    .replace(/=20+/g, ' ') // Replace multiple =20 with a single space
+    .replace(/=20+/g, '') // Remove all =20 codes completely
     .replace(/\s+/g, ' ') // Normalize spaces (multiple spaces to single space)
     .trim();
   

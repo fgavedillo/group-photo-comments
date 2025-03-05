@@ -19,11 +19,14 @@ export const decodeQuotedPrintable = (text: string): string => {
   decoded = decoded.replace(/=\r\n/g, '');
   decoded = decoded.replace(/=\n/g, '');
   
-  // Completely remove the '=20' characters that often appear at the end of lines
-  decoded = decoded.replace(/=20/g, ' ');
+  // Completely remove all instances of =20 characters
+  decoded = decoded.replace(/=20+/g, ' ');
   
   // Replace other problematic characters common in emails
   decoded = decoded.replace(/&nbsp;/g, ' ');
+  
+  // Clean up excessive whitespace
+  decoded = decoded.replace(/\s+/g, ' ').trim();
   
   return decoded;
 };

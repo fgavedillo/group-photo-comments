@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, RefreshCw, UserCheck } from "lucide-react";
+import { Mail, RefreshCw, UserCheck, SendHorizonal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EmailActionCardProps {
@@ -65,7 +65,7 @@ export const EmailActionCard = ({
               {highlight ? (
                 <UserCheck className="mr-2 h-4 w-4" />
               ) : (
-                <Mail className="mr-2 h-4 w-4" />
+                <SendHorizonal className="mr-2 h-4 w-4" />
               )}
               {buttonText}
             </>
