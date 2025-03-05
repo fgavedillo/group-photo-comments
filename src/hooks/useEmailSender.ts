@@ -1,4 +1,3 @@
-
 import { useState, useCallback, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { sendManualEmail } from "@/services/emailService";
@@ -20,10 +19,8 @@ export const useEmailSender = () => {
     setLastRequestId(null);
   }, []);
   
-  // Added a function to check Edge Function availability
   const checkEdgeFunctionStatus = useCallback(async () => {
     try {
-      // Make a lightweight ping to the Edge Function
       const response = await fetch("https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email", {
         method: "OPTIONS",
         headers: {
@@ -44,7 +41,6 @@ export const useEmailSender = () => {
     }
   }, []);
   
-  // Call this function on component mount
   useEffect(() => {
     checkEdgeFunctionStatus().then(isAvailable => {
       console.log("Edge Function availability:", isAvailable ? "✅ Available" : "❌ Not available");
@@ -58,18 +54,14 @@ export const useEmailSender = () => {
   }, [retryCount, lastSendConfiguration, maxRetries]);
   
   const handleSendEmail = useCallback(async (filtered: boolean = false, isRetry: boolean = false) => {
-    // Reset retry count for new requests
     if (!isRetry) {
       resetStatus();
       setRetryCount(0);
-      // Save configuration for potential retries
       setLastSendConfiguration({ filtered });
     } else {
-      // For retries, increment the count
       setRetryCount(prev => prev + 1);
     }
     
-    // Set loading state
     if (filtered) {
       setIsSendingFiltered(true);
     } else {
@@ -79,22 +71,18 @@ export const useEmailSender = () => {
     try {
       console.log(`Starting email send (${filtered ? 'filtered' : 'full'}) - Retry ${retryCount}`);
       
-      // Ping the edge function status before sending
       const isEdgeFunctionAvailable = await checkEdgeFunctionStatus();
       if (!isEdgeFunctionAvailable) {
         console.warn("Edge Function may not be available. Continuing anyway...");
       }
       
-      // Send the email
       const response = await sendManualEmail(filtered);
       
-      // Store request ID if available
       if (response.data?.requestId || response.error?.context?.requestId) {
         setLastRequestId(response.data?.requestId || response.error?.context?.requestId);
       }
       
       if (!response.success) {
-        // Store error details if available
         if (response.error?.details) {
           setDetailedError(response.error.details);
         }
@@ -102,27 +90,31 @@ export const useEmailSender = () => {
         throw new Error(response.error?.message || "Error desconocido");
       }
       
-      // Store success
+      const successMessage = filtered 
+        ? "Se ha enviado el correo personalizado con las incidencias asignadas a cada usuario"
+        : "Se ha enviado el correo programado completo con éxito";
+      
       setLastSendStatus({
         success: true,
-        message: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`
+        message: successMessage
       });
       
-      // Reset retry count on success
       setRetryCount(0);
       
+      const recipientCount = response.data?.recipients?.length || 0;
+      const recipientInfo = recipientCount > 0 ? ` a ${recipientCount} destinatarios` : "";
+      
       toast({
-        title: "Correo enviado",
-        description: `Se ha enviado el correo programado ${filtered ? 'filtrado por usuario' : 'completo'} con éxito`,
+        title: "Correo enviado correctamente",
+        description: `${successMessage}${recipientInfo}`,
         duration: 5000
       });
     } catch (error) {
       console.error('Error al enviar correo:', error);
       
-      // Store error
       setLastSendStatus({
         success: false,
-        message: `Error: ${error.message || 'No se pudo enviar el correo programado'}`
+        message: `Error: ${error.message || 'No se pudo enviar el correo'}`
       });
       
       toast({

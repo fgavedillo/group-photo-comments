@@ -1,7 +1,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, RefreshCw } from "lucide-react";
+import { Mail, RefreshCw, UserCheck } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface EmailActionCardProps {
   title: string;
@@ -10,6 +11,7 @@ interface EmailActionCardProps {
   buttonText: string;
   isLoading: boolean;
   variant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link";
+  highlight?: boolean;
   onClick: () => void;
 }
 
@@ -20,12 +22,26 @@ export const EmailActionCard = ({
   buttonText,
   isLoading,
   variant = "default",
+  highlight = false,
   onClick
 }: EmailActionCardProps) => {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
+    <Card className={cn(
+      "transition-all duration-300 hover:shadow-md",
+      highlight && "border-blue-200 bg-blue-50/30"
+    )}>
+      <CardHeader className={cn(
+        "pb-2",
+        highlight && "border-b border-blue-100"
+      )}>
+        <CardTitle className="flex items-center gap-2">
+          {highlight ? (
+            <UserCheck className="h-5 w-5 text-blue-500" />
+          ) : (
+            <Mail className="h-5 w-5 text-muted-foreground" />
+          )}
+          {title}
+        </CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
@@ -33,7 +49,10 @@ export const EmailActionCard = ({
         <Button 
           onClick={onClick} 
           disabled={isLoading}
-          className="w-full sm:w-auto"
+          className={cn(
+            "w-full transition-all",
+            highlight && !isLoading && variant === "secondary" && "bg-blue-600 hover:bg-blue-700 text-white"
+          )}
           variant={variant}
         >
           {isLoading ? (
@@ -43,7 +62,11 @@ export const EmailActionCard = ({
             </>
           ) : (
             <>
-              <Mail className="mr-2 h-4 w-4" />
+              {highlight ? (
+                <UserCheck className="mr-2 h-4 w-4" />
+              ) : (
+                <Mail className="mr-2 h-4 w-4" />
+              )}
               {buttonText}
             </>
           )}
