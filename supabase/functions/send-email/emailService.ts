@@ -3,7 +3,7 @@ import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
 import { logger } from "./logger.ts";
 import { SendEmailRequest } from "./types.ts";
 
-// Function to validate credentials
+// Función para validar credenciales
 function validateCredentials(username: string | undefined, password: string | undefined, requestId: string): void {
   if (!username) {
     logger.error(`[${requestId}] GMAIL_USER no está configurado en las variables de entorno`);
@@ -15,7 +15,7 @@ function validateCredentials(username: string | undefined, password: string | un
     throw new Error("GMAIL_APP_PASSWORD no está configurado");
   }
   
-  // Remove spaces in password - this is critical as the API may fail with spaces
+  // Eliminar espacios en la contraseña - esto es crítico ya que la API puede fallar con espacios
   password = password.trim().replace(/\s+/g, '');
   
   if (password.length !== 16) {
@@ -23,7 +23,7 @@ function validateCredentials(username: string | undefined, password: string | un
     throw new Error("La contraseña de aplicación debe tener exactamente 16 caracteres");
   }
   
-  // Verify basic email format
+  // Verificar formato básico de email
   if (!username.includes('@')) {
     logger.error(`[${requestId}] GMAIL_USER no parece ser una dirección de correo válida: ${username}`);
     throw new Error("GMAIL_USER no parece ser una dirección de correo válida");
@@ -38,27 +38,27 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
   try {
     logger.log(`[${requestId}] Iniciando envío de correo a ${to}`);
     
-    // Get credentials from environment
+    // Obtener credenciales del entorno
     const username = Deno.env.get("GMAIL_USER");
     let password = Deno.env.get("GMAIL_APP_PASSWORD");
     
-    // Remove spaces in password - many errors come from here
+    // Eliminar espacios en la contraseña - muchos errores provienen de aquí
     if (password) {
       password = password.trim().replace(/\s+/g, '');
     }
     
-    // Validate credentials
+    // Validar credenciales
     validateCredentials(username, password, requestId);
     
-    // Diagnostic information about credentials
+    // Información de diagnóstico sobre credenciales
     logger.log(`[${requestId}] Usando email: ${username}`);
     logger.log(`[${requestId}] Longitud de la contraseña: ${password.length} caracteres`);
     
-    // Start measuring time for performance tracking
+    // Medir tiempo para seguimiento de rendimiento
     const startTime = Date.now();
     
     try {
-      // Using the updated SMTP client that doesn't rely on Deno.writeAll
+      // Usar el cliente SMTP actualizado que no depende de Deno.writeAll
       logger.log(`[${requestId}] Configurando cliente SMTP...`);
       
       const client = new SmtpClient();
@@ -74,7 +74,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       
       logger.log(`[${requestId}] Conexión establecida, enviando correo...`);
       
-      // Prepare email content
+      // Preparar contenido del email
       const mailOptions = {
         from: username!,
         to: [to],
@@ -83,12 +83,12 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
         html: html || undefined,
       };
       
-      // Add CC if provided
+      // Añadir CC si se proporciona
       if (cc && cc.length > 0) {
         mailOptions.to = [...mailOptions.to, ...cc];
       }
       
-      // Send the email
+      // Enviar el email
       logger.log(`[${requestId}] Enviando email con opciones:`, JSON.stringify({
         from: username,
         to: mailOptions.to,
@@ -100,13 +100,13 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       const result = await client.send(mailOptions);
       await client.close();
       
-      // Calculate how long it took
+      // Calcular cuánto tiempo tomó
       const elapsed = Date.now() - startTime;
       
-      // Log success
+      // Registrar éxito
       logger.log(`[${requestId}] Email enviado correctamente en ${elapsed}ms`);
       
-      // Return successful result
+      // Devolver resultado exitoso
       return { 
         success: true, 
         message: `Email enviado correctamente a ${to}`,
@@ -121,11 +121,11 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
   } catch (error) {
     logger.error(`[${requestId}] Error enviando email:`, error);
     
-    // Improve error message for common errors
+    // Mejorar mensaje de error para errores comunes
     let errorMessage = error.message || "Error desconocido al enviar correo";
     let detailedError = error.stack || errorMessage;
     
-    // Check for common Gmail authentication issues
+    // Verificar problemas comunes de autenticación de Gmail
     if (errorMessage.includes("Username and Password not accepted") || 
         errorMessage.includes("535-5.7.8")) {
       errorMessage = "Autenticación de Gmail fallida: credenciales no aceptadas";
@@ -138,7 +138,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
 Error original: ${error.message}`;
     }
     
-    // Re-throw with improved information
+    // Relanzar con información mejorada
     const enhancedError = new Error(errorMessage);
     enhancedError.stack = detailedError;
     throw enhancedError;

@@ -1,5 +1,5 @@
 
-// Simple logger utility for email service
+// Simple utilidad de registro para el servicio de correo electrónico
 export const logger = {
   log: (message: string, ...args: any[]) => {
     console.log(message, ...args);

@@ -39,17 +39,17 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     headers.append("Content-Type", "application/json");
     headers.append("apikey", supabaseAnonKey);
     
-    // We don't add authorization headers - the Edge Function doesn't require JWT verification
+    // No añadimos cabeceras de autorización - La función Edge no requiere verificación JWT
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos
     
     const requestId = `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
     
     try {
       console.log(`[${requestId}] Enviando solicitud a ${functionUrl}`);
       
-      // Create the payload using our interface
+      // Crear el payload usando nuestra interfaz
       const payload: EmailPayload = {
         to,
         subject,
@@ -58,7 +58,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
         attachments
       };
       
-      // Add CC if provided
+      // Añadir CC si se proporciona
       if (cc && cc.length > 0) {
         payload.cc = cc;
       }
@@ -86,7 +86,7 @@ export const sendEmail = async (to: string, subject: string, content: string, at
             errorMessage = errorData.message;
           }
         } catch (e) {
-          // If we can't parse as JSON, use plain text
+          // Si no podemos analizar como JSON, usar texto plano
           errorMessage += ` - ${errorText}`;
         }
         

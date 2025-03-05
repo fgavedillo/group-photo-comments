@@ -5,13 +5,13 @@ import { sendEmail } from "./emailService.ts";
 import { corsHeaders } from "./cors.ts";
 import { SendEmailRequest } from "./types.ts";
 
-// Create the request handler
+// Crear el manejador de solicitudes
 const handler = async (req: Request): Promise<Response> => {
-  // Generate a unique ID for this request
+  // Generar un ID único para esta solicitud
   const uniqueRequestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   logger.log(`[${uniqueRequestId}] Email function invoked`);
   
-  // Handle OPTIONS preflight request
+  // Manejar solicitud OPTIONS de preflight
   if (req.method === "OPTIONS") {
     logger.log(`[${uniqueRequestId}] Responding to OPTIONS request (CORS preflight)`);
     return new Response(null, { 
@@ -23,11 +23,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Log headers for debugging
+    // Registrar encabezados para depuración
     const headersObj = Object.fromEntries(req.headers.entries());
     logger.log(`[${uniqueRequestId}] Headers received:`, JSON.stringify(headersObj));
 
-    // Parse the request body
+    // Analizar el cuerpo de la solicitud
     const body = await req.json();
     const { to, subject, html, cc, text, attachments, requestId = uniqueRequestId } = body;
     
@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
       attachmentsCount: attachments ? attachments.length : 0
     }));
     
-    // Validate required fields
+    // Validar campos requeridos
     if (!to) {
       logger.error(`[${requestId}] 'to' field is required`);
       throw new Error("Campo 'to' es obligatorio");
@@ -60,24 +60,24 @@ const handler = async (req: Request): Promise<Response> => {
     
     logger.log(`[${requestId}] Email request validated: ${to}, Subject: ${subject}`);
     
-    // Create the request object
+    // Crear el objeto de solicitud
     const emailRequest: SendEmailRequest = {
       to,
       subject,
       requestId
     };
     
-    // Add HTML or text content
+    // Añadir contenido HTML o texto
     if (html) emailRequest.html = html;
     if (text) emailRequest.text = text;
     
-    // Add CC if provided
+    // Añadir CC si se proporciona
     if (cc) emailRequest.cc = Array.isArray(cc) ? cc : [cc];
     
-    // Add attachments if provided
+    // Añadir archivos adjuntos si se proporcionan
     if (attachments) emailRequest.attachments = attachments;
     
-    // Send the email with time measurement
+    // Enviar el correo con medición de tiempo
     const startTime = Date.now();
     logger.log(`[${requestId}] Starting email send through service...`);
     
@@ -86,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
     const endTime = Date.now();
     logger.log(`[${requestId}] send-email function call completed in ${endTime - startTime}ms`);
     
-    // Return success
+    // Devolver éxito
     return new Response(JSON.stringify({
       ...result,
       processingTime: `${endTime - startTime}ms`,
@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error) {
     logger.error(`[${uniqueRequestId}] Error in send-email function:`, error);
     
-    // Return error with details for diagnosis
+    // Devolver error con detalles para diagnóstico
     return new Response(
       JSON.stringify({
         success: false,
@@ -123,5 +123,5 @@ const handler = async (req: Request): Promise<Response> => {
   }
 };
 
-// Start the server
+// Iniciar el servidor
 serve(handler);
