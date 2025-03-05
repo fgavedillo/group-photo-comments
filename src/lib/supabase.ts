@@ -42,7 +42,15 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     try {
       console.log(`[${requestId}] Enviando solicitud a ${functionUrl}`);
       
-      const payload = {
+      // Define the payload with the correct type that includes cc
+      const payload: {
+        to: string;
+        subject: string;
+        html: string;
+        requestId: string;
+        attachments?: Attachment[];
+        cc?: string[];
+      } = {
         to,
         subject,
         html: content,
