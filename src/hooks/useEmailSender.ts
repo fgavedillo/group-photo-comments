@@ -20,6 +20,37 @@ export const useEmailSender = () => {
     setLastRequestId(null);
   }, []);
   
+  // Added a function to check Edge Function availability
+  const checkEdgeFunctionStatus = useCallback(async () => {
+    try {
+      // Make a lightweight ping to the Edge Function
+      const response = await fetch("https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email", {
+        method: "OPTIONS",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      });
+      
+      console.log("Edge Function status check:", {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+      
+      return response.ok;
+    } catch (error) {
+      console.error("Error checking Edge Function status:", error);
+      return false;
+    }
+  }, []);
+  
+  // Call this function on component mount
+  useEffect(() => {
+    checkEdgeFunctionStatus().then(isAvailable => {
+      console.log("Edge Function availability:", isAvailable ? "✅ Available" : "❌ Not available");
+    });
+  }, [checkEdgeFunctionStatus]);
+  
   const handleRetry = useCallback(() => {
     if (lastSendConfiguration && retryCount < maxRetries) {
       handleSendEmail(lastSendConfiguration.filtered, true);
@@ -27,23 +58,31 @@ export const useEmailSender = () => {
   }, [retryCount, lastSendConfiguration, maxRetries]);
   
   const handleSendEmail = useCallback(async (filtered: boolean = false, isRetry: boolean = false) => {
+    // Reset retry count for new requests
+    if (!isRetry) {
+      resetStatus();
+      setRetryCount(0);
+      // Save configuration for potential retries
+      setLastSendConfiguration({ filtered });
+    } else {
+      // For retries, increment the count
+      setRetryCount(prev => prev + 1);
+    }
+    
+    // Set loading state
+    if (filtered) {
+      setIsSendingFiltered(true);
+    } else {
+      setIsSending(true);
+    }
+    
     try {
-      // Reset retry count for new requests
-      if (!isRetry) {
-        resetStatus();
-        setRetryCount(0);
-        // Save configuration for potential retries
-        setLastSendConfiguration({ filtered });
-      } else {
-        // For retries, increment the count
-        setRetryCount(prev => prev + 1);
-      }
+      console.log(`Starting email send (${filtered ? 'filtered' : 'full'}) - Retry ${retryCount}`);
       
-      // Set loading state
-      if (filtered) {
-        setIsSendingFiltered(true);
-      } else {
-        setIsSending(true);
+      // Ping the edge function status before sending
+      const isEdgeFunctionAvailable = await checkEdgeFunctionStatus();
+      if (!isEdgeFunctionAvailable) {
+        console.warn("Edge Function may not be available. Continuing anyway...");
       }
       
       // Send the email
@@ -99,7 +138,7 @@ export const useEmailSender = () => {
         setIsSending(false);
       }
     }
-  }, [toast, resetStatus]);
+  }, [toast, resetStatus, retryCount, checkEdgeFunctionStatus]);
 
   return {
     isSending,
@@ -110,6 +149,7 @@ export const useEmailSender = () => {
     retryCount,
     handleSendEmail,
     handleRetry,
-    resetStatus
+    resetStatus,
+    checkEdgeFunctionStatus
   };
 };
