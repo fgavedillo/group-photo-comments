@@ -1,11 +1,12 @@
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, RefreshCw } from "lucide-react";
+import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { sendEmail } from "@/lib/supabase";
 import { useState, useEffect } from "react";
 import { decodeQuotedPrintable, getAbsoluteUrl } from "@/utils/stringUtils";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -18,6 +19,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
   const { toast } = useToast();
   const [email, setEmail] = useState(assignedEmail);
   const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setEmail(assignedEmail);
@@ -37,6 +39,9 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       });
       return;
     }
+
+    // Reset error state
+    setError(null);
 
     try {
       setIsSending(true);
@@ -114,6 +119,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       });
     } catch (error) {
       console.error('Error sending email:', error);
+      setError(error.message || "No se pudo enviar el correo");
       toast({
         title: "Error",
         description: error.message || "No se pudo enviar el correo",
@@ -153,6 +159,15 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
           )}
         </Button>
       </div>
+      
+      {error && (
+        <Alert variant="destructive" className="mt-2">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription className="text-xs">
+            {error}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };

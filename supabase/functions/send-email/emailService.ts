@@ -16,7 +16,7 @@ function validateCredentials(username: string | undefined, password: string | un
   }
   
   // Eliminar espacios en la contraseña - esto es crítico ya que la API puede fallar con espacios
-  password = password.replace(/\s+/g, '');
+  password = password.trim().replace(/\s+/g, '');
   
   if (password.length !== 16) {
     logger.error(`[${requestId}] La contraseña de aplicación debe tener exactamente 16 caracteres (longitud actual: ${password.length})`);
@@ -45,7 +45,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
     
     // Eliminar espacios en la contraseña - muchos errores vienen de aquí
     if (password) {
-      password = password.replace(/\s+/g, '');
+      password = password.trim().replace(/\s+/g, '');
     }
     
     // Validar credenciales

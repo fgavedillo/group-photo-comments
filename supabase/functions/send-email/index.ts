@@ -23,6 +23,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Log headers for debugging
+    const headersObj = Object.fromEntries(req.headers.entries());
+    logger.log(`[${uniqueRequestId}] Headers recibidos:`, JSON.stringify(headersObj));
+
     // Analizar el cuerpo de la solicitud
     const body = await req.json();
     const { to, subject, html, cc, text, attachments, requestId = uniqueRequestId } = body;
