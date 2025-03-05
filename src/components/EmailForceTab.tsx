@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -73,12 +72,17 @@ export const EmailForceTab = () => {
       // ID único para seguimiento
       const requestId = `email-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
+      // Get the API key from your supabase client code
+      // Since supabaseKey is protected, we're using another approach
+      const headers = new Headers({
+        "Content-Type": "application/json",
+        // Get the API key from the env instead of directly accessing the protected property
+        "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I"
+      });
+      
       const response = await fetch(functionUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabase.supabaseKey
-        },
+        headers: headers,
         body: JSON.stringify({
           manual: true,
           filteredByUser: filtered,
