@@ -58,7 +58,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
     const startTime = Date.now();
     
     try {
-      // Usar el cliente SMTP actualizado que no depende de Deno.writeAll
+      // Usar el cliente SMTP actualizado
       logger.log(`[${requestId}] Configurando cliente SMTP...`);
       
       const client = new SmtpClient();

@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Define a consistent interface for email payloads to avoid type errors
+// Define una interfaz consistente para los payloads de email para evitar errores de tipo
 export interface EmailPayload {
   to: string;
   subject: string;
