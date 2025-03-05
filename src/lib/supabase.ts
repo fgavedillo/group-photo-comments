@@ -18,6 +18,16 @@ interface Attachment {
   type: string;
 }
 
+// Define a consistent interface for email payloads to prevent type errors
+interface EmailPayload {
+  to: string;
+  subject: string;
+  html: string;
+  requestId: string;
+  attachments?: Attachment[];
+  cc?: string[];
+}
+
 export const sendEmail = async (to: string, subject: string, content: string, attachments?: Attachment[], cc?: string[]) => {
   try {
     console.log("Enviando correo a:", to);
@@ -42,15 +52,8 @@ export const sendEmail = async (to: string, subject: string, content: string, at
     try {
       console.log(`[${requestId}] Enviando solicitud a ${functionUrl}`);
       
-      // Define the payload with the correct type that includes cc
-      const payload: {
-        to: string;
-        subject: string;
-        html: string;
-        requestId: string;
-        attachments?: Attachment[];
-        cc?: string[];
-      } = {
+      // Create the payload using our interface
+      const payload: EmailPayload = {
         to,
         subject,
         html: content,
