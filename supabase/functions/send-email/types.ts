@@ -7,7 +7,7 @@ export interface Attachment {
 }
 
 export interface SendEmailRequest {
-  to: string;
+  to: string | string[];
   subject: string;
   html?: string;
   text?: string;
@@ -36,8 +36,16 @@ export function validateEmailPayload(payload: any): { success: true; data: SendE
   }
 
   // Validar el formato básico del email (simple)
-  if (!payload.to.includes('@')) {
+  if (typeof payload.to === 'string' && !payload.to.includes('@')) {
     return { success: false, error: "El formato del email destinatario es inválido" };
+  }
+  
+  if (Array.isArray(payload.to) && payload.to.length > 0) {
+    for (const email of payload.to) {
+      if (!email.includes('@')) {
+        return { success: false, error: `El formato del email destinatario "${email}" es inválido` };
+      }
+    }
   }
 
   // Validar que exista el asunto

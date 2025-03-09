@@ -1,5 +1,6 @@
 
-import { SmtpClient } from "https://deno.land/x/smtp@v0.7.0/mod.ts";
+// Importamos la nueva biblioteca smtp2 que es más moderna y compatible
+import { SmtpClient } from "https://deno.land/x/smtp2@0.4.0/mod.ts";
 import { logger } from "./logger.ts";
 import { SendEmailRequest } from "./types.ts";
 
@@ -58,25 +59,28 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
     const startTime = Date.now();
     
     try {
-      // Usar el cliente SMTP actualizado
-      logger.log(`[${requestId}] Configurando cliente SMTP...`);
+      // Configurar cliente SMTP con la nueva biblioteca
+      logger.log(`[${requestId}] Configurando cliente SMTP con la nueva biblioteca smtp2...`);
       
-      // Crear un nuevo cliente SMTP usando la biblioteca actualizada
-      const client = new SmtpClient();
-      
-      await client.connectTLS({
-        hostname: "smtp.gmail.com",
-        port: 465,
-        username: username!,
-        password: password!,
+      // Crear cliente con la nueva biblioteca, que tiene mejor compatibilidad con Deno actual
+      const client = new SmtpClient({
+        connection: {
+          hostname: "smtp.gmail.com",
+          port: 465,
+          tls: true,
+          auth: {
+            username: username!,
+            password: password!,
+          }
+        }
       });
       
-      logger.log(`[${requestId}] Conexión establecida, enviando correo...`);
+      logger.log(`[${requestId}] Cliente SMTP configurado, preparando envío de correo...`);
       
-      // Preparar contenido del email
+      // Preparar contenido del email con la nueva estructura de la biblioteca
       const mailOptions = {
         from: username!,
-        to: [to],
+        to: Array.isArray(to) ? to : [to], // Asegurar que 'to' sea un array
         subject: subject,
         content: text || "",
         html: html || undefined,
@@ -87,26 +91,45 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
         mailOptions.to = [...mailOptions.to, ...cc];
       }
       
-      // Enviar el email utilizando métodos que no dependen de Deno.writeAll
+      logger.log(`[${requestId}] Enviando email con la nueva biblioteca...`);
+      
+      // Enviar el correo con la nueva API que no usa Deno.writeAll
       const result = await client.send(mailOptions);
-      await client.close();
       
       // Calcular cuánto tiempo tomó
       const elapsed = Date.now() - startTime;
       
       // Registrar éxito
-      logger.log(`[${requestId}] Email enviado correctamente en ${elapsed}ms`);
+      logger.log(`[${requestId}] Email enviado correctamente con la nueva biblioteca en ${elapsed}ms`);
       
       // Devolver resultado exitoso
       return { 
         success: true, 
         message: `Email enviado correctamente a ${to}`,
         elapsed: `${elapsed}ms`,
-        messageId: result?.messageId
+        messageId: result?.messageId || `msg-${Date.now()}`
       };
     } catch (smtpError) {
-      logger.error(`[${requestId}] Error en el cliente SMTP:`, smtpError);
-      throw smtpError;
+      logger.error(`[${requestId}] Error en el cliente SMTP nuevo:`, smtpError);
+      
+      // Hacer diagnóstico específico para errores comunes de Gmail
+      let errorMessage = smtpError.message || "Error desconocido al enviar correo";
+      let errorDetails = smtpError.stack || errorMessage;
+      
+      if (errorMessage.includes("authentication") || errorMessage.includes("auth") || errorMessage.includes("535")) {
+        errorMessage = "Error de autenticación con Gmail";
+        errorDetails = `Problemas con la autenticación en Gmail. Verifique:
+1. Que su cuenta tenga verificación en dos pasos activada
+2. Que esté usando una contraseña de aplicación correcta (16 caracteres sin espacios)
+3. Que el email (${username}) sea correcto
+
+Error técnico: ${smtpError.message}`;
+      }
+      
+      // Mejorar el mensaje de error original para facilitar el diagnóstico
+      const enhancedError = new Error(errorMessage);
+      enhancedError.stack = errorDetails;
+      throw enhancedError;
     }
     
   } catch (error) {
@@ -129,11 +152,12 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
 Error original: ${error.message}`;
     }
     
-    // Buscar errores relacionados con Deno.writeAll en el mensaje
-    if (errorMessage.includes("writeAll") || detailedError.includes("writeAll")) {
-      errorMessage = "Error en la API de Deno para envío SMTP";
-      detailedError = `La versión actual de Deno no es compatible con algunas funciones SMTP. 
-Recomendamos utilizar una versión más reciente del cliente SMTP o utilizar un servicio de correo alternativo como Resend.com.
+    // Buscar errores relacionados con compatibilidad
+    if (errorMessage.includes("writeAll") || detailedError.includes("writeAll") || 
+        errorMessage.includes("not a function") || errorMessage.includes("undefined")) {
+      errorMessage = "Error de compatibilidad en la biblioteca SMTP";
+      detailedError = `Error de compatibilidad detectado. Este error debería estar resuelto con la nueva biblioteca.
+Si persiste, por favor reporte el problema con los detalles técnicos.
 
 Error original: ${error.message}`;
     }
