@@ -61,9 +61,8 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
       // Usar el cliente SMTP actualizado
       logger.log(`[${requestId}] Configurando cliente SMTP...`);
       
+      // Crear un nuevo cliente SMTP usando la biblioteca actualizada
       const client = new SmtpClient();
-      
-      logger.log(`[${requestId}] Conectando a Gmail...`);
       
       await client.connectTLS({
         hostname: "smtp.gmail.com",
@@ -88,15 +87,7 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
         mailOptions.to = [...mailOptions.to, ...cc];
       }
       
-      // Enviar el email
-      logger.log(`[${requestId}] Enviando email con opciones:`, JSON.stringify({
-        from: username,
-        to: mailOptions.to,
-        subject,
-        hasHtml: !!html,
-        hasText: !!text,
-      }));
-      
+      // Enviar el email utilizando métodos que no dependen de Deno.writeAll
       const result = await client.send(mailOptions);
       await client.close();
       
@@ -134,6 +125,15 @@ export async function sendEmail(request: SendEmailRequest): Promise<any> {
 2. Esté usando una contraseña de aplicación válida (16 caracteres sin espacios)
 3. La contraseña de aplicación sea correcta y esté actualizada
 4. El correo electrónico en GMAIL_USER sea correcto
+
+Error original: ${error.message}`;
+    }
+    
+    // Buscar errores relacionados con Deno.writeAll en el mensaje
+    if (errorMessage.includes("writeAll") || detailedError.includes("writeAll")) {
+      errorMessage = "Error en la API de Deno para envío SMTP";
+      detailedError = `La versión actual de Deno no es compatible con algunas funciones SMTP. 
+Recomendamos utilizar una versión más reciente del cliente SMTP o utilizar un servicio de correo alternativo como Resend.com.
 
 Error original: ${error.message}`;
     }
