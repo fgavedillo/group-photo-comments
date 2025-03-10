@@ -3,10 +3,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { sendEmail } from "@/lib/supabase";
 import { useState, useEffect } from "react";
-import { decodeQuotedPrintable, getAbsoluteUrl } from "@/utils/stringUtils";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getAbsoluteUrl } from "@/utils/stringUtils";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -40,15 +39,10 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       return;
     }
 
-    // Reset error state
     setError(null);
+    setIsSending(true);
 
     try {
-      setIsSending(true);
-      
-      // Decode the message to remove encoding characters
-      const decodedMessage = decodeQuotedPrintable(message);
-      
       // Get absolute URL for links
       const issuesPageUrl = getAbsoluteUrl('/issues');
       
@@ -59,60 +53,25 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
       
-      const emailContent = `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
-          <div style="background-color: #0f172a; padding: 15px; border-radius: 6px 6px 0 0;">
-            <h1 style="color: white; margin: 0; font-size: 24px;">Nueva Incidencia Asignada</h1>
-          </div>
-          
-          <div style="padding: 20px; background-color: #f9fafb; border-bottom: 1px solid #e0e0e0;">
-            <p style="color: #64748b; margin-top: 0;">Fecha: ${currentDate}</p>
-            <p style="color: #334155; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-              Se ha reportado una nueva incidencia que requiere de su atención. A continuación, se detallan los pormenores:
-            </p>
-            
-            <div style="background-color: white; border-left: 4px solid #3b82f6; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
-              <h3 style="color: #1e293b; margin-top: 0;">Descripción de la Incidencia:</h3>
-              <p style="color: #334155; line-height: 1.6;">${decodedMessage}</p>
-            </div>
-            
-            ${imageUrl ? `
-            <div style="margin-bottom: 20px;">
-              <h3 style="color: #1e293b; margin-bottom: 10px;">Imagen Adjunta:</h3>
-              <img src="${imageUrl}" alt="Imagen de la incidencia" style="max-width: 100%; height: auto; border-radius: 6px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            </div>
-            ` : ''}
-            
-            <div style="background-color: #eff6ff; padding: 15px; border-radius: 4px;">
-              <h3 style="color: #1e40af; margin-top: 0;">Próximos Pasos:</h3>
-              <ol style="color: #1e3a8a; line-height: 1.6;">
-                <li>Revisar la incidencia en detalle</li>
-                <li>Evaluar la situación y determinar un plan de acción</li>
-                <li>Actualizar el estado de la incidencia en el sistema</li>
-                <li>Documentar las medidas tomadas</li>
-              </ol>
-            </div>
-          </div>
-          
-          <div style="padding: 20px; text-align: center;">
-            <a href="${issuesPageUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Ver en la Plataforma</a>
-          </div>
-          
-          <div style="padding: 15px; background-color: #f1f5f9; border-radius: 0 0 6px 6px; font-size: 12px; color: #64748b; text-align: center;">
-            <p>Este es un mensaje automático del sistema de gestión de incidencias.</p>
-            <p>Por favor, no responda directamente a este correo.</p>
-          </div>
-        </div>
-      `;
+      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-simple-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: email,
+          subject: "Nueva incidencia asignada - Acción requerida",
+          description: message,
+          date: currentDate,
+          issuesPageUrl,
+          imageUrl: imageUrl || null
+        }),
+      });
 
-      console.log("Enviando correo a:", email);
-      console.log("Con asunto: Nueva incidencia asignada - Acción requerida");
-      
-      await sendEmail(
-        email,
-        "Nueva incidencia asignada - Acción requerida",
-        emailContent
-      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error al enviar el correo');
+      }
 
       toast({
         title: "Correo enviado",

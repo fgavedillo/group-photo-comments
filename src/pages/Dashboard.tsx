@@ -1,10 +1,10 @@
+
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
 import { IssueTable } from "@/components/IssueTable";
-import { EmailForceTab } from "@/components/EmailForceTab";
 import { useMessages } from "@/hooks/useMessages";
 import { useMessageSender } from "@/hooks/useMessageSender";
 import { Issue } from "@/types/issue";
@@ -67,9 +67,6 @@ const Dashboard = () => {
             <TabsTrigger value="table" className="px-2 py-1.5 sm:px-3 sm:py-2">
               Tabla
             </TabsTrigger>
-            <TabsTrigger value="correo" className="px-2 py-1.5 sm:px-3 sm:py-2">
-              Correo
-            </TabsTrigger>
           </TabsList>
         </div>
         
@@ -114,10 +111,6 @@ const Dashboard = () => {
 
           <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col">
             <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
-          </TabsContent>
-
-          <TabsContent value="correo" className="h-full m-0 data-[state=active]:flex flex-col">
-            <EmailForceTab />
           </TabsContent>
         </div>
       </Tabs>
