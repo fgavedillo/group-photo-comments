@@ -9,6 +9,11 @@ import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
 import { compressImageToBase64 } from "@/utils/imageCompression";
 
+// Constantes correctas para EmailJS
+const CORRECT_SERVICE_ID = 'service_yz5opji';
+const CORRECT_TEMPLATE_ID = 'template_ah9tqde';
+const CORRECT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
+
 interface EmailAssignmentFormProps {
   assignedEmail: string;
   onEmailChange: (email: string) => void;
@@ -117,17 +122,17 @@ export const EmailAssignmentForm = ({
 
       console.log("Enviando email con la configuración verificada");
       console.log("Configuración del servicio:", {
-        serviceId: 'service_yz5opji', // ID de servicio correcto
-        templateId: 'template_ah9tqde',
-        publicKey: 'RKDqUO9tTPGJrGKLQ' // Solo mostramos por propósitos de depuración
+        serviceId: CORRECT_SERVICE_ID, // ID de servicio correcto
+        templateId: CORRECT_TEMPLATE_ID,
+        publicKey: CORRECT_PUBLIC_KEY // Solo mostramos por propósitos de depuración
       });
 
       // Usar la configuración correcta para EmailJS
       const result = await sendEmail(
         {
-          serviceId: 'service_yz5opji', // ID de servicio correcto
-          templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ',
+          serviceId: CORRECT_SERVICE_ID, // ID de servicio correcto
+          templateId: CORRECT_TEMPLATE_ID,
+          publicKey: CORRECT_PUBLIC_KEY,
         },
         templateParams
       );

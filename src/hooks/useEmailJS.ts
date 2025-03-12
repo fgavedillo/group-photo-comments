@@ -28,7 +28,7 @@ export interface EmailJSTemplateParams {
 }
 
 // Constantes para configuration de EmailJS
-// El ID de servicio correcto de EmailJS
+// El ID de servicio correcto de EmailJS - NUNCA CAMBIAR ESTE VALOR
 const DEFAULT_SERVICE_ID = 'service_yz5opji';
 const DEFAULT_TEMPLATE_ID = 'template_ah9tqde';
 const DEFAULT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
@@ -57,14 +57,14 @@ export const useEmailJS = () => {
         throw new Error('El ID del servicio de EmailJS es requerido');
       }
 
-      // Verificar si el serviceId proporcionado es válido
-      // Se asegura que usemos el servicio válido: service_yz5opji
-      const validServiceId = DEFAULT_SERVICE_ID;
+      // IMPORTANTE: Forzar el uso del serviceId correcto siempre
+      // independientemente de lo que se pase como parámetro
+      const correctServiceId = DEFAULT_SERVICE_ID;
       
-      // Si el serviceId no coincide con el válido, usar el correcto
-      if (config.serviceId !== validServiceId) {
-        console.warn(`ID de servicio incorrecto: ${config.serviceId}. Se utilizará el ID correcto: ${validServiceId}`);
-        config.serviceId = validServiceId;
+      // Siempre usar el ID correcto, ignorando lo que se pase como parámetro
+      if (config.serviceId !== correctServiceId) {
+        console.warn(`ID de servicio incorrecto proporcionado: ${config.serviceId}. Se utilizará el ID correcto: ${correctServiceId}`);
+        config.serviceId = correctServiceId;
       }
 
       // Validar el ID de la plantilla
@@ -120,7 +120,7 @@ export const useEmailJS = () => {
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
       console.log('Configuración finalizada:', {
-        serviceId: config.serviceId, // Mostramos el serviceId explícitamente para verificar
+        serviceId: correctServiceId, // Siempre mostrar el ID correcto
         templateId: config.templateId,
         publicKey: '********' // Por seguridad no mostramos la clave
       });
@@ -134,7 +134,7 @@ export const useEmailJS = () => {
       try {
         console.log('Iniciando envío de email con EmailJS...');
         const result = await emailjs.send(
-          config.serviceId, // Aquí usamos el ID de servicio correcto
+          correctServiceId, // Aquí forzamos el uso del ID de servicio correcto
           config.templateId,
           cleanParams,
           config.publicKey
@@ -148,10 +148,10 @@ export const useEmailJS = () => {
         // Mejorar el mensaje de error para problemas comunes
         if (emailJsError instanceof Error) {
           if (emailJsError.message.includes("service_id not found")) {
-            throw new Error(`El servicio con ID "${config.serviceId}" no existe. Verifique su cuenta de EmailJS y cree un nuevo servicio.`);
+            throw new Error(`El servicio con ID "${correctServiceId}" no existe. Verifique su cuenta de EmailJS y cree un nuevo servicio con este ID exacto.`);
           }
           if (emailJsError.message.includes("template_id not found")) {
-            throw new Error(`La plantilla con ID "${config.templateId}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla.`);
+            throw new Error(`La plantilla con ID "${config.templateId}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla con este ID exacto.`);
           }
         }
         
