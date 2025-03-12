@@ -21,14 +21,27 @@ export const useEmailJS = () => {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Asegurarse de que las variables coincidan exactamente con las que espera la plantilla Handlebars
+      // Asegurar que las variables coincidan exactamente con las de la plantilla EmailJS
+      // Nota: Observando la plantilla, los nombres de variables tienen dobles llaves {{variable}}
       const validatedParams = {
-        // Variables básicas que aparecen en la plantilla
-        date: templateParams.date?.toString() || '',
-        message: templateParams.message?.toString() || '',
-        image_url: templateParams.image_url?.toString() || '',
-        issues_url: templateParams.issues_url?.toString() || '',
+        // Para "{{to_email}}" en el campo To Email
         to_email: templateParams.to_email?.toString() || '',
+        
+        // Para "{{date}}" en la plantilla
+        date: templateParams.date?.toString() || '',
+        
+        // Para "{{message}}" en la plantilla
+        message: templateParams.message?.toString() || '',
+        
+        // Para "{{#if image_url}}" en la plantilla (condicional)
+        image_url: templateParams.image_url?.toString() || '',
+        
+        // Para "{{issues_url}}" usado en el botón "Ver Detalles"
+        issues_url: templateParams.issues_url?.toString() || '',
+        
+        // Estas variables parecen estar en la configuración de EmailJS basado en la imagen
+        title: 'Nueva Incidencia Asignada',  // Posible variable de asunto
+        email: templateParams.to_email?.toString() || '',  // Para campo de correo
       };
 
       console.log('Enviando con parámetros validados:', validatedParams);
