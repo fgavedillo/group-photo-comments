@@ -46,10 +46,12 @@ export const useEmailJS = () => {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Validar la clave pública
-      if (!config.publicKey || config.publicKey.length < 10) {
-        throw new Error('La clave pública de EmailJS es inválida');
-      }
+      // Ignorar los valores proporcionados en config y usar SIEMPRE los valores por defecto
+      // Logging de verificación
+      console.log('⚠️ IGNORANDO valores proporcionados en config:');
+      console.log('❌ ServiceID proporcionado:', config.serviceId, '-> Usando FORZOSAMENTE:', DEFAULT_SERVICE_ID);
+      console.log('❌ TemplateID proporcionado:', config.templateId, '-> Usando FORZOSAMENTE:', DEFAULT_TEMPLATE_ID);
+      console.log('❌ PublicKey proporcionada:', config.publicKey, '-> Usando FORZOSAMENTE:', DEFAULT_PUBLIC_KEY);
 
       // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
       const cleanParams: Record<string, string> = {};
@@ -99,10 +101,9 @@ export const useEmailJS = () => {
 
       try {
         console.log('📧 Iniciando envío de email con EmailJS...');
-        console.log('📧 Service ID FORZADO a:', DEFAULT_SERVICE_ID);
         
         // IMPORTANTE: Usar DIRECTAMENTE las constantes en el método send
-        // NO usar parámetros que puedan ser alterados
+        // NO usar config, ya que puede contener valores incorrectos
         const result = await emailjs.send(
           DEFAULT_SERVICE_ID, // FORZAR el ID de servicio correcto
           DEFAULT_TEMPLATE_ID, // FORZAR el ID de plantilla correcto
