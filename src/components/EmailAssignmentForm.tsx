@@ -58,14 +58,19 @@ export const EmailAssignmentForm = ({
         year: 'numeric'
       });
 
-      // Ahora incluimos el campo 'area' además de los campos básicos
+      // Enviar todos los campos disponibles de la incidencia
       const templateParams: EmailJSTemplateParams = {
         to_name: "Usuario",  
         to_email: toEmail,   
         from_name: "Sistema de Incidencias",
         date: currentDate,
-        message: message || "No hay mensaje disponible",
-        area: issue?.area || "" // Añadimos el campo area
+        message: message || "",
+        area: issue?.area || "",
+        responsable: issue?.responsable || "",
+        status: issue?.status || "",
+        security_improvement: issue?.securityImprovement || "",
+        action_plan: issue?.actionPlan || "",
+        id: issue?.id ? String(issue.id) : ""
       };
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));

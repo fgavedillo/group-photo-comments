@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -17,9 +16,12 @@ export interface EmailJSTemplateParams {
   message: string;
   issues_url?: string;
   image_url?: string;
-  area?: string;          // Nuevo campo para área
-  responsable?: string;   // Nuevo campo para responsable
-  status?: string;        // Nuevo campo para estado
+  area?: string;
+  responsable?: string;
+  status?: string;
+  security_improvement?: string;
+  action_plan?: string;
+  id?: string;
   [key: string]: string | undefined;
 }
 
