@@ -58,7 +58,7 @@ export const EmailAssignmentForm = ({
         year: 'numeric'
       });
 
-      // Construir los parámetros base del template
+      // Para la primera prueba, solo usamos los campos básicos
       const templateParams: EmailJSTemplateParams = {
         to_name: "Usuario",  
         to_email: toEmail,   
@@ -66,31 +66,6 @@ export const EmailAssignmentForm = ({
         date: currentDate,
         message: message || "No hay mensaje disponible"
       };
-
-      // Añadir campos adicionales si existe el issue
-      if (issue) {
-        if (issue.area) templateParams.area = issue.area;
-        if (issue.responsable) templateParams.responsable = issue.responsable;
-        if (issue.status) templateParams.status = issue.status;
-      }
-
-      // Opcionalmente añadir la URL de las incidencias
-      const issuesPageUrl = getAbsoluteUrl('/issues');
-      if (issuesPageUrl) {
-        templateParams.issues_url = issuesPageUrl;
-      }
-
-      // Opcionalmente añadir la URL de la imagen
-      if (imageUrl && typeof imageUrl === 'string' && 
-          (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
-        try {
-          // Verificar que sea una URL válida
-          new URL(imageUrl);
-          templateParams.image_url = imageUrl;
-        } catch (e) {
-          console.warn("La URL de la imagen no es válida, no se incluirá en el email:", imageUrl);
-        }
-      }
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
 
