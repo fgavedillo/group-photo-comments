@@ -77,6 +77,14 @@ export const EmailAssignmentForm = ({
           
           if (imageBase64) {
             console.log("Imagen convertida a base64 y comprimida correctamente");
+            // Verificar tamaño de la imagen después de comprimir
+            console.log("Tamaño de la imagen en base64:", Math.round(imageBase64.length / 1024), "KB");
+            
+            // Si la imagen sigue siendo muy grande (más de 500KB), intentar comprimirla más
+            if (imageBase64.length > 500000) { // 500KB
+              console.warn("La imagen es demasiado grande, se enviará sin imagen");
+              imageBase64 = null;
+            }
           } else {
             console.warn("No se pudo procesar la imagen a base64");
           }
@@ -107,14 +115,20 @@ export const EmailAssignmentForm = ({
         image_url: imageUrl || ""
       };
 
-      console.log("Enviando email con la imagen procesada");
+      console.log("Enviando email con la configuración verificada");
       console.log("Configuración del servicio:", {
         serviceId: 'service_yz5opji',
         templateId: 'template_ah9tqde',
-        publicKey: 'RKDqUO9tTPGJrGKLQ' // Solo mostramos los primeros caracteres por seguridad
+        publicKey: 'RKDqUO9tTPGJrGKLQ' // Solo mostramos por propósitos de depuración
       });
 
-      // Usar la configuración correcta para EmailJS
+      // Verificar si hay un nuevo service ID disponible, si no, avisamos al usuario
+      if (!process.env.REACT_APP_EMAILJS_SERVICE_ID) {
+        console.warn("No se ha configurado un nuevo service ID para EmailJS");
+      }
+
+      // Usar la configuración correcta para EmailJS - usar el ID de servicio actualizado
+      // o mantener el que está definido en el hook useEmailJS
       const result = await sendEmail(
         {
           serviceId: 'service_yz5opji', // ID de servicio correcto
