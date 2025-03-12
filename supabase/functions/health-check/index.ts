@@ -1,6 +1,6 @@
 
 // Import from standard Deno modules
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // CORS headers para permitir solicitudes cross-origin
 const corsHeaders = {
@@ -26,6 +26,11 @@ serve(async (req) => {
       status: "healthy",
       timestamp: new Date().toISOString(),
       environment: Deno.env.get("ENVIRONMENT") || "development",
+      runtime: {
+        deno: Deno.version.deno,
+        v8: Deno.version.v8,
+        typescript: Deno.version.typescript
+      },
       message: "La función Edge se ha desplegado correctamente"
     };
 
