@@ -21,13 +21,14 @@ export const useEmailJS = () => {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Asegurarse de que las variables coincidan con la plantilla HTML
+      // Asegurarse de que las variables coincidan exactamente con las que espera la plantilla Handlebars
       const validatedParams = {
+        // Variables básicas que aparecen en la plantilla
         date: templateParams.date?.toString() || '',
         message: templateParams.message?.toString() || '',
         image_url: templateParams.image_url?.toString() || '',
         issues_url: templateParams.issues_url?.toString() || '',
-        to_email: templateParams.to_email?.toString() || ''
+        to_email: templateParams.to_email?.toString() || '',
       };
 
       console.log('Enviando con parámetros validados:', validatedParams);

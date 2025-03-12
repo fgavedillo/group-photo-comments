@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
@@ -39,23 +40,29 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
     }
 
     try {
+      // Construir la URL absoluta para el enlace de la página de incidencias
       const issuesPageUrl = getAbsoluteUrl('/issues');
+      
+      // Formatear la fecha actual en español
       const currentDate = new Date().toLocaleDateString('es-ES', {
         day: '2-digit',
         month: 'long',
         year: 'numeric'
       });
 
+      // Crear los parámetros que se enviarán a la plantilla
+      // Asegurarse de que coincidan exactamente con los nombres en la plantilla
       const templateParams = {
         date: currentDate,
         message: message || "",
         image_url: imageUrl || "",
         issues_url: issuesPageUrl,
-        to_email: email
+        to_email: email,
       };
 
       console.log("Enviando email con parámetros:", templateParams);
 
+      // Enviar el email utilizando los parámetros y la configuración de EmailJS
       await sendEmail(
         {
           serviceId: 'service_2yujt9t',
@@ -65,12 +72,15 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         templateParams
       );
 
+      // Mostrar un mensaje de éxito al usuario
       toast({
         title: "Correo enviado",
         description: "Se ha enviado la notificación exitosamente"
       });
     } catch (error) {
       console.error('Error sending email:', error);
+      
+      // Mostrar un mensaje de error al usuario
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "No se pudo enviar el correo",
