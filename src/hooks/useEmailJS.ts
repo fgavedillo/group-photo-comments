@@ -21,14 +21,13 @@ export const useEmailJS = () => {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Asegurarse de que las claves del template coincidan exactamente
+      // Asegurarse de que las variables coincidan con la plantilla HTML
       const validatedParams = {
-        to_name: templateParams.to_email?.toString() || '',
-        to_email: templateParams.to_email?.toString() || '',
-        message: templateParams.message?.toString() || '',
         date: templateParams.date?.toString() || '',
+        message: templateParams.message?.toString() || '',
+        image_url: templateParams.image_url?.toString() || '',
         issues_url: templateParams.issues_url?.toString() || '',
-        image_url: templateParams.image_url?.toString() || ''
+        to_email: templateParams.to_email?.toString() || ''
       };
 
       console.log('Enviando con parámetros validados:', validatedParams);

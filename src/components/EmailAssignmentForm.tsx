@@ -47,12 +47,11 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       });
 
       const templateParams = {
-        to_name: email,
-        to_email: email,
-        message: message || "",
         date: currentDate,
+        message: message || "",
+        image_url: imageUrl || "",
         issues_url: issuesPageUrl,
-        image_url: imageUrl || ""
+        to_email: email
       };
 
       console.log("Enviando email con parámetros:", templateParams);
