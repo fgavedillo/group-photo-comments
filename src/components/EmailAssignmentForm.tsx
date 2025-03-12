@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAbsoluteUrl } from "@/utils/stringUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -53,25 +54,24 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
       
-      // Usar la nueva función Edge de Acumbamail en lugar de la anterior
-      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-acumbamail', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      // Usar la función Edge de Acumbamail mediante supabase.functions.invoke
+      const { data, error: functionError } = await supabase.functions.invoke("send-acumbamail", {
+        body: {
           to: email,
           subject: "Nueva incidencia asignada - Acción requerida",
           description: message,
           date: currentDate,
           issuesPageUrl,
           imageUrl: imageUrl || null
-        }),
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al enviar el correo');
+      if (functionError) {
+        throw new Error(functionError.message || 'Error al invocar la función');
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Error al enviar el correo');
       }
 
       toast({

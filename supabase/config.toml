@@ -64,3 +64,15 @@ port = 9000
 
 [functions.send-acumbamail]
 verify_jwt = false
+
+[functions.send-daily-report]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false
+
+[functions.notify-admin]
+verify_jwt = false
+
+[functions.health-check]
+verify_jwt = false
