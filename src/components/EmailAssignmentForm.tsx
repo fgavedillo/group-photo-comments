@@ -9,8 +9,8 @@ import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
 import { compressImageToBase64 } from "@/utils/imageCompression";
 
-// Constantes correctas para EmailJS
-const CORRECT_SERVICE_ID = 'service_yz5opji';
+// Constantes correctas para EmailJS - NUNCA MODIFICAR
+const CORRECT_SERVICE_ID = 'service_yz5opji'; // ID de servicio correcto y verificado
 const CORRECT_TEMPLATE_ID = 'template_ah9tqde';
 const CORRECT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
 
@@ -57,6 +57,7 @@ export const EmailAssignmentForm = ({
       setIsProcessingImage(true);
       const toEmail = email.trim();
       console.log("Preparando envío de email a:", toEmail);
+      console.log("IMPORTANTE: Usando service_id correcto:", CORRECT_SERVICE_ID);
       
       // Formatear la fecha actual en español
       const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -124,15 +125,16 @@ export const EmailAssignmentForm = ({
       console.log("Configuración del servicio:", {
         serviceId: CORRECT_SERVICE_ID, // ID de servicio correcto
         templateId: CORRECT_TEMPLATE_ID,
-        publicKey: CORRECT_PUBLIC_KEY // Solo mostramos por propósitos de depuración
+        publicKey: "***********" // Ocultamos por seguridad
       });
 
-      // Usar la configuración correcta para EmailJS
+      // IMPORTANTE: Usar directamente las constantes correctas para EmailJS
+      // NO usar variables intermedias que puedan ser alteradas
       const result = await sendEmail(
         {
-          serviceId: CORRECT_SERVICE_ID, // ID de servicio correcto
-          templateId: CORRECT_TEMPLATE_ID,
-          publicKey: CORRECT_PUBLIC_KEY,
+          serviceId: CORRECT_SERVICE_ID, // Usando directamente la constante correcta
+          templateId: CORRECT_TEMPLATE_ID, // Usando directamente la constante correcta
+          publicKey: CORRECT_PUBLIC_KEY, // Usando directamente la constante correcta
         },
         templateParams
       );

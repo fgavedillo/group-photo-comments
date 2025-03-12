@@ -27,9 +27,8 @@ export interface EmailJSTemplateParams {
   [key: string]: string | undefined;
 }
 
-// Constantes para configuration de EmailJS
-// El ID de servicio correcto de EmailJS - NUNCA CAMBIAR ESTE VALOR
-const DEFAULT_SERVICE_ID = 'service_yz5opji';
+// IMPORTANTE: Estas constantes son las ÚNICAS correctas para EmailJS - NUNCA CAMBIAR ESTOS VALORES
+const DEFAULT_SERVICE_ID = 'service_yz5opji'; // ID DE SERVICIO VERIFICADO
 const DEFAULT_TEMPLATE_ID = 'template_ah9tqde';
 const DEFAULT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
 
@@ -52,31 +51,23 @@ export const useEmailJS = () => {
         throw new Error('La clave pública de EmailJS es inválida');
       }
 
-      // Validar el service ID y asegurarse de que sea el correcto
-      if (!config.serviceId) {
-        throw new Error('El ID del servicio de EmailJS es requerido');
-      }
-
-      // IMPORTANTE: Forzar el uso del serviceId correcto siempre
+      // IMPORTANTE: FORZAR siempre el uso del ID de servicio correcto
       // independientemente de lo que se pase como parámetro
-      const correctServiceId = DEFAULT_SERVICE_ID;
+      if (config.serviceId !== DEFAULT_SERVICE_ID) {
+        console.warn(`⚠️ ID de servicio incorrecto proporcionado: "${config.serviceId}". Se FUERZA el uso del ID correcto: "${DEFAULT_SERVICE_ID}"`);
+      }
       
-      // Siempre usar el ID correcto, ignorando lo que se pase como parámetro
-      if (config.serviceId !== correctServiceId) {
-        console.warn(`ID de servicio incorrecto proporcionado: ${config.serviceId}. Se utilizará el ID correcto: ${correctServiceId}`);
-        config.serviceId = correctServiceId;
-      }
-
-      // Validar el ID de la plantilla
-      if (!config.templateId) {
-        throw new Error('El ID de la plantilla de EmailJS es requerido');
-      }
-
-      // Verificar que el templateId sea válido
+      // SIEMPRE sobreescribir el serviceId con el valor correcto
+      // Esto es crítico: ignoramos completamente el valor proporcionado
+      const serviceId = DEFAULT_SERVICE_ID;
+      
+      // Validar el ID de la plantilla y forzar el uso del correcto
       if (config.templateId !== DEFAULT_TEMPLATE_ID) {
-        console.warn(`ID de plantilla incorrecto: ${config.templateId}. Se utilizará el ID correcto: ${DEFAULT_TEMPLATE_ID}`);
-        config.templateId = DEFAULT_TEMPLATE_ID;
+        console.warn(`⚠️ ID de plantilla incorrecto: "${config.templateId}". Se utilizará el correcto: "${DEFAULT_TEMPLATE_ID}"`);
       }
+      
+      // SIEMPRE sobreescribir el templateId con el valor correcto
+      const templateId = DEFAULT_TEMPLATE_ID;
 
       // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
       const cleanParams: Record<string, string> = {};
@@ -119,9 +110,12 @@ export const useEmailJS = () => {
       }
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
+      console.log('⚠️ VERIFICACIÓN DE SEGURIDAD ⚠️');
+      console.log('ServiceID que se usará:', serviceId);
+      console.log('TemplateID que se usará:', templateId);
       console.log('Configuración finalizada:', {
-        serviceId: correctServiceId, // Siempre mostrar el ID correcto
-        templateId: config.templateId,
+        serviceId: serviceId, // Mostrar el ID que realmente se usará
+        templateId: templateId,
         publicKey: '********' // Por seguridad no mostramos la clave
       });
 
@@ -132,12 +126,16 @@ export const useEmailJS = () => {
       }
 
       try {
-        console.log('Iniciando envío de email con EmailJS...');
+        console.log('📧 Iniciando envío de email con EmailJS...');
+        console.log('📧 Service ID FORZADO a:', serviceId);
+        
+        // IMPORTANTE: Usar directamente las constantes en el método send
+        // NO usar variables intermedias que puedan ser alteradas
         const result = await emailjs.send(
-          correctServiceId, // Aquí forzamos el uso del ID de servicio correcto
-          config.templateId,
+          DEFAULT_SERVICE_ID, // Usar directamente la constante correcta
+          DEFAULT_TEMPLATE_ID, // Usar directamente la constante correcta
           cleanParams,
-          config.publicKey
+          config.publicKey // Este valor podría venir de una variable
         );
         
         console.log('EmailJS response:', result);
@@ -148,10 +146,13 @@ export const useEmailJS = () => {
         // Mejorar el mensaje de error para problemas comunes
         if (emailJsError instanceof Error) {
           if (emailJsError.message.includes("service_id not found")) {
-            throw new Error(`El servicio con ID "${correctServiceId}" no existe. Verifique su cuenta de EmailJS y cree un nuevo servicio con este ID exacto.`);
+            throw new Error(`El servicio con ID "${DEFAULT_SERVICE_ID}" no existe. Verifique su cuenta de EmailJS y cree un nuevo servicio con este ID exacto.`);
           }
           if (emailJsError.message.includes("template_id not found")) {
-            throw new Error(`La plantilla con ID "${config.templateId}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla con este ID exacto.`);
+            throw new Error(`La plantilla con ID "${DEFAULT_TEMPLATE_ID}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla con este ID exacto.`);
+          }
+          if (emailJsError.message.includes("user_id invalid")) {
+            throw new Error(`La clave pública (User ID: "${config.publicKey.substring(0, 4)}...") no es válida. Verifique en su cuenta de EmailJS.`);
           }
         }
         
