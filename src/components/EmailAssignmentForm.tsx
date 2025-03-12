@@ -57,7 +57,6 @@ export const EmailAssignmentForm = ({
       setIsProcessingImage(true);
       const toEmail = email.trim();
       console.log("Preparando envío de email a:", toEmail);
-      console.log("IMPORTANTE: Usando service_id correcto:", CORRECT_SERVICE_ID);
       
       // Formatear la fecha actual en español
       const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -121,10 +120,19 @@ export const EmailAssignmentForm = ({
         image_url: imageUrl || ""
       };
 
-      console.log("Enviando email con los IDs correctos");
-      console.log(`Service ID FORZADO a: ${CORRECT_SERVICE_ID}`);
-      console.log(`Template ID FORZADO a: ${CORRECT_TEMPLATE_ID}`);
-      console.log(`Public Key FORZADA a: ${CORRECT_PUBLIC_KEY}`);
+      console.log("⚠️ ENVIANDO EMAIL - VERIFICACIÓN FINAL:");
+      console.log("✅ Service ID FORZADO:", CORRECT_SERVICE_ID);
+      console.log("✅ Template ID FORZADO:", CORRECT_TEMPLATE_ID);
+      console.log("✅ Public Key FORZADA:", CORRECT_PUBLIC_KEY);
+      
+      // Si encontramos algún otro valor en el código, lo sobreescribimos aquí
+      // Esto es una medida de seguridad adicional por si hay otra parte del código
+      // que esté intentando usar IDs incorrectos
+      Object.defineProperty(global, 'emailjs_service_id', {
+        value: CORRECT_SERVICE_ID,
+        writable: false,
+        configurable: false
+      });
       
       // Usar FORZOSAMENTE las constantes correctas, no parámetros que puedan ser sobreescritos
       const result = await sendEmail(

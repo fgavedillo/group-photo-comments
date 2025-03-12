@@ -29,6 +29,9 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
     }
   }
 
+  // Logs adicionales para depuración
+  console.log(`IssueContent: Renderizando issue ${message.id} con email asignado: ${message.assignedEmail || 'no asignado'}`);
+
   return (
     <CardContent>
       {validatedImageUrl && (

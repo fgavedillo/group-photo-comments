@@ -17,7 +17,7 @@ export interface EmailJSTemplateParams {
   message: string;
   issues_url?: string;
   image_url?: string;
-  image_base64?: string; // Añadimos el nuevo campo para imágenes en base64
+  image_base64?: string; // Campo para imágenes en base64
   area?: string;
   responsable?: string;
   status?: string;
@@ -36,7 +36,11 @@ export const useEmailJS = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendEmail = async (config: EmailJSConfig, templateParams: EmailJSTemplateParams) => {
+  const sendEmail = async (
+    /* eslint-disable @typescript-eslint/no-unused-vars */
+    _ignoredConfig: EmailJSConfig, // Este parámetro se ignora completamente
+    templateParams: EmailJSTemplateParams
+  ) => {
     setIsLoading(true);
     setError(null);
 
@@ -46,14 +50,13 @@ export const useEmailJS = () => {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Ignorar los valores proporcionados en config y usar SIEMPRE los valores por defecto
-      // Logging de verificación
-      console.log('⚠️ IGNORANDO valores proporcionados en config:');
-      console.log('❌ ServiceID proporcionado:', config.serviceId, '-> Usando FORZOSAMENTE:', DEFAULT_SERVICE_ID);
-      console.log('❌ TemplateID proporcionado:', config.templateId, '-> Usando FORZOSAMENTE:', DEFAULT_TEMPLATE_ID);
-      console.log('❌ PublicKey proporcionada:', config.publicKey, '-> Usando FORZOSAMENTE:', DEFAULT_PUBLIC_KEY);
+      // ALERTA IMPORTANTE: Se ignoran completamente los valores proporcionados en config
+      console.log('⚠️⚠️⚠️ IGNORANDO COMPLETAMENTE LOS VALORES PROPORCIONADOS:');
+      console.log('⛔ USANDO EXCLUSIVAMENTE:', DEFAULT_SERVICE_ID);
+      console.log('⛔ USANDO EXCLUSIVAMENTE:', DEFAULT_TEMPLATE_ID);
+      console.log('⛔ USANDO EXCLUSIVAMENTE:', DEFAULT_PUBLIC_KEY);
 
-      // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
+      // Crear un objeto de parámetros limpio
       const cleanParams: Record<string, string> = {};
       
       // Procesar y convertir cada parámetro a string válido
@@ -94,24 +97,24 @@ export const useEmailJS = () => {
       }
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
-      console.log('⚠️ VERIFICACIÓN DE SEGURIDAD ⚠️');
-      console.log('SIEMPRE usando ServiceID:', DEFAULT_SERVICE_ID);
-      console.log('SIEMPRE usando TemplateID:', DEFAULT_TEMPLATE_ID);
-      console.log('SIEMPRE usando PublicKey:', DEFAULT_PUBLIC_KEY);
+      console.log('⚠️ VERIFICACIÓN FINAL DE SEGURIDAD ⚠️');
+      console.log('✅ ServiceID:', DEFAULT_SERVICE_ID);
+      console.log('✅ TemplateID:', DEFAULT_TEMPLATE_ID);
+      console.log('✅ PublicKey:', DEFAULT_PUBLIC_KEY);
 
       try {
-        console.log('📧 Iniciando envío de email con EmailJS...');
+        console.log('📧 Iniciando envío directo con EmailJS...');
         
         // IMPORTANTE: Usar DIRECTAMENTE las constantes en el método send
-        // NO usar config, ya que puede contener valores incorrectos
+        // NO usar ninguna variable que pueda ser alterada
         const result = await emailjs.send(
-          DEFAULT_SERVICE_ID, // FORZAR el ID de servicio correcto
-          DEFAULT_TEMPLATE_ID, // FORZAR el ID de plantilla correcto
+          DEFAULT_SERVICE_ID, 
+          DEFAULT_TEMPLATE_ID, 
           cleanParams,
-          DEFAULT_PUBLIC_KEY // FORZAR la clave pública correcta
+          DEFAULT_PUBLIC_KEY 
         );
         
-        console.log('EmailJS response:', result);
+        console.log('EmailJS respuesta exitosa:', result);
         return result;
       } catch (emailJsError) {
         console.error('Error específico de EmailJS:', emailJsError);
