@@ -112,7 +112,7 @@ export const EmailAssignmentForm = ({
       // Usar la clave pública completa y correcta para EmailJS
       await sendEmail(
         {
-          serviceId: 'service_2yujt9t',
+          serviceId: 'service_o30yddr', // Se actualiza el serviceId
           templateId: 'template_ah9tqde',
           publicKey: 'RKDqUO9tTPGJrGKLQ', // Esta clave está incompleta, se necesita la clave completa
         },
