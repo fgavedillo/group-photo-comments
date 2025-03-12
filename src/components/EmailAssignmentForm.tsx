@@ -58,8 +58,8 @@ export const EmailAssignmentForm = ({
         year: 'numeric'
       });
 
-      // Validar y preparar la URL de la imagen
-      let fullImageUrl = undefined;
+      // Validar y preparar la URL de la imagen (si existe)
+      let fullImageUrl = "";
       if (imageUrl && typeof imageUrl === 'string') {
         try {
           fullImageUrl = getAbsoluteUrl(imageUrl);
@@ -76,23 +76,23 @@ export const EmailAssignmentForm = ({
         from_name: "Sistema de Incidencias",
         date: currentDate,
         message: message || "",
+        image_url: fullImageUrl, // Asegurar que siempre sea un string
         area: issue?.area || "",
         responsable: issue?.responsable || "",
         status: issue?.status || "",
         security_improvement: issue?.securityImprovement || "",
         action_plan: issue?.actionPlan || "",
-        id: issue?.id ? String(issue.id) : "",
-        image_url: fullImageUrl || "" // Añadimos la URL de la imagen
+        id: issue?.id ? String(issue.id) : ""
       };
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
 
-      // Usar la clave pública completa y correcta para EmailJS
+      // Usar la clave pública completa para EmailJS
       await sendEmail(
         {
           serviceId: 'service_2yujt9t',
           templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ', // Esta clave está incompleta, se necesita la clave completa
+          publicKey: 'RKDqUO9tTPGJrGKLQ', // La clave debe estar completa en producción
         },
         templateParams
       );

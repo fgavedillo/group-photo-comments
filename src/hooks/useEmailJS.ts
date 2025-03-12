@@ -50,7 +50,7 @@ export const useEmailJS = () => {
       
       // Procesar y convertir cada parámetro a string válido
       for (const [key, value] of Object.entries(templateParams)) {
-        // Omitir valores null/undefined/vacíos
+        // Omitir valores null/undefined
         if (value === null || value === undefined) {
           continue;
         }
@@ -64,7 +64,7 @@ export const useEmailJS = () => {
           stringValue = String(value);
         } else if (value && typeof value === 'object') {
           try {
-            // Manejar fechas de forma segura con tipos
+            // Manejar fechas de forma segura
             if (Object.prototype.toString.call(value) === '[object Date]') {
               stringValue = (value as Date).toISOString();
             } else {
@@ -80,9 +80,7 @@ export const useEmailJS = () => {
         }
         
         // Solo incluir valores no vacíos
-        if (stringValue.length > 0) {
-          cleanParams[key] = stringValue;
-        }
+        cleanParams[key] = stringValue;
       }
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
