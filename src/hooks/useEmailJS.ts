@@ -51,24 +51,6 @@ export const useEmailJS = () => {
         throw new Error('La clave pública de EmailJS es inválida');
       }
 
-      // IMPORTANTE: FORZAR siempre el uso del ID de servicio correcto
-      // independientemente de lo que se pase como parámetro
-      if (config.serviceId !== DEFAULT_SERVICE_ID) {
-        console.warn(`⚠️ ID de servicio incorrecto proporcionado: "${config.serviceId}". Se FUERZA el uso del ID correcto: "${DEFAULT_SERVICE_ID}"`);
-      }
-      
-      // SIEMPRE sobreescribir el serviceId con el valor correcto
-      // Esto es crítico: ignoramos completamente el valor proporcionado
-      const serviceId = DEFAULT_SERVICE_ID;
-      
-      // Validar el ID de la plantilla y forzar el uso del correcto
-      if (config.templateId !== DEFAULT_TEMPLATE_ID) {
-        console.warn(`⚠️ ID de plantilla incorrecto: "${config.templateId}". Se utilizará el correcto: "${DEFAULT_TEMPLATE_ID}"`);
-      }
-      
-      // SIEMPRE sobreescribir el templateId con el valor correcto
-      const templateId = DEFAULT_TEMPLATE_ID;
-
       // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
       const cleanParams: Record<string, string> = {};
       
@@ -111,31 +93,21 @@ export const useEmailJS = () => {
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
       console.log('⚠️ VERIFICACIÓN DE SEGURIDAD ⚠️');
-      console.log('ServiceID que se usará:', serviceId);
-      console.log('TemplateID que se usará:', templateId);
-      console.log('Configuración finalizada:', {
-        serviceId: serviceId, // Mostrar el ID que realmente se usará
-        templateId: templateId,
-        publicKey: '********' // Por seguridad no mostramos la clave
-      });
-
-      // Mostrar información detallada para diagnóstico
-      console.log('Longitud de los parámetros:', JSON.stringify(cleanParams).length);
-      if (cleanParams.image_base64) {
-        console.log('Longitud de la imagen base64:', cleanParams.image_base64.length);
-      }
+      console.log('SIEMPRE usando ServiceID:', DEFAULT_SERVICE_ID);
+      console.log('SIEMPRE usando TemplateID:', DEFAULT_TEMPLATE_ID);
+      console.log('SIEMPRE usando PublicKey:', DEFAULT_PUBLIC_KEY);
 
       try {
         console.log('📧 Iniciando envío de email con EmailJS...');
-        console.log('📧 Service ID FORZADO a:', serviceId);
+        console.log('📧 Service ID FORZADO a:', DEFAULT_SERVICE_ID);
         
-        // IMPORTANTE: Usar directamente las constantes en el método send
-        // NO usar variables intermedias que puedan ser alteradas
+        // IMPORTANTE: Usar DIRECTAMENTE las constantes en el método send
+        // NO usar parámetros que puedan ser alterados
         const result = await emailjs.send(
-          DEFAULT_SERVICE_ID, // Usar directamente la constante correcta
-          DEFAULT_TEMPLATE_ID, // Usar directamente la constante correcta
+          DEFAULT_SERVICE_ID, // FORZAR el ID de servicio correcto
+          DEFAULT_TEMPLATE_ID, // FORZAR el ID de plantilla correcto
           cleanParams,
-          config.publicKey // Este valor podría venir de una variable
+          DEFAULT_PUBLIC_KEY // FORZAR la clave pública correcta
         );
         
         console.log('EmailJS response:', result);
@@ -152,7 +124,7 @@ export const useEmailJS = () => {
             throw new Error(`La plantilla con ID "${DEFAULT_TEMPLATE_ID}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla con este ID exacto.`);
           }
           if (emailJsError.message.includes("user_id invalid")) {
-            throw new Error(`La clave pública (User ID: "${config.publicKey.substring(0, 4)}...") no es válida. Verifique en su cuenta de EmailJS.`);
+            throw new Error(`La clave pública (User ID: "${DEFAULT_PUBLIC_KEY.substring(0, 4)}...") no es válida. Verifique en su cuenta de EmailJS.`);
           }
         }
         

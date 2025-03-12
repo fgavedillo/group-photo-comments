@@ -122,19 +122,13 @@ export const EmailAssignmentForm = ({
       };
 
       console.log("Enviando email con la configuración verificada");
-      console.log("Configuración del servicio:", {
-        serviceId: CORRECT_SERVICE_ID, // ID de servicio correcto
-        templateId: CORRECT_TEMPLATE_ID,
-        publicKey: "***********" // Ocultamos por seguridad
-      });
-
-      // IMPORTANTE: Usar directamente las constantes correctas para EmailJS
-      // NO usar variables intermedias que puedan ser alteradas
+      
+      // IMPORTANTE: Usar SIEMPRE las constantes correctas, no las que vienen como parámetros
       const result = await sendEmail(
         {
-          serviceId: CORRECT_SERVICE_ID, // Usando directamente la constante correcta
-          templateId: CORRECT_TEMPLATE_ID, // Usando directamente la constante correcta
-          publicKey: CORRECT_PUBLIC_KEY, // Usando directamente la constante correcta
+          serviceId: CORRECT_SERVICE_ID,
+          templateId: CORRECT_TEMPLATE_ID,
+          publicKey: CORRECT_PUBLIC_KEY,
         },
         templateParams
       );
