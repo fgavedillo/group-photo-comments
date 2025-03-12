@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -62,17 +63,17 @@ export const useEmailJS = () => {
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
         } else if (typeof value === 'object' && value !== null) {
-          if ('toISOString' in value && typeof value.toISOString === 'function') {
-            // Es un objeto Date o similar con método toISOString
-            stringValue = value.toISOString();
-          } else {
-            // Otros objetos convertir a JSON
-            try {
+          try {
+            // Verificar si es un objeto Date
+            if (value instanceof Date && typeof value.toISOString === 'function') {
+              stringValue = value.toISOString();
+            } else {
+              // Otros objetos convertir a JSON
               stringValue = JSON.stringify(value);
-            } catch (e) {
-              console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-              continue;
             }
+          } catch (e) {
+            console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
+            continue;
           }
         } else {
           stringValue = String(value);

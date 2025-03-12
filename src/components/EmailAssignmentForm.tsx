@@ -14,7 +14,7 @@ interface EmailAssignmentFormProps {
   onEmailChange: (email: string) => void;
   message: string;
   imageUrl?: string;
-  issue?: Issue;  // Añadimos issue como prop opcional
+  issue?: Issue;
 }
 
 export const EmailAssignmentForm = ({ 
@@ -58,6 +58,17 @@ export const EmailAssignmentForm = ({
         year: 'numeric'
       });
 
+      // Validar y preparar la URL de la imagen
+      let fullImageUrl = undefined;
+      if (imageUrl && typeof imageUrl === 'string') {
+        try {
+          fullImageUrl = getAbsoluteUrl(imageUrl);
+          console.log("URL de imagen para correo:", fullImageUrl);
+        } catch (error) {
+          console.warn("No se pudo procesar la URL de la imagen:", error);
+        }
+      }
+
       // Enviar todos los campos disponibles de la incidencia
       const templateParams: EmailJSTemplateParams = {
         to_name: "Usuario",  
@@ -70,7 +81,8 @@ export const EmailAssignmentForm = ({
         status: issue?.status || "",
         security_improvement: issue?.securityImprovement || "",
         action_plan: issue?.actionPlan || "",
-        id: issue?.id ? String(issue.id) : ""
+        id: issue?.id ? String(issue.id) : "",
+        image_url: fullImageUrl || "" // Añadimos la URL de la imagen
       };
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
