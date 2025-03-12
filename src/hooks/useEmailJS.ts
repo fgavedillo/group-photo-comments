@@ -17,27 +17,28 @@ export const useEmailJS = () => {
     setError(null);
 
     try {
+      // Validar el email del destinatario
       if (!templateParams.to_email) {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Verificar que la clave pública esté completa
+      // Validar la clave pública
       const publicKey = config.publicKey.trim();
-      if (!publicKey || publicKey.length < 20) {
-        throw new Error('La clave pública de EmailJS es inválida');
+      if (!publicKey) {
+        throw new Error('La clave pública de EmailJS es requerida');
       }
 
-      // Crear un objeto de parámetros limpio con solo strings
+      // Crear un objeto de parámetros limpio
       const cleanParams: Record<string, string> = {};
       
-      // Procesar cada parámetro para asegurar que sea un string válido
-      Object.entries(templateParams).forEach(([key, value]) => {
-        // Omitir valores null/undefined
+      // Procesar y convertir cada parámetro a string válido
+      for (const [key, value] of Object.entries(templateParams)) {
+        // Omitir valores null/undefined/vacíos
         if (value === null || value === undefined) {
-          return;
+          continue;
         }
         
-        // Convertir a string y sanitizar
+        // Convertir a string adecuadamente según el tipo
         let stringValue = '';
         
         if (typeof value === 'string') {
@@ -48,29 +49,25 @@ export const useEmailJS = () => {
           stringValue = value.toISOString();
         } else if (typeof value === 'object') {
           try {
-            // Intentar convertir objetos a JSON string
             stringValue = JSON.stringify(value);
           } catch (e) {
             console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-            return; // Omitir este campo
+            continue;
           }
         } else {
-          // Usar toString() como fallback
           try {
             stringValue = String(value);
           } catch (e) {
             console.warn(`No se pudo convertir el valor en el campo ${key} a string`);
-            return; // Omitir este campo
+            continue;
           }
         }
         
-        // Si después de todo el valor es vacío, no lo incluimos
-        if (stringValue.length === 0) {
-          return;
+        // Solo incluir valores no vacíos
+        if (stringValue.length > 0) {
+          cleanParams[key] = stringValue;
         }
-        
-        cleanParams[key] = stringValue;
-      });
+      }
       
       // Validar URL de imagen específicamente
       if (cleanParams.image_url) {
@@ -82,8 +79,14 @@ export const useEmailJS = () => {
         }
       }
       
-      console.log('Enviando con parámetros limpios:', cleanParams);
+      console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
+      console.log('Configuración:', {
+        serviceId: config.serviceId,
+        templateId: config.templateId,
+        publicKey: publicKey.substring(0, 5) + '...' // Solo mostrar parte de la clave por seguridad
+      });
 
+      // Corrección importante: asegurar que la clave pública esté completa
       const result = await emailjs.send(
         config.serviceId,
         config.templateId,
