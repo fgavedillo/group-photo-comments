@@ -40,9 +40,6 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
     }
 
     try {
-      // Construir la URL absoluta para el enlace de la página de incidencias
-      const issuesPageUrl = getAbsoluteUrl('/issues');
-      
       // Formatear la fecha actual en español
       const currentDate = new Date().toLocaleDateString('es-ES', {
         day: '2-digit',
@@ -50,35 +47,37 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
 
-      // Preparar los parámetros básicos sin la imagen
+      // Construir la URL absoluta para el enlace de la página de incidencias
+      const issuesPageUrl = getAbsoluteUrl('/issues');
+      
+      // Preparar parámetros básicos como strings
       const templateParams: Record<string, string> = {
         to_name: "Usuario",
-        to_email: email,
+        to_email: email.trim(),
         from_name: "Sistema de Incidencias",
         date: currentDate,
-        message: message || "",
-        issues_url: issuesPageUrl,
+        message: message || "No hay mensaje disponible",
+        issues_url: issuesPageUrl
       };
 
-      // Solo agregar la URL de la imagen si existe y parece válida
-      if (imageUrl && imageUrl.startsWith('http')) {
+      // Solo añadir la URL de la imagen si es válida
+      if (imageUrl && typeof imageUrl === 'string' && 
+          (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
         templateParams.image_url = imageUrl;
       }
 
       console.log("Enviando email con parámetros:", templateParams);
 
-      // Enviar el email utilizando los parámetros y la configuración de EmailJS
-      // Corrección: Clave pública completa para EmailJS
+      // Clave pública completa para EmailJS
       await sendEmail(
         {
           serviceId: 'service_2yujt9t',
           templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ', // Asegúrate de que esta clave esté completa
+          publicKey: 'RKDqUO9tTPGJrGKLQ',
         },
         templateParams
       );
 
-      // Mostrar un mensaje de éxito al usuario
       toast({
         title: "Correo enviado",
         description: "Se ha enviado la notificación exitosamente"
@@ -86,7 +85,6 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
     } catch (error) {
       console.error('Error sending email:', error);
       
-      // Mostrar un mensaje de error al usuario
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "No se pudo enviar el correo",

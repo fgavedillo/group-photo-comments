@@ -14,9 +14,12 @@ interface IssueContentProps {
 export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: IssueContentProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
-  // Asegurarse de que la URL de la imagen sea válida
-  const isValidImageUrl = imageUrl && typeof imageUrl === 'string' && 
-                         (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+  // Validar la URL de la imagen
+  const isValidImageUrl = Boolean(
+    imageUrl && 
+    typeof imageUrl === 'string' && 
+    (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))
+  );
 
   return (
     <CardContent>
@@ -33,7 +36,7 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
             />
           </div>
           <ImageModal
-            imageUrl={imageUrl}
+            imageUrl={imageUrl as string}
             isOpen={isImageModalOpen}
             onClose={() => setIsImageModalOpen(false)}
           />
