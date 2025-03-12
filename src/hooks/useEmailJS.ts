@@ -65,8 +65,9 @@ export const useEmailJS = () => {
           stringValue = String(value);
         } else if (typeof value === 'object') {
           // Comprobar si es un objeto Date
-          if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
-            stringValue = value.toISOString();
+          const isDate = Object.prototype.toString.call(value) === '[object Date]';
+          if (isDate && !isNaN((value as Date).getTime())) {
+            stringValue = (value as Date).toISOString();
           } else {
             // Otros objetos convertir a JSON
             try {
