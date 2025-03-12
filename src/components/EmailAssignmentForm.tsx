@@ -47,19 +47,25 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
 
+      // Asegurar que todas las variables están definidas y son strings
+      const templateParams = {
+        to_email: email,
+        message: message || "",
+        date: currentDate,
+        issues_url: issuesPageUrl,
+        // Asegurar que la URL de la imagen siempre es un string, incluso si es vacío
+        image_url: imageUrl || ""
+      };
+
+      console.log("Enviando email con parámetros:", templateParams);
+
       await sendEmail(
         {
-          serviceId: 'service_2yujt9t', // Service ID actualizado
-          templateId: 'template_ah9tqde', // Template ID proporcionado
-          publicKey: 'RKDqUO9tTPGJrGKLQ', // Public Key actualizada
+          serviceId: 'service_2yujt9t',
+          templateId: 'template_ah9tqde',
+          publicKey: 'RKDqUO9tTPGJrGKLQ',
         },
-        {
-          to_email: email,
-          message,
-          date: currentDate,
-          issues_url: issuesPageUrl,
-          image_url: imageUrl || ''
-        }
+        templateParams
       );
 
       toast({
