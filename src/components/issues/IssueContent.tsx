@@ -15,17 +15,12 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
   // Validar la URL de la imagen de forma más estricta
-  const isValidImageUrl = Boolean(
-    imageUrl && 
-    typeof imageUrl === 'string' && 
-    (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))
-  );
-
-  // Intenta validar que sea una URL real
-  let validatedImageUrl = undefined;
-  if (isValidImageUrl) {
+  let validatedImageUrl: string | undefined = undefined;
+  
+  if (imageUrl && typeof imageUrl === 'string' && 
+      (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
     try {
-      new URL(imageUrl as string);
+      new URL(imageUrl);
       validatedImageUrl = imageUrl;
     } catch (e) {
       console.warn("URL de imagen inválida:", imageUrl);
@@ -34,7 +29,7 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
 
   return (
     <CardContent>
-      {isValidImageUrl && (
+      {validatedImageUrl && (
         <div className="mb-4">
           <div 
             className="cursor-pointer" 
@@ -51,7 +46,7 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
             />
           </div>
           <ImageModal
-            imageUrl={validatedImageUrl as string}
+            imageUrl={validatedImageUrl}
             isOpen={isImageModalOpen}
             onClose={() => setIsImageModalOpen(false)}
           />

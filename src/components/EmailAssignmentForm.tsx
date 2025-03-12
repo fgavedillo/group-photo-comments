@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAbsoluteUrl } from "@/utils/stringUtils";
-import { useEmailJS } from "@/hooks/useEmailJS";
+import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -50,24 +50,22 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
 
-      // Construir la URL absoluta para el enlace
-      const issuesPageUrl = getAbsoluteUrl('/issues');
-      
-      // Preparar parámetros del template
-      const templateParams = {
-        to_name: "Usuario",  // Este es un nombre genérico para el destinatario
-        to_email: toEmail,   // Email del destinatario - CRÍTICO: Asegurar que se use el email correcto
+      // Construir los parámetros base del template
+      const templateParams: EmailJSTemplateParams = {
+        to_name: "Usuario",  
+        to_email: toEmail,   
         from_name: "Sistema de Incidencias",
         date: currentDate,
         message: message || "No hay mensaje disponible"
       };
 
-      // Solo añadir la URL de las incidencias si es válida
+      // Opcionalmente añadir la URL de las incidencias
+      const issuesPageUrl = getAbsoluteUrl('/issues');
       if (issuesPageUrl) {
         templateParams.issues_url = issuesPageUrl;
       }
 
-      // Solo añadir la URL de la imagen si es válida
+      // Opcionalmente añadir la URL de la imagen
       if (imageUrl && typeof imageUrl === 'string' && 
           (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
         try {
@@ -86,7 +84,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         {
           serviceId: 'service_2yujt9t',
           templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ', // Verificar que esta sea la clave correcta y completa
+          publicKey: 'RKDqUO9tTPGJrGKLQ', // Esta clave está incompleta, se necesita la clave completa
         },
         templateParams
       );

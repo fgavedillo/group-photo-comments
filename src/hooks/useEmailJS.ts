@@ -8,11 +8,23 @@ interface EmailJSConfig {
   publicKey: string;
 }
 
+// Define the structure for template parameters
+export interface EmailJSTemplateParams {
+  to_name: string;
+  to_email: string;
+  from_name: string;
+  date: string;
+  message: string;
+  issues_url?: string;
+  image_url?: string;
+  [key: string]: string | undefined;
+}
+
 export const useEmailJS = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const sendEmail = async (config: EmailJSConfig, templateParams: Record<string, unknown>) => {
+  const sendEmail = async (config: EmailJSConfig, templateParams: EmailJSTemplateParams) => {
     setIsLoading(true);
     setError(null);
 
@@ -23,9 +35,8 @@ export const useEmailJS = () => {
       }
 
       // Validar la clave pública
-      const publicKey = config.publicKey.trim();
-      if (!publicKey) {
-        throw new Error('La clave pública de EmailJS es requerida');
+      if (!config.publicKey || config.publicKey.length < 10) {
+        throw new Error('La clave pública de EmailJS es inválida');
       }
 
       // Crear un objeto de parámetros limpio
@@ -69,29 +80,19 @@ export const useEmailJS = () => {
         }
       }
       
-      // Validar URL de imagen específicamente
-      if (cleanParams.image_url) {
-        try {
-          new URL(cleanParams.image_url);
-        } catch (e) {
-          console.warn('URL de imagen inválida, omitiendo:', cleanParams.image_url);
-          delete cleanParams.image_url;
-        }
-      }
-      
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
       console.log('Configuración:', {
         serviceId: config.serviceId,
         templateId: config.templateId,
-        publicKey: publicKey.substring(0, 5) + '...' // Solo mostrar parte de la clave por seguridad
+        publicKey: '********' // Por seguridad no mostramos la clave
       });
 
-      // Corrección importante: asegurar que la clave pública esté completa
+      // Enviar el email usando la API de EmailJS
       const result = await emailjs.send(
         config.serviceId,
         config.templateId,
         cleanParams,
-        publicKey
+        config.publicKey
       );
       
       console.log('EmailJS response:', result);
