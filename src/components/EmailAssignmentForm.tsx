@@ -7,15 +7,23 @@ import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAbsoluteUrl } from "@/utils/stringUtils";
 import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
+import { Issue } from "@/types/issue";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
   onEmailChange: (email: string) => void;
   message: string;
   imageUrl?: string;
+  issue?: Issue;  // Añadimos issue como prop opcional
 }
 
-export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, imageUrl }: EmailAssignmentFormProps) => {
+export const EmailAssignmentForm = ({ 
+  assignedEmail, 
+  onEmailChange, 
+  message, 
+  imageUrl,
+  issue 
+}: EmailAssignmentFormProps) => {
   const { toast } = useToast();
   const [email, setEmail] = useState(assignedEmail);
   const { sendEmail, isLoading, error: emailError } = useEmailJS();
@@ -58,6 +66,13 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         date: currentDate,
         message: message || "No hay mensaje disponible"
       };
+
+      // Añadir campos adicionales si existe el issue
+      if (issue) {
+        if (issue.area) templateParams.area = issue.area;
+        if (issue.responsable) templateParams.responsable = issue.responsable;
+        if (issue.status) templateParams.status = issue.status;
+      }
 
       // Opcionalmente añadir la URL de las incidencias
       const issuesPageUrl = getAbsoluteUrl('/issues');

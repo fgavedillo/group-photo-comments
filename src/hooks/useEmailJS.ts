@@ -8,7 +8,7 @@ interface EmailJSConfig {
   publicKey: string;
 }
 
-// Define the structure for template parameters
+// Define la estructura para los parámetros de la plantilla
 export interface EmailJSTemplateParams {
   to_name: string;
   to_email: string;
@@ -17,6 +17,9 @@ export interface EmailJSTemplateParams {
   message: string;
   issues_url?: string;
   image_url?: string;
+  area?: string;          // Nuevo campo para área
+  responsable?: string;   // Nuevo campo para responsable
+  status?: string;        // Nuevo campo para estado
   [key: string]: string | undefined;
 }
 
