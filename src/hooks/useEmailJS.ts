@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -44,13 +45,14 @@ export const useEmailJS = () => {
         throw new Error('La clave pública de EmailJS es inválida');
       }
 
-      // Crear un objeto de parámetros limpio
+      // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
       const cleanParams: Record<string, string> = {};
       
       // Procesar y convertir cada parámetro a string válido
       for (const [key, value] of Object.entries(templateParams)) {
-        // Omitir valores null/undefined/vacíos
+        // Asignar cadena vacía a valores null/undefined
         if (value === null || value === undefined) {
+          cleanParams[key] = '';
           continue;
         }
         
@@ -61,9 +63,9 @@ export const useEmailJS = () => {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (typeof value === 'object' && value !== null) {
-          if ('toISOString' in value && typeof value.toISOString === 'function') {
-            // Es un objeto Date o similar con método toISOString
+        } else if (typeof value === 'object') {
+          // Comprobar si es un objeto Date
+          if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value.getTime())) {
             stringValue = value.toISOString();
           } else {
             // Otros objetos convertir a JSON
@@ -71,17 +73,15 @@ export const useEmailJS = () => {
               stringValue = JSON.stringify(value);
             } catch (e) {
               console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-              continue;
+              stringValue = '';
             }
           }
         } else {
           stringValue = String(value);
         }
         
-        // Solo incluir valores no vacíos
-        if (stringValue.length > 0) {
-          cleanParams[key] = stringValue;
-        }
+        // Siempre incluir el valor, incluso si está vacío
+        cleanParams[key] = stringValue;
       }
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);

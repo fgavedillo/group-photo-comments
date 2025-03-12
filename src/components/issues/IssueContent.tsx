@@ -14,14 +14,16 @@ interface IssueContentProps {
 export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: IssueContentProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
-  // Validar la URL de la imagen de forma más estricta
-  let validatedImageUrl: string | undefined = undefined;
+  // Validar la URL de la imagen y asegurar que sea una cadena
+  let validatedImageUrl: string = "";
   
-  if (imageUrl && typeof imageUrl === 'string' && 
-      (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+  if (imageUrl && typeof imageUrl === 'string') {
     try {
-      new URL(imageUrl);
-      validatedImageUrl = imageUrl;
+      // Verificar si es una URL válida
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        new URL(imageUrl);
+        validatedImageUrl = imageUrl;
+      }
     } catch (e) {
       console.warn("URL de imagen inválida:", imageUrl);
     }

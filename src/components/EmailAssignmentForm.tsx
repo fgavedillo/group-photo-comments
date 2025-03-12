@@ -5,7 +5,6 @@ import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getAbsoluteUrl } from "@/utils/stringUtils";
 import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
 
@@ -58,19 +57,22 @@ export const EmailAssignmentForm = ({
         year: 'numeric'
       });
 
-      // Enviar todos los campos disponibles de la incidencia
+      // Asegurar que todos los campos estén definidos con valores por defecto
       const templateParams: EmailJSTemplateParams = {
         to_name: "Usuario",  
         to_email: toEmail,   
         from_name: "Sistema de Incidencias",
         date: currentDate,
         message: message || "",
+        // Asegurar que todos los campos opcionales tengan un valor por defecto
         area: issue?.area || "",
         responsable: issue?.responsable || "",
         status: issue?.status || "",
         security_improvement: issue?.securityImprovement || "",
         action_plan: issue?.actionPlan || "",
-        id: issue?.id ? String(issue.id) : ""
+        id: issue?.id ? String(issue.id) : "",
+        // Asegurar que la imagen también tenga un valor válido
+        image_url: imageUrl || ""
       };
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
