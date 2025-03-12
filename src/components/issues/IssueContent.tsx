@@ -1,3 +1,4 @@
+
 import { CardContent } from "@/components/ui/card";
 import { ImageModal } from "../ImageModal";
 import { EmailAssignmentForm } from "../EmailAssignmentForm";
@@ -32,6 +33,12 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
   console.log(`IssueContent: Renderizando issue ${message.id}`);
   console.log(`IssueContent: Email asignado: ${message.assignedEmail || 'no asignado'}`);
   console.log(`IssueContent: URL de imagen: ${validatedImageUrl || 'sin imagen'}`);
+
+  // Log verificación importante
+  console.log('⚠️⚠️⚠️ ISSUE CONTENT - VERIFYING EMAIL SERVICE VALUES ⚠️⚠️⚠️');
+  console.log('🔒 Service ID must be "service_yz5opji"');
+  console.log('🔒 Template ID must be "template_ah9tqde"');
+  console.log('🔒 Public Key must be "RKDqUO9tTPGJrGKLQ"');
 
   return (
     <CardContent>

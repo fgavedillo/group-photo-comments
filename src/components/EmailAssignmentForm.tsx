@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
@@ -8,11 +9,10 @@ import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
 import { compressImageToBase64 } from "@/utils/imageCompression";
 
-// ⚠️ IMPORTANTE: NO MODIFICAR ESTOS VALORES ⚠️
-// Estos IDs son los correctos y verificados para EmailJS
-const CORRECT_SERVICE_ID = 'service_yz5opji';
-const CORRECT_TEMPLATE_ID = 'template_ah9tqde';
-const CORRECT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
+// HARDCODED VALUES TO MATCH useEmailJS.ts - THESE MUST BE EXACTLY THE SAME!!!
+const FORCE_SERVICE_ID = 'service_yz5opji'; // Correct ID from EmailJS dashboard
+const FORCE_TEMPLATE_ID = 'template_ah9tqde';
+const FORCE_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -56,11 +56,13 @@ export const EmailAssignmentForm = ({
     try {
       setIsProcessingImage(true);
       const toEmail = email.trim();
-      console.log("💌 Preparando envío de email a:", toEmail);
-      console.log("🔐 VERIFICANDO CONSTANTES:");
-      console.log("✅ SERVICE_ID:", CORRECT_SERVICE_ID);
-      console.log("✅ TEMPLATE_ID:", CORRECT_TEMPLATE_ID);
-      console.log("✅ PUBLIC_KEY:", CORRECT_PUBLIC_KEY);
+      
+      console.log("=============================================================");
+      console.log("⚠️⚠️⚠️ EMAIL SENDING - STARTING WITH FORCED VALUES ⚠️⚠️⚠️");
+      console.log("✅ FORCING SERVICE_ID:", FORCE_SERVICE_ID);
+      console.log("✅ FORCING TEMPLATE_ID:", FORCE_TEMPLATE_ID);
+      console.log("✅ FORCING PUBLIC_KEY:", FORCE_PUBLIC_KEY);
+      console.log("=============================================================");
       
       // Formatear la fecha actual en español
       const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -124,30 +126,33 @@ export const EmailAssignmentForm = ({
         image_url: imageUrl || ""
       };
 
-      console.log("🚨 USANDO ESTRICTAMENTE ESTOS VALORES:");
-      console.log("🔒 Service ID:", CORRECT_SERVICE_ID);
-      console.log("🔒 Template ID:", CORRECT_TEMPLATE_ID);
-      console.log("🔒 Public Key:", CORRECT_PUBLIC_KEY);
+      console.log("=============================================================");
+      console.log("⚠️⚠️⚠️ FINAL VERIFICATION BEFORE SENDING ⚠️⚠️⚠️");
+      console.log("✅ SERVICE_ID:", FORCE_SERVICE_ID);
+      console.log("✅ TEMPLATE_ID:", FORCE_TEMPLATE_ID);
+      console.log("✅ PUBLIC_KEY:", FORCE_PUBLIC_KEY);
+      console.log("✉️ EMAIL TARGET:", toEmail);
+      console.log("=============================================================");
       
-      // Enviar el email usando el hook personalizado
-      // IMPORTANTE: Aquí NO se deben usar variables para los IDs, usamos las constantes directamente
+      // Llamada forzando los valores correctos
       const result = await sendEmail(
-        {
-          serviceId: CORRECT_SERVICE_ID,
-          templateId: CORRECT_TEMPLATE_ID,
-          publicKey: CORRECT_PUBLIC_KEY,
+        { 
+          // These will be ignored, but we still provide the right values for clarity
+          serviceId: FORCE_SERVICE_ID,
+          templateId: FORCE_TEMPLATE_ID,
+          publicKey: FORCE_PUBLIC_KEY,
         },
         templateParams
       );
 
-      console.log("✅ Resultado del envío de email:", result);
+      console.log("✅ EMAIL SENT SUCCESSFULLY:", result);
 
       toast({
         title: "Correo enviado",
         description: `Se ha enviado la notificación a ${toEmail} exitosamente`
       });
     } catch (error) {
-      console.error('❌ Error al enviar email:', error);
+      console.error('❌ ERROR AL ENVIAR EMAIL:', error);
       
       let mensajeError = "No se pudo enviar el correo";
       if (error instanceof Error) {
