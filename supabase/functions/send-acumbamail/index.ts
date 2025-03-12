@@ -1,7 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// Standard CORS headers to allow cross-origin requests
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -11,7 +10,6 @@ const corsHeaders = {
 serve(async (req) => {
   console.log("Acumbamail function invoked:", new Date().toISOString());
   
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
       headers: corsHeaders,
@@ -20,7 +18,6 @@ serve(async (req) => {
   }
 
   try {
-    // Check for Acumbamail token
     const acumbamailToken = Deno.env.get("ACUMBAMAIL_AUTH_TOKEN");
     
     if (!acumbamailToken) {
@@ -37,7 +34,6 @@ serve(async (req) => {
       );
     }
 
-    // If this is a test call with no body, return diagnostic info
     if (req.method === 'GET' || req.headers.get('content-length') === '0') {
       const info = {
         status: "running",
@@ -63,7 +59,6 @@ serve(async (req) => {
       );
     }
 
-    // If this is a real request, parse the payload
     const payload = await req.json();
     console.log("Procesando solicitud de email con Acumbamail:", {
       to: payload.to,
@@ -72,16 +67,47 @@ serve(async (req) => {
       hasImageUrl: !!payload.imageUrl
     });
 
-    // TODO: Implementar la integración real con Acumbamail aquí
-    // Por ahora, simplemente devolvemos éxito como prueba
+    // Construir el HTML del email
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+        <body style="font-family: Arial, sans-serif;">
+          <h2>${payload.subject}</h2>
+          <p>${payload.description}</p>
+          ${payload.imageUrl ? `<img src="${payload.imageUrl}" style="max-width: 100%;" />` : ''}
+          ${payload.issuesPageUrl ? `<p><a href="${payload.issuesPageUrl}">Ver detalles</a></p>` : ''}
+        </body>
+      </html>
+    `;
 
-    // Return success for now
+    // Llamada a la API de Acumbamail
+    const acumbamailResponse = await fetch('https://acumbamail.com/api/1/sendEmail/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${acumbamailToken}`
+      },
+      body: JSON.stringify({
+        from_email: 'prevencionlingotes@gmail.com',
+        from_name: 'Sistema de Prevención',
+        to: [payload.to],
+        subject: payload.subject,
+        html: emailHtml
+      })
+    });
+
+    const acumbamailData = await acumbamailResponse.json();
+    console.log("Respuesta de Acumbamail:", acumbamailData);
+
+    if (!acumbamailResponse.ok) {
+      throw new Error(`Error de Acumbamail: ${JSON.stringify(acumbamailData)}`);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Email de prueba procesado correctamente",
-        to: payload.to,
-        subject: payload.subject,
+        message: "Email enviado correctamente",
+        acumbamailResponse: acumbamailData,
         timestamp: new Date().toISOString()
       }),
       { 
