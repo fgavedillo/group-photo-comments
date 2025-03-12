@@ -74,3 +74,7 @@ verify_jwt = false
 
 [functions.send-simple-email]
 verify_jwt = false
+
+[functions.send-test-report]
+verify_jwt = false
+
