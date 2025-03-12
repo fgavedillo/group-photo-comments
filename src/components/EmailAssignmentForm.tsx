@@ -51,7 +51,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         {
           serviceId: 'service_2yujt9t', // Service ID actualizado
           templateId: 'template_ah9tqde', // Template ID proporcionado
-          publicKey: 'i3HY0xzZLdBPwGTDH', // Reemplaza con tu Public Key
+          publicKey: 'RKDqUO9tTPGJrGKLQ', // Public Key actualizada
         },
         {
           to_email: email,
