@@ -117,18 +117,12 @@ export const EmailAssignmentForm = ({
 
       console.log("Enviando email con la configuración verificada");
       console.log("Configuración del servicio:", {
-        serviceId: 'service_yz5opji',
+        serviceId: 'service_yz5opji', // ID de servicio correcto
         templateId: 'template_ah9tqde',
         publicKey: 'RKDqUO9tTPGJrGKLQ' // Solo mostramos por propósitos de depuración
       });
 
-      // Verificar si hay un nuevo service ID disponible, si no, avisamos al usuario
-      if (!process.env.REACT_APP_EMAILJS_SERVICE_ID) {
-        console.warn("No se ha configurado un nuevo service ID para EmailJS");
-      }
-
-      // Usar la configuración correcta para EmailJS - usar el ID de servicio actualizado
-      // o mantener el que está definido en el hook useEmailJS
+      // Usar la configuración correcta para EmailJS
       const result = await sendEmail(
         {
           serviceId: 'service_yz5opji', // ID de servicio correcto

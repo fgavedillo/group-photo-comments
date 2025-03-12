@@ -28,7 +28,7 @@ export interface EmailJSTemplateParams {
 }
 
 // Constantes para configuration de EmailJS
-// Si cambias estos valores, asegúrate que corresponden con tu cuenta de EmailJS
+// El ID de servicio correcto de EmailJS
 const DEFAULT_SERVICE_ID = 'service_yz5opji';
 const DEFAULT_TEMPLATE_ID = 'template_ah9tqde';
 const DEFAULT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
@@ -58,10 +58,10 @@ export const useEmailJS = () => {
       }
 
       // Verificar si el serviceId proporcionado es válido
-      // Se asegura que usemos uno de los servicios válidos
+      // Se asegura que usemos el servicio válido: service_yz5opji
       const validServiceId = DEFAULT_SERVICE_ID;
       
-      // Si el serviceId no coincide con ninguno de los válidos, usar el predeterminado
+      // Si el serviceId no coincide con el válido, usar el correcto
       if (config.serviceId !== validServiceId) {
         console.warn(`ID de servicio incorrecto: ${config.serviceId}. Se utilizará el ID correcto: ${validServiceId}`);
         config.serviceId = validServiceId;
@@ -120,7 +120,7 @@ export const useEmailJS = () => {
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
       console.log('Configuración finalizada:', {
-        serviceId: config.serviceId,
+        serviceId: config.serviceId, // Mostramos el serviceId explícitamente para verificar
         templateId: config.templateId,
         publicKey: '********' // Por seguridad no mostramos la clave
       });
@@ -134,7 +134,7 @@ export const useEmailJS = () => {
       try {
         console.log('Iniciando envío de email con EmailJS...');
         const result = await emailjs.send(
-          config.serviceId,
+          config.serviceId, // Aquí usamos el ID de servicio correcto
           config.templateId,
           cleanParams,
           config.publicKey
