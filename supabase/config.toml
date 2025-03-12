@@ -48,6 +48,9 @@ jwt_expiry = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
 
+# Use an external OAuth provider. The full list of providers are: `apple`, `azure`, `bitbucket`,
+# `discord`, `facebook`, `github`, `gitlab`, `google`, `keycloak`, `linkedin`, `notion`, `twitch`,
+# `twitter`, `slack`, `spotify`, `workos`, `zoom`.
 [auth.external.apple]
 enabled = false
 client_id = ""
@@ -62,17 +65,12 @@ url = ""
 # Port to use for the Functions endpoint.
 port = 9000
 
-[functions.send-acumbamail]
-verify_jwt = false
-
+# Individual function configurations are defined as separate sections
 [functions.send-daily-report]
 verify_jwt = false
 
 [functions.send-email]
 verify_jwt = false
 
-[functions.notify-admin]
-verify_jwt = false
-
-[functions.health-check]
+[functions.send-simple-email]
 verify_jwt = false
