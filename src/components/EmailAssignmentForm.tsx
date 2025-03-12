@@ -58,13 +58,14 @@ export const EmailAssignmentForm = ({
         year: 'numeric'
       });
 
-      // Para la primera prueba, solo usamos los campos básicos
+      // Ahora incluimos el campo 'area' además de los campos básicos
       const templateParams: EmailJSTemplateParams = {
         to_name: "Usuario",  
         to_email: toEmail,   
         from_name: "Sistema de Incidencias",
         date: currentDate,
-        message: message || "No hay mensaje disponible"
+        message: message || "No hay mensaje disponible",
+        area: issue?.area || "" // Añadimos el campo area
       };
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
