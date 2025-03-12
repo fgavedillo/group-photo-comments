@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
@@ -47,13 +46,12 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
 
-      // Asegurar que todas las variables están definidas y son strings
       const templateParams = {
+        to_name: email,
         to_email: email,
         message: message || "",
         date: currentDate,
         issues_url: issuesPageUrl,
-        // Asegurar que la URL de la imagen siempre es un string, incluso si es vacío
         image_url: imageUrl || ""
       };
 

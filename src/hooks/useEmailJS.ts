@@ -17,16 +17,19 @@ export const useEmailJS = () => {
     setError(null);
 
     try {
-      // Validar que todas las variables necesarias están presentes
       if (!templateParams.to_email) {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // EmailJS requiere que todos los valores sean strings
-      const validatedParams = Object.entries(templateParams).reduce((acc, [key, value]) => {
-        acc[key] = value?.toString() || '';
-        return acc;
-      }, {} as Record<string, string>);
+      // Asegurarse de que las claves del template coincidan exactamente
+      const validatedParams = {
+        to_name: templateParams.to_email?.toString() || '',
+        to_email: templateParams.to_email?.toString() || '',
+        message: templateParams.message?.toString() || '',
+        date: templateParams.date?.toString() || '',
+        issues_url: templateParams.issues_url?.toString() || '',
+        image_url: templateParams.image_url?.toString() || ''
+      };
 
       console.log('Enviando con parámetros validados:', validatedParams);
 
