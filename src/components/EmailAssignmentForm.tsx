@@ -50,16 +50,16 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
 
-      // Crear los parámetros que se enviarán a la plantilla
-      // Asegurarse de que coincidan exactamente con los nombres en la plantilla
+      // Enviar sólo los parámetros básicos que aparecen en la plantilla
+      // sin valores adicionales que puedan causar problemas
       const templateParams = {
-        to_email: email,         // Para el campo destinatario
-        email: email,            // Variable adicional que podría estar en la configuración
-        date: currentDate,       // Para {{date}} en la plantilla
-        message: message || "",  // Para {{message}} en la plantilla
-        image_url: imageUrl || "", // Para la condición {{#if image_url}} en la plantilla
-        issues_url: issuesPageUrl, // Para {{issues_url}} en el botón de la plantilla
-        title: 'Nueva Incidencia Asignada' // Posible variable para el asunto
+        to_name: "Usuario", // Nombre del destinatario si lo requiere la plantilla
+        to_email: email,    // Email del destinatario
+        from_name: "Sistema de Incidencias", // Nombre del remitente
+        date: currentDate,
+        message: message,
+        image_url: imageUrl || "",
+        issues_url: issuesPageUrl,
       };
 
       console.log("Enviando email con parámetros:", templateParams);
