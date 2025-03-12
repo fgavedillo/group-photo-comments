@@ -56,7 +56,8 @@ export const useEmailJS = () => {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (value instanceof Date) {
+        } else if (typeof value === 'object' && value !== null && 'toISOString' in value && typeof value.toISOString === 'function') {
+          // Verificar si es un objeto Date de manera segura para TypeScript
           stringValue = value.toISOString();
         } else if (typeof value === 'object') {
           try {
