@@ -53,7 +53,8 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
       
-      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-simple-email', {
+      // Usar la nueva función Edge de Acumbamail en lugar de la anterior
+      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-acumbamail', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
 
       toast({
         title: "Correo enviado",
-        description: "Se ha enviado la notificación exitosamente"
+        description: "Se ha enviado la notificación exitosamente con Acumbamail"
       });
     } catch (error) {
       console.error('Error sending email:', error);
