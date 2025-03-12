@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -16,6 +17,7 @@ export interface EmailJSTemplateParams {
   message: string;
   issues_url?: string;
   image_url?: string;
+  image_base64?: string; // Añadimos el nuevo campo para imágenes en base64
   area?: string;
   responsable?: string;
   status?: string;

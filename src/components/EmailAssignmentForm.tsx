@@ -7,13 +7,14 @@ import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
+import { compressImageToBase64 } from "@/utils/imageCompression";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
   onEmailChange: (email: string) => void;
   message: string;
   imageUrl?: string;
-  issue?: Issue;  // Añadimos issue como prop opcional
+  issue?: Issue;
 }
 
 export const EmailAssignmentForm = ({ 
@@ -25,6 +26,7 @@ export const EmailAssignmentForm = ({
 }: EmailAssignmentFormProps) => {
   const { toast } = useToast();
   const [email, setEmail] = useState(assignedEmail);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const { sendEmail, isLoading, error: emailError } = useEmailJS();
 
   useEffect(() => {
@@ -47,6 +49,7 @@ export const EmailAssignmentForm = ({
     }
 
     try {
+      setIsProcessingImage(true);
       const toEmail = email.trim();
       console.log("Preparando envío de email a:", toEmail);
       
@@ -56,6 +59,33 @@ export const EmailAssignmentForm = ({
         month: 'long',
         year: 'numeric'
       });
+
+      // Procesar imagen si existe
+      let imageBase64 = null;
+      if (imageUrl) {
+        try {
+          // Intentar convertir la URL de la imagen a base64
+          console.log("Procesando imagen para email:", imageUrl);
+          
+          // Hacer fetch de la imagen y convertirla a File para comprimirla
+          const response = await fetch(imageUrl);
+          const blob = await response.blob();
+          const imageFile = new File([blob], "issue-image.jpg", { type: blob.type });
+          
+          // Comprimir la imagen
+          imageBase64 = await compressImageToBase64(imageFile);
+          
+          if (imageBase64) {
+            console.log("Imagen convertida a base64 y comprimida correctamente");
+          } else {
+            console.warn("No se pudo procesar la imagen a base64");
+          }
+        } catch (imgError) {
+          console.error("Error al procesar la imagen:", imgError);
+          // Continuar sin la imagen
+          imageBase64 = null;
+        }
+      }
 
       // Asegurar que todos los campos estén definidos con valores por defecto
       const templateParams: EmailJSTemplateParams = {
@@ -71,11 +101,13 @@ export const EmailAssignmentForm = ({
         security_improvement: issue?.securityImprovement || "",
         action_plan: issue?.actionPlan || "",
         id: issue?.id ? String(issue.id) : "",
-        // Asegurar que la imagen también tenga un valor válido
+        // Añadir la imagen en base64 si existe
+        image_base64: imageBase64 || "",
+        // Mantener la URL de la imagen como respaldo
         image_url: imageUrl || ""
       };
 
-      console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
+      console.log("Enviando email con la imagen procesada");
 
       // Usar la clave pública completa y correcta para EmailJS
       await sendEmail(
@@ -99,6 +131,8 @@ export const EmailAssignmentForm = ({
         description: error instanceof Error ? error.message : "No se pudo enviar el correo",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 
@@ -116,12 +150,12 @@ export const EmailAssignmentForm = ({
           variant="outline" 
           onClick={handleSendEmail}
           className="shrink-0"
-          disabled={isLoading}
+          disabled={isLoading || isProcessingImage}
         >
-          {isLoading ? (
+          {isLoading || isProcessingImage ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Enviando...
+              {isProcessingImage ? 'Procesando...' : 'Enviando...'}
             </>
           ) : (
             <>
