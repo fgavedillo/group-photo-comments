@@ -62,11 +62,11 @@ export const useEmailJS = () => {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (typeof value === 'object' && value !== null) {
+        } else if (value && typeof value === 'object') {
           try {
-            // Verificar si es un objeto Date
-            if (value instanceof Date && typeof value.toISOString === 'function') {
-              stringValue = value.toISOString();
+            // Manejar fechas de forma segura con tipos
+            if (Object.prototype.toString.call(value) === '[object Date]') {
+              stringValue = (value as Date).toISOString();
             } else {
               // Otros objetos convertir a JSON
               stringValue = JSON.stringify(value);
