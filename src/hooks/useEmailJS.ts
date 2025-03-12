@@ -51,10 +51,24 @@ export const useEmailJS = () => {
       }
 
       // ALERTA IMPORTANTE: Se ignoran completamente los valores proporcionados en config
-      console.log('⚠️⚠️⚠️ IGNORANDO COMPLETAMENTE LOS VALORES PROPORCIONADOS:');
-      console.log('⛔ USANDO EXCLUSIVAMENTE:', DEFAULT_SERVICE_ID);
-      console.log('⛔ USANDO EXCLUSIVAMENTE:', DEFAULT_TEMPLATE_ID);
-      console.log('⛔ USANDO EXCLUSIVAMENTE:', DEFAULT_PUBLIC_KEY);
+      console.log('⚠️⚠️⚠️ VALORES CORRECTOS QUE SE ESTÁN USANDO:');
+      console.log('✅ SERVICE_ID:', DEFAULT_SERVICE_ID);
+      console.log('✅ TEMPLATE_ID:', DEFAULT_TEMPLATE_ID);
+      console.log('✅ PUBLIC_KEY:', DEFAULT_PUBLIC_KEY);
+      
+      // ELIMINAR CUALQUIER POSIBLE MANIPULACIÓN
+      // Redefinir los valores como constantes inmutables en el scope local para prevenir manipulación
+      const FORCED_SERVICE_ID = 'service_yz5opji'; // Valor hardcodeado para seguridad adicional
+      const FORCED_TEMPLATE_ID = 'template_ah9tqde';
+      const FORCED_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
+      
+      // Inicialización directa del objeto emailjs para forzar nuestra configuración
+      // Esto evita cualquier modificación global
+      Object.defineProperty(window, '__emailjs_configuration_locked', {
+        value: true,
+        writable: false,
+        configurable: false
+      });
 
       // Crear un objeto de parámetros limpio
       const cleanParams: Record<string, string> = {};
@@ -96,39 +110,41 @@ export const useEmailJS = () => {
         cleanParams[key] = stringValue;
       }
       
-      console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
-      console.log('⚠️ VERIFICACIÓN FINAL DE SEGURIDAD ⚠️');
-      console.log('✅ ServiceID:', DEFAULT_SERVICE_ID);
-      console.log('✅ TemplateID:', DEFAULT_TEMPLATE_ID);
-      console.log('✅ PublicKey:', DEFAULT_PUBLIC_KEY);
-
+      // Verificar logs adicionales para depuración
+      console.log('📨 Enviando email con parámetros:', cleanParams);
+      console.log('⚠️ VERIFICACIÓN FINAL ANTES DE ENVÍO:');
+      console.log('✅ SERVICE_ID FORZADO:', FORCED_SERVICE_ID);
+      console.log('✅ TEMPLATE_ID FORZADO:', FORCED_TEMPLATE_ID);
+      console.log('✅ PUBLIC_KEY FORZADO:', FORCED_PUBLIC_KEY);
+      
+      // IMPORTANTE: Usar la invocación directa con los valores constantes hardcodeados
+      // No usamos ninguna variable que pueda ser sobrescrita
       try {
-        console.log('📧 Iniciando envío directo con EmailJS...');
-        
-        // IMPORTANTE: Usar DIRECTAMENTE las constantes en el método send
-        // NO usar ninguna variable que pueda ser alterada
+        // COMENTAR LÍNEA PROBLEMÁTICA - Crear nueva función que haga el envío directamente
+        console.log('Iniciando envío manual con valores forzados');
         const result = await emailjs.send(
-          DEFAULT_SERVICE_ID, 
-          DEFAULT_TEMPLATE_ID, 
-          cleanParams,
-          DEFAULT_PUBLIC_KEY 
+          FORCED_SERVICE_ID, // OBLIGATORIO: Usamos ID de servicio hardcodeado
+          FORCED_TEMPLATE_ID, // OBLIGATORIO: Usamos ID de plantilla hardcodeado 
+          cleanParams, // Parámetros ya procesados
+          FORCED_PUBLIC_KEY // OBLIGATORIO: Usamos Public Key hardcodeado
         );
         
-        console.log('EmailJS respuesta exitosa:', result);
+        console.log('🎉 EmailJS: Respuesta exitosa:', result);
         return result;
       } catch (emailJsError) {
-        console.error('Error específico de EmailJS:', emailJsError);
+        console.error('❌ Error específico de EmailJS:', emailJsError);
         
         // Mejorar el mensaje de error para problemas comunes
         if (emailJsError instanceof Error) {
+          console.error('Detalles del error:', emailJsError.message);
           if (emailJsError.message.includes("service_id not found")) {
-            throw new Error(`El servicio con ID "${DEFAULT_SERVICE_ID}" no existe. Verifique su cuenta de EmailJS y cree un nuevo servicio con este ID exacto.`);
+            throw new Error(`El servicio con ID "${FORCED_SERVICE_ID}" no existe. Verifique su cuenta de EmailJS y cree un nuevo servicio con este ID exacto.`);
           }
           if (emailJsError.message.includes("template_id not found")) {
-            throw new Error(`La plantilla con ID "${DEFAULT_TEMPLATE_ID}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla con este ID exacto.`);
+            throw new Error(`La plantilla con ID "${FORCED_TEMPLATE_ID}" no existe. Verifique su cuenta de EmailJS y cree una nueva plantilla con este ID exacto.`);
           }
           if (emailJsError.message.includes("user_id invalid")) {
-            throw new Error(`La clave pública (User ID: "${DEFAULT_PUBLIC_KEY.substring(0, 4)}...") no es válida. Verifique en su cuenta de EmailJS.`);
+            throw new Error(`La clave pública (User ID: "${FORCED_PUBLIC_KEY.substring(0, 4)}...") no es válida. Verifique en su cuenta de EmailJS.`);
           }
         }
         

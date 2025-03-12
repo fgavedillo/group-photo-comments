@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
@@ -9,8 +8,9 @@ import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
 import { compressImageToBase64 } from "@/utils/imageCompression";
 
-// IMPORTANTE: Estas constantes son las ÚNICAS correctas para EmailJS - NO MODIFICAR
-const CORRECT_SERVICE_ID = 'service_yz5opji'; // ID de servicio correcto y verificado
+// ⚠️ IMPORTANTE: NO MODIFICAR ESTOS VALORES ⚠️
+// Estos IDs son los correctos y verificados para EmailJS
+const CORRECT_SERVICE_ID = 'service_yz5opji';
 const CORRECT_TEMPLATE_ID = 'template_ah9tqde';
 const CORRECT_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
 
@@ -56,7 +56,11 @@ export const EmailAssignmentForm = ({
     try {
       setIsProcessingImage(true);
       const toEmail = email.trim();
-      console.log("Preparando envío de email a:", toEmail);
+      console.log("💌 Preparando envío de email a:", toEmail);
+      console.log("🔐 VERIFICANDO CONSTANTES:");
+      console.log("✅ SERVICE_ID:", CORRECT_SERVICE_ID);
+      console.log("✅ TEMPLATE_ID:", CORRECT_TEMPLATE_ID);
+      console.log("✅ PUBLIC_KEY:", CORRECT_PUBLIC_KEY);
       
       // Formatear la fecha actual en español
       const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -70,7 +74,7 @@ export const EmailAssignmentForm = ({
       if (imageUrl) {
         try {
           // Intentar convertir la URL de la imagen a base64
-          console.log("Procesando imagen para email:", imageUrl);
+          console.log("🖼️ Procesando imagen para email:", imageUrl);
           
           // Hacer fetch de la imagen y convertirla a File para comprimirla
           const response = await fetch(imageUrl);
@@ -81,20 +85,20 @@ export const EmailAssignmentForm = ({
           imageBase64 = await compressImageToBase64(imageFile);
           
           if (imageBase64) {
-            console.log("Imagen convertida a base64 y comprimida correctamente");
+            console.log("✅ Imagen convertida a base64 y comprimida correctamente");
             // Verificar tamaño de la imagen después de comprimir
-            console.log("Tamaño de la imagen en base64:", Math.round(imageBase64.length / 1024), "KB");
+            console.log("📏 Tamaño de la imagen en base64:", Math.round(imageBase64.length / 1024), "KB");
             
             // Si la imagen sigue siendo muy grande (más de 500KB), intentar comprimirla más
             if (imageBase64.length > 500000) { // 500KB
-              console.warn("La imagen es demasiado grande, se enviará sin imagen");
+              console.warn("⚠️ La imagen es demasiado grande, se enviará sin imagen");
               imageBase64 = null;
             }
           } else {
-            console.warn("No se pudo procesar la imagen a base64");
+            console.warn("⚠️ No se pudo procesar la imagen a base64");
           }
         } catch (imgError) {
-          console.error("Error al procesar la imagen:", imgError);
+          console.error("❌ Error al procesar la imagen:", imgError);
           // Continuar sin la imagen
           imageBase64 = null;
         }
@@ -120,21 +124,13 @@ export const EmailAssignmentForm = ({
         image_url: imageUrl || ""
       };
 
-      console.log("⚠️ ENVIANDO EMAIL - VERIFICACIÓN FINAL:");
-      console.log("✅ Service ID FORZADO:", CORRECT_SERVICE_ID);
-      console.log("✅ Template ID FORZADO:", CORRECT_TEMPLATE_ID);
-      console.log("✅ Public Key FORZADA:", CORRECT_PUBLIC_KEY);
+      console.log("🚨 USANDO ESTRICTAMENTE ESTOS VALORES:");
+      console.log("🔒 Service ID:", CORRECT_SERVICE_ID);
+      console.log("🔒 Template ID:", CORRECT_TEMPLATE_ID);
+      console.log("🔒 Public Key:", CORRECT_PUBLIC_KEY);
       
-      // Si encontramos algún otro valor en el código, lo sobreescribimos aquí
-      // Esto es una medida de seguridad adicional por si hay otra parte del código
-      // que esté intentando usar IDs incorrectos
-      Object.defineProperty(global, 'emailjs_service_id', {
-        value: CORRECT_SERVICE_ID,
-        writable: false,
-        configurable: false
-      });
-      
-      // Usar FORZOSAMENTE las constantes correctas, no parámetros que puedan ser sobreescritos
+      // Enviar el email usando el hook personalizado
+      // IMPORTANTE: Aquí NO se deben usar variables para los IDs, usamos las constantes directamente
       const result = await sendEmail(
         {
           serviceId: CORRECT_SERVICE_ID,
@@ -144,19 +140,19 @@ export const EmailAssignmentForm = ({
         templateParams
       );
 
-      console.log("Resultado del envío de email:", result);
+      console.log("✅ Resultado del envío de email:", result);
 
       toast({
         title: "Correo enviado",
         description: `Se ha enviado la notificación a ${toEmail} exitosamente`
       });
     } catch (error) {
-      console.error('Error al enviar email:', error);
+      console.error('❌ Error al enviar email:', error);
       
       let mensajeError = "No se pudo enviar el correo";
       if (error instanceof Error) {
         mensajeError = error.message;
-        console.error('Detalles del error:', error.stack);
+        console.error('🔍 Detalles del error:', error.stack);
       }
       
       toast({

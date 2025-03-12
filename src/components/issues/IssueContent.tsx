@@ -1,4 +1,3 @@
-
 import { CardContent } from "@/components/ui/card";
 import { ImageModal } from "../ImageModal";
 import { EmailAssignmentForm } from "../EmailAssignmentForm";
@@ -30,7 +29,9 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
   }
 
   // Logs adicionales para depuración
-  console.log(`IssueContent: Renderizando issue ${message.id} con email asignado: ${message.assignedEmail || 'no asignado'}`);
+  console.log(`IssueContent: Renderizando issue ${message.id}`);
+  console.log(`IssueContent: Email asignado: ${message.assignedEmail || 'no asignado'}`);
+  console.log(`IssueContent: URL de imagen: ${validatedImageUrl || 'sin imagen'}`);
 
   return (
     <CardContent>
@@ -72,7 +73,10 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
       <div className="mt-4">
         <EmailAssignmentForm
           assignedEmail={message.assignedEmail || ""}
-          onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
+          onEmailChange={(email) => {
+            console.log(`Cambiando email para issue ${message.id} a: ${email}`);
+            onAssignedEmailChange(message.id, email);
+          }}
           message={message.message}
           imageUrl={validatedImageUrl}
           issue={message} // Pasamos todo el objeto issue para tener acceso a todos sus campos
