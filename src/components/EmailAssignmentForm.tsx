@@ -49,7 +49,7 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
 
       await sendEmail(
         {
-          serviceId: 'service_lwkfkwj', // Reemplaza con tu Service ID
+          serviceId: 'service_2yujt9t', // Service ID actualizado
           templateId: 'template_ah9tqde', // Template ID proporcionado
           publicKey: 'i3HY0xzZLdBPwGTDH', // Reemplaza con tu Public Key
         },
