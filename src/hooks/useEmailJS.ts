@@ -66,12 +66,7 @@ export const useEmailJS = () => {
             continue;
           }
         } else {
-          try {
-            stringValue = String(value);
-          } catch (e) {
-            console.warn(`No se pudo convertir el valor en el campo ${key} a string`);
-            continue;
-          }
+          stringValue = String(value);
         }
         
         // Solo incluir valores no vacíos
