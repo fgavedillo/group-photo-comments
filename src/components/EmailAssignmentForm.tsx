@@ -1,3 +1,4 @@
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
@@ -108,12 +109,12 @@ export const EmailAssignmentForm = ({
 
       console.log("Enviando email con la imagen procesada");
 
-      // Usar la clave pública completa y correcta para EmailJS
+      // Usar la clave pública y el serviceId correctos para EmailJS
       await sendEmail(
         {
-          serviceId: 'service_yz5opji', // Se actualiza el serviceId al correcto
+          serviceId: 'service_yz5opji',
           templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ', // Esta clave está incompleta, se necesita la clave completa
+          publicKey: 'RKDqUO9tTPGJrGKLQ',
         },
         templateParams
       );

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -44,6 +43,11 @@ export const useEmailJS = () => {
       // Validar la clave pública
       if (!config.publicKey || config.publicKey.length < 10) {
         throw new Error('La clave pública de EmailJS es inválida');
+      }
+
+      // Validar el service ID
+      if (!config.serviceId) {
+        throw new Error('El ID del servicio de EmailJS es requerido');
       }
 
       // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
