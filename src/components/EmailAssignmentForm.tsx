@@ -50,17 +50,20 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         year: 'numeric'
       });
 
-      // Enviar sólo los parámetros básicos que aparecen en la plantilla
-      // sin valores adicionales que puedan causar problemas
-      const templateParams = {
-        to_name: "Usuario", // Nombre del destinatario si lo requiere la plantilla
-        to_email: email,    // Email del destinatario
-        from_name: "Sistema de Incidencias", // Nombre del remitente
+      // Preparar los parámetros básicos sin la imagen
+      const templateParams: Record<string, string> = {
+        to_name: "Usuario",
+        to_email: email,
+        from_name: "Sistema de Incidencias",
         date: currentDate,
-        message: message,
-        image_url: imageUrl || "",
+        message: message || "",
         issues_url: issuesPageUrl,
       };
+
+      // Solo agregar la URL de la imagen si existe y parece válida
+      if (imageUrl && imageUrl.startsWith('http')) {
+        templateParams.image_url = imageUrl;
+      }
 
       console.log("Enviando email con parámetros:", templateParams);
 

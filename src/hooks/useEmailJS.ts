@@ -28,10 +28,23 @@ export const useEmailJS = () => {
       // Convertir todos los valores a strings y eliminar undefined/null
       Object.keys(templateParams).forEach(key => {
         const value = templateParams[key];
-        if (value !== undefined && value !== null && value !== '') {
-          cleanParams[key] = String(value);
+        if (value !== undefined && value !== null) {
+          // Convertir explícitamente a string y usar cadena vacía para valores vacíos
+          cleanParams[key] = String(value || '');
         }
       });
+      
+      // Si hay una imagen_url, validar que sea una URL válida o eliminarla
+      if (cleanParams.image_url) {
+        try {
+          // Verificar si es una URL válida
+          new URL(cleanParams.image_url);
+        } catch (e) {
+          // Si no es una URL válida, eliminar para evitar corrupción
+          console.warn('La URL de la imagen no es válida, se omitirá:', cleanParams.image_url);
+          delete cleanParams.image_url;
+        }
+      }
       
       console.log('Enviando con parámetros limpios:', cleanParams);
 
