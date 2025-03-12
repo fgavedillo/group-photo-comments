@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -50,9 +49,8 @@ export const useEmailJS = () => {
       
       // Procesar y convertir cada parámetro a string válido
       for (const [key, value] of Object.entries(templateParams)) {
-        // Asignar un string vacío para valores null/undefined
+        // Omitir valores null/undefined/vacíos
         if (value === null || value === undefined) {
-          cleanParams[key] = '';
           continue;
         }
         
@@ -63,25 +61,27 @@ export const useEmailJS = () => {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (typeof value === 'object') {
-          try {
-            // Manejar fechas de forma segura
-            if (Object.prototype.toString.call(value) === '[object Date]') {
-              stringValue = (value as Date).toISOString();
-            } else {
-              // Otros objetos convertir a JSON
+        } else if (typeof value === 'object' && value !== null) {
+          if ('toISOString' in value && typeof value.toISOString === 'function') {
+            // Es un objeto Date o similar con método toISOString
+            stringValue = value.toISOString();
+          } else {
+            // Otros objetos convertir a JSON
+            try {
               stringValue = JSON.stringify(value);
+            } catch (e) {
+              console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
+              continue;
             }
-          } catch (e) {
-            console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-            stringValue = '';
           }
         } else {
           stringValue = String(value);
         }
         
-        // Incluir todos los valores, incluso los vacíos
-        cleanParams[key] = stringValue;
+        // Solo incluir valores no vacíos
+        if (stringValue.length > 0) {
+          cleanParams[key] = stringValue;
+        }
       }
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
