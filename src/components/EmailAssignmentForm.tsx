@@ -76,7 +76,7 @@ export const EmailAssignmentForm = ({
         from_name: "Sistema de Incidencias",
         date: currentDate,
         message: message || "",
-        image_url: fullImageUrl, // Asegurar que siempre sea un string
+        image_url: fullImageUrl || "", // Asegurar que siempre sea un string
         area: issue?.area || "",
         responsable: issue?.responsable || "",
         status: issue?.status || "",

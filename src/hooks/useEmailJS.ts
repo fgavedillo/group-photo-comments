@@ -50,8 +50,9 @@ export const useEmailJS = () => {
       
       // Procesar y convertir cada parámetro a string válido
       for (const [key, value] of Object.entries(templateParams)) {
-        // Omitir valores null/undefined
+        // Asignar un string vacío para valores null/undefined
         if (value === null || value === undefined) {
+          cleanParams[key] = '';
           continue;
         }
         
@@ -62,7 +63,7 @@ export const useEmailJS = () => {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (value && typeof value === 'object') {
+        } else if (typeof value === 'object') {
           try {
             // Manejar fechas de forma segura
             if (Object.prototype.toString.call(value) === '[object Date]') {
@@ -73,13 +74,13 @@ export const useEmailJS = () => {
             }
           } catch (e) {
             console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-            continue;
+            stringValue = '';
           }
         } else {
           stringValue = String(value);
         }
         
-        // Solo incluir valores no vacíos
+        // Incluir todos los valores, incluso los vacíos
         cleanParams[key] = stringValue;
       }
       
