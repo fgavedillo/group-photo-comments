@@ -1,4 +1,3 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
@@ -108,6 +107,10 @@ export const EmailAssignmentForm = ({
       };
 
       console.log("Enviando email con la imagen procesada");
+      console.log("Configuración del servicio:", {
+        serviceId: 'service_yz5opji',
+        templateId: 'template_ah9tqde'
+      });
 
       // Usar la clave pública y el serviceId correctos para EmailJS
       await sendEmail(
@@ -124,7 +127,7 @@ export const EmailAssignmentForm = ({
         description: `Se ha enviado la notificación a ${toEmail} exitosamente`
       });
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error al enviar email:', error);
       
       toast({
         title: "Error",
@@ -177,3 +180,4 @@ export const EmailAssignmentForm = ({
     </div>
   );
 };
+

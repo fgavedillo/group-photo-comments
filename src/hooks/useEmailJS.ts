@@ -45,9 +45,15 @@ export const useEmailJS = () => {
         throw new Error('La clave pública de EmailJS es inválida');
       }
 
-      // Validar el service ID
+      // Validar el service ID y asegurarse de que sea el correcto
       if (!config.serviceId) {
         throw new Error('El ID del servicio de EmailJS es requerido');
+      }
+
+      // Verificar que el service ID sea el esperado
+      if (config.serviceId !== 'service_yz5opji') {
+        console.warn(`ID de servicio incorrecto: ${config.serviceId}. Se utilizará el ID correcto: service_yz5opji`);
+        config.serviceId = 'service_yz5opji';
       }
 
       // Crear un objeto de parámetros limpio con valores por defecto para campos vacíos
