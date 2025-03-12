@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAbsoluteUrl } from "@/utils/stringUtils";
+import { useEmailJS } from "@/hooks/useEmailJS";
 
 interface EmailAssignmentFormProps {
   assignedEmail: string;
@@ -17,8 +18,7 @@ interface EmailAssignmentFormProps {
 export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, imageUrl }: EmailAssignmentFormProps) => {
   const { toast } = useToast();
   const [email, setEmail] = useState(assignedEmail);
-  const [isSending, setIsSending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { sendEmail, isLoading, error: emailError } = useEmailJS();
 
   useEffect(() => {
     setEmail(assignedEmail);
@@ -39,39 +39,28 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       return;
     }
 
-    setError(null);
-    setIsSending(true);
-
     try {
-      // Get absolute URL for links
       const issuesPageUrl = getAbsoluteUrl('/issues');
-      
-      // Improved format for the email
       const currentDate = new Date().toLocaleDateString('es-ES', {
         day: '2-digit',
         month: 'long',
         year: 'numeric'
       });
-      
-      const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-simple-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: email,
-          subject: "Nueva incidencia asignada - Acción requerida",
-          description: message,
-          date: currentDate,
-          issuesPageUrl,
-          imageUrl: imageUrl || null
-        }),
-      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al enviar el correo');
-      }
+      await sendEmail(
+        {
+          serviceId: 'YOUR_SERVICE_ID',
+          templateId: 'YOUR_TEMPLATE_ID',
+          publicKey: 'YOUR_PUBLIC_KEY'
+        },
+        {
+          to_email: email,
+          message,
+          date: currentDate,
+          issues_url: issuesPageUrl,
+          image_url: imageUrl || ''
+        }
+      );
 
       toast({
         title: "Correo enviado",
@@ -79,14 +68,11 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       });
     } catch (error) {
       console.error('Error sending email:', error);
-      setError(error.message || "No se pudo enviar el correo");
       toast({
         title: "Error",
-        description: error.message || "No se pudo enviar el correo",
+        description: error instanceof Error ? error.message : "No se pudo enviar el correo",
         variant: "destructive"
       });
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -104,9 +90,9 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
           variant="outline" 
           onClick={handleSendEmail}
           className="shrink-0"
-          disabled={isSending}
+          disabled={isLoading}
         >
-          {isSending ? (
+          {isLoading ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
               Enviando...
@@ -120,11 +106,11 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
         </Button>
       </div>
       
-      {error && (
+      {emailError && (
         <Alert variant="destructive" className="mt-2">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="text-xs">
-            {error}
+            {emailError}
           </AlertDescription>
         </Alert>
       )}
