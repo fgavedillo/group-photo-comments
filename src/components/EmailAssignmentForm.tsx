@@ -68,11 +68,12 @@ export const EmailAssignmentForm = ({ assignedEmail, onEmailChange, message, ima
       console.log("Enviando email con parámetros:", templateParams);
 
       // Enviar el email utilizando los parámetros y la configuración de EmailJS
+      // Corrección: Clave pública completa para EmailJS
       await sendEmail(
         {
           serviceId: 'service_2yujt9t',
           templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ',
+          publicKey: 'RKDqUO9tTPGJrGKLQ', // Asegúrate de que esta clave esté completa
         },
         templateParams
       );

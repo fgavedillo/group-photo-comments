@@ -13,10 +13,14 @@ interface IssueContentProps {
 
 export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: IssueContentProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  
+  // Asegurarse de que la URL de la imagen sea válida
+  const isValidImageUrl = imageUrl && typeof imageUrl === 'string' && 
+                         (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
 
   return (
     <CardContent>
-      {imageUrl && (
+      {isValidImageUrl && (
         <div className="mb-4">
           <div 
             className="cursor-pointer" 
@@ -52,7 +56,7 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
           assignedEmail={message.assignedEmail || ""}
           onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
           message={message.message}
-          imageUrl={message.imageUrl}
+          imageUrl={isValidImageUrl ? imageUrl : undefined}
         />
       </div>
     </CardContent>
