@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useEmailJS } from "@/hooks/useEmailJS";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
+import { supabase } from "@/lib/supabase";
 
 interface ReportButtonProps {
   dashboardRef: React.RefObject<HTMLDivElement>;
@@ -16,6 +17,31 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
   const { sendEmail, isLoading } = useEmailJS();
   const { toast } = useToast();
 
+  // Función para obtener todos los emails de responsables con incidencias en estudio o en curso
+  const getResponsibleEmails = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('issues')
+        .select('assigned_email')
+        .in('status', ['en-estudio', 'en-curso'])
+        .not('assigned_email', 'is', null);
+      
+      if (error) throw error;
+      
+      // Extraer los emails únicos (eliminar duplicados)
+      const uniqueEmails = [...new Set(data.map(item => item.assigned_email).filter(Boolean))];
+      
+      if (uniqueEmails.length === 0) {
+        throw new Error('No hay destinatarios con incidencias en estudio o en curso');
+      }
+      
+      return uniqueEmails;
+    } catch (error) {
+      console.error('Error al obtener emails de responsables:', error);
+      throw error;
+    }
+  };
+
   const handleGenerateReport = async () => {
     if (isGenerating || isLoading || !dashboardRef.current) return;
     
@@ -25,6 +51,10 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
         title: "Generando reporte",
         description: "Este proceso puede tardar unos segundos...",
       });
+
+      // Obtener los emails de los responsables
+      const responsibleEmails = await getResponsibleEmails();
+      console.log('Enviando reporte a:', responsibleEmails);
 
       // Capturar el dashboard
       const dashboardCanvas = await html2canvas(dashboardRef.current, {
@@ -58,46 +88,52 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
         year: 'numeric'
       });
 
-      // Preparar los parámetros para EmailJS
-      const templateParams = {
-        to_name: "Equipo de Seguridad",
-        to_email: "", // Se rellenará en el formulario
-        from_name: "Sistema de Incidencias",
-        date: currentDate,
-        message: `Reporte automático generado el ${currentDate}`,
-        report_image: dashboardImage,
-        table_image: tableImage,
-      };
+      // Enviar a cada responsable
+      let successCount = 0;
+      let errorCount = 0;
 
-      // Solicitar el email de destino
-      const emailTo = window.prompt("Ingrese el correo electrónico de destino:", "");
-      if (!emailTo) {
-        setIsGenerating(false);
-        toast({
-          title: "Envío cancelado",
-          description: "No se proporcionó un correo electrónico",
-          variant: "destructive"
-        });
-        return;
+      for (const email of responsibleEmails) {
+        try {
+          // Preparar los parámetros para EmailJS
+          const templateParams = {
+            to_name: "Responsable de Incidencias",
+            to_email: email,
+            from_name: "Sistema de Incidencias",
+            date: currentDate,
+            message: `Reporte automático de incidencias pendientes generado el ${currentDate}`,
+            report_image: dashboardImage,
+            table_image: tableImage,
+          };
+
+          // Enviar por EmailJS
+          await sendEmail(
+            {
+              serviceId: 'service_yz5opji',
+              templateId: 'template_ddq6b3h',
+              publicKey: 'RKDqUO9tTPGJrGKLQ',
+            },
+            templateParams
+          );
+          
+          successCount++;
+        } catch (error) {
+          console.error(`Error al enviar a ${email}:`, error);
+          errorCount++;
+        }
       }
 
-      // Actualizar el destinatario
-      templateParams.to_email = emailTo;
-
-      // Enviar por EmailJS
-      await sendEmail(
-        {
-          serviceId: 'service_yz5opji',
-          templateId: 'template_ddq6b3h',
-          publicKey: 'RKDqUO9tTPGJrGKLQ',
-        },
-        templateParams
-      );
-
-      toast({
-        title: "Reporte enviado",
-        description: `Se ha enviado el reporte a ${emailTo} exitosamente`
-      });
+      if (successCount > 0) {
+        toast({
+          title: "Reporte enviado",
+          description: `Se ha enviado el reporte a ${successCount} destinatario(s) exitosamente${errorCount > 0 ? `. ${errorCount} envíos fallaron.` : ''}`
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo enviar ningún reporte",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error("Error al generar/enviar el reporte:", error);
       toast({

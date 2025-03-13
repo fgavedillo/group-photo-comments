@@ -70,8 +70,8 @@ export const useEmailJS = () => {
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
         } else if (typeof value === 'object' && value !== null) {
-          if ('toISOString' in value && typeof value.toISOString === 'function') {
-            // Es un objeto Date o similar con método toISOString
+          // Verificar si es una instancia de Date
+          if (value instanceof Date) {
             stringValue = value.toISOString();
           } else {
             // Otros objetos convertir a JSON
