@@ -14,31 +14,18 @@ interface IssueContentProps {
 export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: IssueContentProps) => {
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
-  // Validar la URL de la imagen y asegurar que sea una cadena
-  let validatedImageUrl: string = "";
+  // Validar la URL de la imagen de forma más estricta
+  let validatedImageUrl: string | undefined = undefined;
   
-  if (imageUrl && typeof imageUrl === 'string') {
+  if (imageUrl && typeof imageUrl === 'string' && 
+      (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
     try {
-      // Verificar si es una URL válida
-      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-        new URL(imageUrl);
-        validatedImageUrl = imageUrl;
-      }
+      new URL(imageUrl);
+      validatedImageUrl = imageUrl;
     } catch (e) {
       console.warn("URL de imagen inválida:", imageUrl);
     }
   }
-
-  // Logs adicionales para depuración
-  console.log(`IssueContent: Renderizando issue ${message.id}`);
-  console.log(`IssueContent: Email asignado: ${message.assignedEmail || 'no asignado'}`);
-  console.log(`IssueContent: URL de imagen: ${validatedImageUrl || 'sin imagen'}`);
-
-  // Log verificación importante
-  console.log('⚠️⚠️⚠️ ISSUE CONTENT - VERIFYING EMAIL SERVICE VALUES ⚠️⚠️⚠️');
-  console.log('🔒 Service ID must be "service_yz5opji"');
-  console.log('🔒 Template ID must be "template_ah9tqde"');
-  console.log('🔒 Public Key must be "RKDqUO9tTPGJrGKLQ"');
 
   return (
     <CardContent>
@@ -80,10 +67,7 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
       <div className="mt-4">
         <EmailAssignmentForm
           assignedEmail={message.assignedEmail || ""}
-          onEmailChange={(email) => {
-            console.log(`Cambiando email para issue ${message.id} a: ${email}`);
-            onAssignedEmailChange(message.id, email);
-          }}
+          onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
           message={message.message}
           imageUrl={validatedImageUrl}
           issue={message} // Pasamos todo el objeto issue para tener acceso a todos sus campos

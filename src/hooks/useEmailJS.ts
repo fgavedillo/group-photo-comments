@@ -1,11 +1,11 @@
-
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
-// HARDCODED CORRECT VALUES - DO NOT CHANGE THESE!!!
-const FORCE_SERVICE_ID = 'service_yz5opji'; // Correct service ID from EmailJS dashboard
-const FORCE_TEMPLATE_ID = 'template_ah9tqde';
-const FORCE_PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
+interface EmailJSConfig {
+  serviceId: string;
+  templateId: string;
+  publicKey: string;
+}
 
 // Define la estructura para los parámetros de la plantilla
 export interface EmailJSTemplateParams {
@@ -16,7 +16,6 @@ export interface EmailJSTemplateParams {
   message: string;
   issues_url?: string;
   image_url?: string;
-  image_base64?: string; // Campo para imágenes en base64
   area?: string;
   responsable?: string;
   status?: string;
@@ -26,86 +25,84 @@ export interface EmailJSTemplateParams {
   [key: string]: string | undefined;
 }
 
-// Interface removed to avoid any confusion (will be ignored anyway)
 export const useEmailJS = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Direct call function that completely bypasses any config params
-  const sendEmail = async (
-    _ignoredConfig: any, // Completely ignore any config passed in
-    templateParams: EmailJSTemplateParams
-  ) => {
+  const sendEmail = async (config: EmailJSConfig, templateParams: EmailJSTemplateParams) => {
     setIsLoading(true);
     setError(null);
 
-    console.log('⚠️⚠️⚠️ BEGINNING EMAIL SEND OPERATION - FORCE VALUES ⚠️⚠️⚠️');
-    console.log(`🔒 FORCING SERVICE_ID: ${FORCE_SERVICE_ID}`);
-    console.log(`🔒 FORCING TEMPLATE_ID: ${FORCE_TEMPLATE_ID}`);
-    console.log(`🔒 FORCING PUBLIC_KEY: ${FORCE_PUBLIC_KEY}`);
-
     try {
+      // Validar el email del destinatario
       if (!templateParams.to_email) {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Create clean params
+      // Validar la clave pública
+      if (!config.publicKey || config.publicKey.length < 10) {
+        throw new Error('La clave pública de EmailJS es inválida');
+      }
+
+      // Crear un objeto de parámetros limpio
       const cleanParams: Record<string, string> = {};
       
+      // Procesar y convertir cada parámetro a string válido
       for (const [key, value] of Object.entries(templateParams)) {
+        // Omitir valores null/undefined/vacíos
         if (value === null || value === undefined) {
-          cleanParams[key] = '';
           continue;
         }
         
+        // Convertir a string adecuadamente según el tipo
         let stringValue = '';
         
         if (typeof value === 'string') {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (typeof value === 'object') {
-          const isDate = Object.prototype.toString.call(value) === '[object Date]';
-          if (isDate && !isNaN((value as Date).getTime())) {
-            stringValue = (value as Date).toISOString();
+        } else if (typeof value === 'object' && value !== null) {
+          if ('toISOString' in value && typeof value.toISOString === 'function') {
+            // Es un objeto Date o similar con método toISOString
+            stringValue = value.toISOString();
           } else {
+            // Otros objetos convertir a JSON
             try {
               stringValue = JSON.stringify(value);
             } catch (e) {
               console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-              stringValue = '';
+              continue;
             }
           }
         } else {
           stringValue = String(value);
         }
         
-        cleanParams[key] = stringValue;
+        // Solo incluir valores no vacíos
+        if (stringValue.length > 0) {
+          cleanParams[key] = stringValue;
+        }
       }
-
-      // EXTREMELY IMPORTANT!!!
-      // Initialize EmailJS directly with our hardcoded public key first
-      // This overrides any previous initialization
-      emailjs.init(FORCE_PUBLIC_KEY);
       
-      console.log('📨 SENDING EMAIL WITH FORCED VALUES - FINAL CHECK:');
-      console.log('SERVICE_ID:', FORCE_SERVICE_ID);
-      console.log('TEMPLATE_ID:', FORCE_TEMPLATE_ID);
-      console.log('PUBLIC_KEY:', FORCE_PUBLIC_KEY);
-      console.log('PARAMS:', cleanParams);
+      console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
+      console.log('Configuración:', {
+        serviceId: config.serviceId,
+        templateId: config.templateId,
+        publicKey: '********' // Por seguridad no mostramos la clave
+      });
 
-      // Direct invocation with hardcoded values
-      // Do not use variables that could be changed
+      // Enviar el email usando la API de EmailJS
       const result = await emailjs.send(
-        FORCE_SERVICE_ID, 
-        FORCE_TEMPLATE_ID,
-        cleanParams
+        config.serviceId,
+        config.templateId,
+        cleanParams,
+        config.publicKey
       );
       
-      console.log('✅ EmailJS Response:', result);
+      console.log('EmailJS response:', result);
       return result;
     } catch (err) {
-      console.error('❌ EmailJS Error:', err);
+      console.error('Error en EmailJS:', err);
       setError(err instanceof Error ? err.message : 'Error al enviar el email');
       throw err;
     } finally {
