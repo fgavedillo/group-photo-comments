@@ -42,6 +42,40 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
     }
   };
 
+  // Función para redimensionar la imagen manteniendo la proporción
+  const resizeImage = (dataUrl: string, maxWidth: number = 600, maxHeight: number = 800): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Calcular las nuevas dimensiones manteniendo la proporción
+        if (width > maxWidth) {
+          height = (height * maxWidth) / width;
+          width = maxWidth;
+        }
+        
+        if (height > maxHeight) {
+          width = (width * maxHeight) / height;
+          height = maxHeight;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Reducir calidad para disminuir el tamaño
+        resolve(canvas.toDataURL('image/jpeg', 0.7));
+      };
+      
+      img.src = dataUrl;
+    });
+  };
+
   const handleGenerateReport = async () => {
     if (isGenerating || isLoading || !dashboardRef.current) return;
     
@@ -58,27 +92,29 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
 
       // Capturar el dashboard
       const dashboardCanvas = await html2canvas(dashboardRef.current, {
-        scale: 1,
+        scale: 0.7, // Reducir la escala para disminuir el tamaño
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
       });
       
-      // Convertir a base64
-      const dashboardImage = dashboardCanvas.toDataURL("image/png");
+      // Convertir a base64 y redimensionar para reducir el tamaño
+      let dashboardImage = dashboardCanvas.toDataURL("image/jpeg", 0.7);
+      dashboardImage = await resizeImage(dashboardImage);
       
       // Capturar la tabla de incidencias si está disponible
       let tableImage = "";
       if (issuesTableRef?.current) {
         const tableCanvas = await html2canvas(issuesTableRef.current, {
-          scale: 1,
+          scale: 0.7, // Reducir la escala para disminuir el tamaño
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
           logging: false,
         });
-        tableImage = tableCanvas.toDataURL("image/png");
+        tableImage = tableCanvas.toDataURL("image/jpeg", 0.7);
+        tableImage = await resizeImage(tableImage);
       }
 
       // Formatear la fecha actual en español para el email
