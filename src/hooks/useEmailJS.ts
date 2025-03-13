@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 
@@ -16,6 +17,8 @@ export interface EmailJSTemplateParams {
   message: string;
   issues_url?: string;
   image_url?: string;
+  report_image?: string;
+  table_image?: string;
   area?: string;
   responsable?: string;
   status?: string;
@@ -43,6 +46,11 @@ export const useEmailJS = () => {
       if (!config.publicKey || config.publicKey.length < 10) {
         throw new Error('La clave pública de EmailJS es inválida');
       }
+
+      // Asegurar que los IDs sean correctos
+      const serviceId = 'service_yz5opji'; // Siempre usar este ID de servicio
+      const templateId = config.templateId || 'template_ah9tqde'; // Usar el ID proporcionado o el predeterminado
+      const publicKey = config.publicKey || 'RKDqUO9tTPGJrGKLQ'; // Usar la clave proporcionada o la predeterminada
 
       // Crear un objeto de parámetros limpio
       const cleanParams: Record<string, string> = {};
@@ -86,17 +94,19 @@ export const useEmailJS = () => {
       
       console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
       console.log('Configuración:', {
-        serviceId: config.serviceId,
-        templateId: config.templateId,
+        serviceId,
+        templateId,
         publicKey: '********' // Por seguridad no mostramos la clave
       });
 
+      // Inicializar EmailJS antes de enviar
+      emailjs.init(publicKey);
+
       // Enviar el email usando la API de EmailJS
       const result = await emailjs.send(
-        config.serviceId,
-        config.templateId,
-        cleanParams,
-        config.publicKey
+        serviceId,
+        templateId,
+        cleanParams
       );
       
       console.log('EmailJS response:', result);

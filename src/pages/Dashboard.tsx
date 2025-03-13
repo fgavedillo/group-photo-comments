@@ -13,12 +13,18 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
+import { useRef } from "react";
+import { ReportButton } from "@/components/dashboard/ReportButton";
 
 const Dashboard = () => {
   const { messages, loadMessages, isLoading } = useMessages();
   const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
   const { toast } = useToast();
+  
+  // Referencias para capturar elementos en la interfaz
+  const dashboardRef = useRef<HTMLDivElement>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
     try {
@@ -43,10 +49,13 @@ const Dashboard = () => {
         <h1 className="text-lg font-semibold text-foreground">
           Panel de Control
         </h1>
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">Cerrar Sesión</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <ReportButton dashboardRef={dashboardRef} issuesTableRef={tableRef} />
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            <LogOut className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">Cerrar Sesión</span>
+          </Button>
+        </div>
       </header>
 
       <Tabs defaultValue="perfil" className="flex-1">
@@ -86,7 +95,9 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="kpis" className="h-full m-0 p-4">
-            <DashboardKPIs messages={messages} />
+            <div ref={dashboardRef}>
+              <DashboardKPIs messages={messages} />
+            </div>
           </TabsContent>
 
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
@@ -110,7 +121,9 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col">
-            <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
+            <div ref={tableRef}>
+              <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
+            </div>
           </TabsContent>
         </div>
       </Tabs>
