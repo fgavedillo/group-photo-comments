@@ -31,6 +31,8 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       // Extraer los emails únicos (eliminar duplicados)
       const uniqueEmails = [...new Set(data.map(item => item.assigned_email).filter(Boolean))];
       
+      console.log('Emails responsables encontrados:', uniqueEmails);
+      
       if (uniqueEmails.length === 0) {
         throw new Error('No hay destinatarios con incidencias en estudio o en curso');
       }
@@ -141,6 +143,19 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
             table_image: tableImage,
           };
 
+          console.log(`Enviando email a ${email}, tamaño de datos:`, 
+            { 
+              reportImage: Math.round(dashboardImage.length / 1024) + 'KB', 
+              tableImage: tableImage ? Math.round(tableImage.length / 1024) + 'KB' : '0KB' 
+            });
+
+          // Verificar que el email no está vacío antes de enviar
+          if (!email || typeof email !== 'string' || email.trim() === '') {
+            console.error('Email inválido detectado:', email);
+            errorCount++;
+            continue;
+          }
+
           // Enviar por EmailJS
           await sendEmail(
             {
@@ -170,7 +185,7 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
           variant: "destructive"
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al generar/enviar el reporte:", error);
       toast({
         title: "Error",

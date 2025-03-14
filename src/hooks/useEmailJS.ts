@@ -111,7 +111,7 @@ export const useEmailJS = () => {
       
       console.log('EmailJS response:', result);
       return result;
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error en EmailJS:', err);
       setError(err instanceof Error ? err.message : 'Error al enviar el email');
       throw err;
