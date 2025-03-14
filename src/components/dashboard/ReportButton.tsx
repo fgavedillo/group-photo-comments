@@ -29,7 +29,10 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       if (error) throw error;
       
       // Extraer los emails únicos (eliminar duplicados)
-      const uniqueEmails = [...new Set(data.map(item => item.assigned_email).filter(Boolean))];
+      const uniqueEmails = [...new Set(data
+        .map(item => item.assigned_email)
+        .filter(email => email && typeof email === 'string' && email.trim() !== '')
+      )];
       
       console.log('Emails responsables encontrados:', uniqueEmails);
       
@@ -38,44 +41,44 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       }
       
       return uniqueEmails;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al obtener emails de responsables:', error);
       throw error;
     }
   };
 
-  // Función para redimensionar la imagen manteniendo la proporción
-  const resizeImage = (dataUrl: string, maxWidth: number = 600, maxHeight: number = 800): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        
-        // Calcular las nuevas dimensiones manteniendo la proporción
-        if (width > maxWidth) {
-          height = (height * maxWidth) / width;
-          width = maxWidth;
-        }
-        
-        if (height > maxHeight) {
-          width = (width * maxHeight) / height;
-          height = maxHeight;
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        
-        // Reducir calidad para disminuir el tamaño
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-      
-      img.src = dataUrl;
-    });
+  // Función para redimensionar y optimizar la imagen
+  const optimizeImage = async (canvas: HTMLCanvasElement): Promise<string> => {
+    // Reducir tamaño y calidad
+    const maxSize = 600; // Tamaño máximo en cualquier dimensión
+    
+    let width = canvas.width;
+    let height = canvas.height;
+    
+    // Redimensionar manteniendo proporción si excede el tamaño máximo
+    if (width > maxSize || height > maxSize) {
+      if (width > height) {
+        height = Math.round((height * maxSize) / width);
+        width = maxSize;
+      } else {
+        width = Math.round((width * maxSize) / height);
+        height = maxSize;
+      }
+    }
+    
+    // Crear un nuevo canvas con las dimensiones reducidas
+    const resizeCanvas = document.createElement('canvas');
+    resizeCanvas.width = width;
+    resizeCanvas.height = height;
+    
+    const ctx = resizeCanvas.getContext('2d');
+    if (!ctx) throw new Error('No se pudo obtener contexto 2D');
+    
+    // Dibujar la imagen redimensionada
+    ctx.drawImage(canvas, 0, 0, width, height);
+    
+    // Convertir a JPEG con calidad reducida (0.6 de 1.0)
+    return resizeCanvas.toDataURL('image/jpeg', 0.6);
   };
 
   const handleGenerateReport = async () => {
@@ -92,31 +95,38 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       const responsibleEmails = await getResponsibleEmails();
       console.log('Enviando reporte a:', responsibleEmails);
 
-      // Capturar el dashboard
+      // Capturar el dashboard con escala reducida para menor tamaño
       const dashboardCanvas = await html2canvas(dashboardRef.current, {
-        scale: 0.7, // Reducir la escala para disminuir el tamaño
+        scale: 0.5, // Reducir aún más la escala
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
         logging: false,
       });
       
-      // Convertir a base64 y redimensionar para reducir el tamaño
-      let dashboardImage = dashboardCanvas.toDataURL("image/jpeg", 0.7);
-      dashboardImage = await resizeImage(dashboardImage);
+      // Optimizar la imagen del dashboard
+      const dashboardImage = await optimizeImage(dashboardCanvas);
+      console.log(`Tamaño de imagen dashboard: ${Math.round(dashboardImage.length / 1024)}KB`);
       
       // Capturar la tabla de incidencias si está disponible
       let tableImage = "";
       if (issuesTableRef?.current) {
         const tableCanvas = await html2canvas(issuesTableRef.current, {
-          scale: 0.7, // Reducir la escala para disminuir el tamaño
+          scale: 0.5,
           useCORS: true,
           allowTaint: true,
           backgroundColor: "#ffffff",
           logging: false,
         });
-        tableImage = tableCanvas.toDataURL("image/jpeg", 0.7);
-        tableImage = await resizeImage(tableImage);
+        
+        tableImage = await optimizeImage(tableCanvas);
+        console.log(`Tamaño de imagen tabla: ${Math.round(tableImage.length / 1024)}KB`);
+      }
+
+      // Si el tamaño total de las imágenes supera 40KB, mostrar advertencia
+      const totalSize = dashboardImage.length + tableImage.length;
+      if (totalSize > 40000) {
+        console.warn(`Tamaño total de imágenes (${Math.round(totalSize/1024)}KB) es grande, podría causar problemas.`);
       }
 
       // Formatear la fecha actual en español para el email
@@ -132,31 +142,27 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
 
       for (const email of responsibleEmails) {
         try {
-          // Preparar los parámetros para EmailJS
-          const templateParams = {
-            to_name: "Responsable de Incidencias",
-            to_email: email,
-            from_name: "Sistema de Incidencias",
-            date: currentDate,
-            message: `Reporte automático de incidencias pendientes generado el ${currentDate}`,
-            report_image: dashboardImage,
-            table_image: tableImage,
-          };
-
-          console.log(`Enviando email a ${email}, tamaño de datos:`, 
-            { 
-              reportImage: Math.round(dashboardImage.length / 1024) + 'KB', 
-              tableImage: tableImage ? Math.round(tableImage.length / 1024) + 'KB' : '0KB' 
-            });
-
-          // Verificar que el email no está vacío antes de enviar
-          if (!email || typeof email !== 'string' || email.trim() === '') {
+          // Verificar que el email es válido
+          if (!email || typeof email !== 'string' || email.trim() === '' || !email.includes('@')) {
             console.error('Email inválido detectado:', email);
             errorCount++;
             continue;
           }
 
-          // Enviar por EmailJS
+          // Preparar los parámetros para EmailJS con tamaño reducido
+          const templateParams = {
+            to_name: "Responsable de Incidencias",
+            to_email: email.trim(),
+            from_name: "Sistema de Incidencias",
+            date: currentDate,
+            message: `Reporte automático de incidencias pendientes generado el ${currentDate}`,
+            report_image: dashboardImage,
+            table_image: tableImage || undefined,
+          };
+
+          console.log(`Enviando email a ${email}, tamaños: Dashboard=${Math.round(dashboardImage.length/1024)}KB, Tabla=${tableImage ? Math.round(tableImage.length/1024) : 0}KB`);
+          
+          // Enviar por EmailJS con config específica para reportes
           await sendEmail(
             {
               serviceId: 'service_yz5opji',
@@ -167,7 +173,8 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
           );
           
           successCount++;
-        } catch (error) {
+          console.log(`Email enviado correctamente a ${email}`);
+        } catch (error: any) {
           console.error(`Error al enviar a ${email}:`, error);
           errorCount++;
         }
@@ -181,7 +188,7 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       } else {
         toast({
           title: "Error",
-          description: "No se pudo enviar ningún reporte",
+          description: "No se pudo enviar ningún reporte. Revise la consola para más detalles.",
           variant: "destructive"
         });
       }
