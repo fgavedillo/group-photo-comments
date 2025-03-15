@@ -42,6 +42,11 @@ export const useEmailJS = () => {
         throw new Error('El email del destinatario es requerido');
       }
 
+      // Validar que el email tenga formato básico (contiene @)
+      if (!templateParams.to_email.includes('@')) {
+        throw new Error(`Email inválido: ${templateParams.to_email}`);
+      }
+
       // Validar la clave pública
       if (!config.publicKey || config.publicKey.length < 10) {
         throw new Error('La clave pública de EmailJS es inválida');
@@ -69,7 +74,7 @@ export const useEmailJS = () => {
           stringValue = value.trim();
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
-        } else if (typeof value === 'object' && value !== null) {
+        } else if (typeof value === 'object') {
           // Verificar si es una instancia de Date
           if (value instanceof Date) {
             stringValue = value.toISOString();

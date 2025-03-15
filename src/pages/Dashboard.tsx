@@ -13,7 +13,7 @@ import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { ReportButton } from "@/components/dashboard/ReportButton";
 
 const Dashboard = () => {
@@ -21,6 +21,7 @@ const Dashboard = () => {
   const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [currentTab, setCurrentTab] = useState("perfil");
   
   // Referencias para capturar elementos en la interfaz
   const dashboardRef = useRef<HTMLDivElement>(null);
@@ -50,7 +51,9 @@ const Dashboard = () => {
           Panel de Control
         </h1>
         <div className="flex items-center gap-2">
-          <ReportButton dashboardRef={dashboardRef} issuesTableRef={tableRef} />
+          {currentTab === "kpis" && (
+            <ReportButton dashboardRef={dashboardRef} issuesTableRef={tableRef} />
+          )}
           <Button variant="outline" size="sm" onClick={handleLogout}>
             <LogOut className="h-4 w-4 mr-2" />
             <span className="hidden sm:inline">Cerrar Sesión</span>
@@ -58,7 +61,11 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <Tabs defaultValue="perfil" className="flex-1">
+      <Tabs 
+        defaultValue="perfil" 
+        className="flex-1"
+        onValueChange={(value) => setCurrentTab(value)}
+      >
         <div className="sticky top-[4.5rem] bg-white z-40 border-b overflow-x-auto">
           <TabsList className="w-full h-auto justify-start rounded-none gap-2 px-2">
             <TabsTrigger value="perfil" className="px-2 py-1.5 sm:px-3 sm:py-2">
