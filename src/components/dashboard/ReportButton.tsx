@@ -4,7 +4,6 @@ import { FileImage, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { useEmailJS } from "@/hooks/useEmailJS";
 import { useToast } from "@/hooks/use-toast";
-import html2canvas from "html2canvas";
 import { supabase } from "@/lib/supabase";
 
 interface ReportButtonProps {
@@ -47,42 +46,8 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
     }
   };
 
-  // Función para redimensionar y optimizar la imagen
-  const optimizeImage = async (canvas: HTMLCanvasElement): Promise<string> => {
-    // Reducir tamaño y calidad
-    const maxSize = 600; // Tamaño máximo en cualquier dimensión
-    
-    let width = canvas.width;
-    let height = canvas.height;
-    
-    // Redimensionar manteniendo proporción si excede el tamaño máximo
-    if (width > maxSize || height > maxSize) {
-      if (width > height) {
-        height = Math.round((height * maxSize) / width);
-        width = maxSize;
-      } else {
-        width = Math.round((width * maxSize) / height);
-        height = maxSize;
-      }
-    }
-    
-    // Crear un nuevo canvas con las dimensiones reducidas
-    const resizeCanvas = document.createElement('canvas');
-    resizeCanvas.width = width;
-    resizeCanvas.height = height;
-    
-    const ctx = resizeCanvas.getContext('2d');
-    if (!ctx) throw new Error('No se pudo obtener contexto 2D');
-    
-    // Dibujar la imagen redimensionada
-    ctx.drawImage(canvas, 0, 0, width, height);
-    
-    // Convertir a JPEG con calidad reducida (0.5 de 1.0) para reducir aún más el tamaño
-    return resizeCanvas.toDataURL('image/jpeg', 0.5);
-  };
-
   const handleGenerateReport = async () => {
-    if (isGenerating || isLoading || !dashboardRef.current) return;
+    if (isGenerating || isLoading) return;
     
     try {
       setIsGenerating(true);
@@ -94,34 +59,6 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       // Obtener los emails de los responsables
       const responsibleEmails = await getResponsibleEmails();
       console.log('Emails válidos para envío:', responsibleEmails);
-
-      // Capturar el dashboard con escala reducida para menor tamaño
-      const dashboardCanvas = await html2canvas(dashboardRef.current, {
-        scale: 0.5, // Reducir la escala para menor tamaño
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-      });
-      
-      // Optimizar la imagen del dashboard
-      const dashboardImage = await optimizeImage(dashboardCanvas);
-      console.log(`Tamaño de imagen dashboard: ${Math.round(dashboardImage.length / 1024)}KB`);
-      
-      // Capturar la tabla de incidencias si está disponible
-      let tableImage = "";
-      if (issuesTableRef?.current) {
-        const tableCanvas = await html2canvas(issuesTableRef.current, {
-          scale: 0.4, // Reducir aún más la escala para la tabla
-          useCORS: true,
-          allowTaint: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-        });
-        
-        tableImage = await optimizeImage(tableCanvas);
-        console.log(`Tamaño de imagen tabla: ${Math.round(tableImage.length / 1024)}KB`);
-      }
 
       // Formatear la fecha actual en español para el email
       const currentDate = new Date().toLocaleDateString('es-ES', {
@@ -143,27 +80,20 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
             continue;
           }
 
-          // Preparar los parámetros para EmailJS
+          // Preparar los parámetros para EmailJS - sin imágenes
           const templateParams = {
             to_name: "Responsable de Incidencias",
             to_email: email.trim(),
             from_name: "Sistema de Incidencias",
             date: currentDate,
-            message: `Reporte automático de incidencias pendientes generado el ${currentDate}`,
-            report_image: dashboardImage,
-            table_image: tableImage || undefined,
+            message: `Reporte automático de incidencias pendientes generado el ${currentDate}. Por favor, revise el panel de control para obtener información detallada.`,
           };
-
-          // Imprimir el tamaño para debugging
-          console.log(`Enviando email a ${email}:`);
-          console.log(`- Tamaño dashboard: ${Math.round(dashboardImage.length/1024)}KB`);
-          console.log(`- Tamaño tabla: ${tableImage ? Math.round(tableImage.length/1024) : 0}KB`);
           
-          // Enviar por EmailJS con config específica para reportes
+          // Enviar por EmailJS usando el template específico para reportes
           await sendEmail(
             {
               serviceId: 'service_yz5opji',
-              templateId: 'template_ddq6b3h', 
+              templateId: 'template_ddq6b3h', // Template específico para reportes
               publicKey: 'RKDqUO9tTPGJrGKLQ',
             },
             templateParams

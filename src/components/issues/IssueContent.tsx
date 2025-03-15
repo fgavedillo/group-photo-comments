@@ -69,7 +69,6 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
           assignedEmail={message.assignedEmail || ""}
           onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
           message={message.message}
-          imageUrl={validatedImageUrl}
           issue={message} // Pasamos todo el objeto issue para tener acceso a todos sus campos
         />
       </div>

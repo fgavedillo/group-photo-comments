@@ -1,11 +1,9 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Mail, RefreshCw, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getAbsoluteUrl } from "@/utils/stringUtils";
 import { useEmailJS, EmailJSTemplateParams } from "@/hooks/useEmailJS";
 import { Issue } from "@/types/issue";
 
@@ -75,12 +73,12 @@ export const EmailAssignmentForm = ({
 
       console.log("Enviando email con los siguientes parámetros:", JSON.stringify(templateParams));
 
-      // Usar la clave pública completa y correcta para EmailJS
+      // Usar el template específico para notificaciones de incidencias individuales
       await sendEmail(
         {
           serviceId: 'service_yz5opji',
-          templateId: 'template_ah9tqde',
-          publicKey: 'RKDqUO9tTPGJrGKLQ', // Esta clave está incompleta, se necesita la clave completa
+          templateId: 'template_ah9tqde', // Template específico para notificaciones de incidencias
+          publicKey: 'RKDqUO9tTPGJrGKLQ',
         },
         templateParams
       );
