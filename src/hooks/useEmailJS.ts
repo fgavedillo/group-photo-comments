@@ -53,7 +53,7 @@ export const useEmailJS = () => {
       }
 
       // Asegurar que los IDs sean correctos
-      const serviceId = 'service_yz5opji'; // Siempre usar este ID de servicio
+      const serviceId = config.serviceId || 'service_yz5opji'; // Usar el ID proporcionado o el predeterminado
       const templateId = config.templateId || 'template_ah9tqde'; // Usar el ID proporcionado o el predeterminado
       const publicKey = config.publicKey || 'RKDqUO9tTPGJrGKLQ'; // Usar la clave proporcionada o la predeterminada
 
@@ -75,9 +75,9 @@ export const useEmailJS = () => {
         } else if (typeof value === 'number' || typeof value === 'boolean') {
           stringValue = String(value);
         } else if (typeof value === 'object') {
-          // Verificar si es una instancia de Date
-          if (value instanceof Date) {
-            stringValue = value.toISOString();
+          // Verificar si es una instancia de Date usando otro método
+          if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value as unknown as number)) {
+            stringValue = (value as Date).toISOString();
           } else {
             // Otros objetos convertir a JSON
             try {
@@ -107,15 +107,35 @@ export const useEmailJS = () => {
       // Inicializar EmailJS antes de enviar
       emailjs.init(publicKey);
 
-      // Enviar el email usando la API de EmailJS
-      const result = await emailjs.send(
-        serviceId,
-        templateId,
-        cleanParams
-      );
-      
-      console.log('EmailJS response:', result);
-      return result;
+      // Enviar el email usando la API de EmailJS - con manejo de errores detallado
+      try {
+        const result = await emailjs.send(
+          serviceId,
+          templateId,
+          cleanParams
+        );
+        
+        console.log('EmailJS response:', result);
+        return result;
+      } catch (emailJSError: any) {
+        console.error('Error específico de EmailJS:', emailJSError);
+        
+        // Detectar errores comunes de EmailJS y proporcionar mensajes más claros
+        if (emailJSError.status === 422) {
+          if (emailJSError.text?.includes("recipients address is empty")) {
+            throw new Error(`La dirección de correo del destinatario está vacía o no es válida: ${templateParams.to_email}`);
+          } else if (emailJSError.text?.includes("no template")) {
+            throw new Error(`La plantilla '${templateId}' no existe o no es accesible. Verifique el ID de la plantilla.`);
+          }
+        } else if (emailJSError.status === 401 || emailJSError.status === 403) {
+          throw new Error(`Error de autenticación en EmailJS. Verifique su clave pública y serviceId.`);
+        } else if (emailJSError.status === 429) {
+          throw new Error(`Se ha excedido el límite de solicitudes a EmailJS. Intente más tarde.`);
+        }
+        
+        // Si no es ninguno de los errores específicos, lanzar el error general
+        throw emailJSError;
+      }
     } catch (error: any) {
       console.error('Error en EmailJS:', error);
       setError(error instanceof Error ? error.message : 'Error al enviar el email');
