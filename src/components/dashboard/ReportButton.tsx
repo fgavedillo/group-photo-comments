@@ -6,6 +6,7 @@ import { useEmailJS } from "@/hooks/useEmailJS";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { EmailStatusAlerts } from "../email/EmailStatusAlerts";
+import emailjs from '@emailjs/browser';
 
 interface ReportButtonProps {
   dashboardRef: React.RefObject<HTMLDivElement>;
@@ -191,10 +192,10 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
               continue;
             }
 
-            // Preparar los parámetros para EmailJS - sin imágenes
+            // Preparar los parámetros para EmailJS - sin limpiar/modificar el email
             const templateParams = {
               to_name: "Responsable de Incidencias",
-              to_email: email.trim(),
+              to_email: email,  // Usar el email tal cual sin trim ni modificaciones
               from_name: "Sistema de Incidencias",
               date: currentDate,
               message: `Reporte automático de incidencias pendientes generado el ${currentDate}. Por favor, revise el panel de control para obtener información detallada.`,
