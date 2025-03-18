@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { FileImage, RefreshCw, AlertCircle } from "lucide-react";
 import { useState } from "react";
@@ -41,7 +40,7 @@ export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps
       };
       
       // No enviar el email, solo obtener token para verificar conectividad
-      await emailjs.send('service_yz5opji', 'template_ddq6b3h', testTemplateParams, { accessToken: publicKey });
+      await emailjs.send('service_yz5opji', 'template_ddq6b3h', testTemplateParams);
       setConnectionStatus('available');
       return true;
     } catch (error: any) {
