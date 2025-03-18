@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useEmailJS } from "@/hooks/useEmailJS";
 import { useToast } from "@/hooks/use-toast";
-import { getResponsibleEmails, sendReportViaEdgeFunction } from '@/utils/emailUtils';
+import { getResponsibleEmails, sendReportViaEdgeFunction, checkEmailJSConnection, isValidEmail } from '@/utils/emailUtils';
 
 export const useReportGeneration = () => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -45,6 +45,10 @@ export const useReportGeneration = () => {
         // Use Edge function to send the report
         const response = await sendReportViaEdgeFunction();
         
+        if (!response) {
+          throw new Error("No se recibió respuesta del servidor");
+        }
+        
         setLastSendStatus({
           success: response.success,
           message: response.success 
@@ -65,9 +69,22 @@ export const useReportGeneration = () => {
           throw new Error(response.message || 'Error al generar el reporte');
         }
       } else {
-        // Original method with EmailJS
+        // First check connection to EmailJS
+        console.log("Checking EmailJS connection...");
+        const isConnected = await checkEmailJSConnection(setConnectionStatus);
+        
+        if (!isConnected) {
+          throw new Error("No se pudo establecer conexión con el servidor de correo. Por favor, intente más tarde.");
+        }
+
         // Get responsible emails
+        console.log("Getting responsible emails...");
         const responsibleEmails = await getResponsibleEmails();
+        
+        if (!responsibleEmails || responsibleEmails.length === 0) {
+          throw new Error("No se encontraron correos electrónicos de responsables válidos para enviar el reporte");
+        }
+        
         console.log('Valid emails for sending:', responsibleEmails);
 
         // Format current date in Spanish for the email
@@ -84,8 +101,8 @@ export const useReportGeneration = () => {
 
         for (const email of responsibleEmails) {
           try {
-            // Verify the email is valid
-            if (!email || typeof email !== 'string' || !email.includes('@')) {
+            // Double-check the email is valid
+            if (!isValidEmail(email)) {
               console.error('Invalid email detected:', email);
               errorCount++;
               continue;

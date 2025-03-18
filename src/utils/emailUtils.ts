@@ -57,17 +57,17 @@ export const getResponsibleEmails = async () => {
     
     if (error) throw error;
     
-    // Extract unique emails (remove duplicates and invalid entries)
+    // Extract unique emails with enhanced validation
     const uniqueEmails = [...new Set(data
       .map(item => item.assigned_email)
-      .filter(email => email && typeof email === 'string' && email.trim() !== '' && email.includes('@'))
-      .map(email => email.trim()) // Ensure all emails are trimmed
+      .filter(email => isValidEmail(email))
+      .map(email => email!.trim()) // Ensure all emails are trimmed
     )];
     
     console.log('Responsible emails found:', uniqueEmails);
     
     if (uniqueEmails.length === 0) {
-      throw new Error('No responsible persons with valid emails found for pending issues');
+      throw new Error('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
     }
     
     return uniqueEmails;
@@ -75,6 +75,17 @@ export const getResponsibleEmails = async () => {
     console.error('Error getting responsible emails:', error);
     throw error;
   }
+};
+
+// Email validation helper
+export const isValidEmail = (email: string | null | undefined): boolean => {
+  if (!email || typeof email !== 'string') return false;
+  email = email.trim();
+  if (email === '') return false;
+  
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 };
 
 // Method for sending report via Edge function

@@ -37,9 +37,9 @@ export const useEmailJS = () => {
     setError(null);
 
     try {
-      // Validate recipient email - critical fix
-      if (!templateParams.to_email) {
-        throw new Error('El email del destinatario es requerido');
+      // Enhanced email validation - critical fix
+      if (!templateParams.to_email || !validateEmail(templateParams.to_email)) {
+        throw new Error(`El email del destinatario '${templateParams.to_email}' no es válido o está vacío`);
       }
 
       // Initialize EmailJS with the public key
@@ -47,13 +47,10 @@ export const useEmailJS = () => {
       
       console.log('Sending email via EmailJS to:', templateParams.to_email);
       
-      // Create a separate email object for EmailJS that ensures the email is correctly formatted
-      // The recipient field must be formatted properly for EmailJS
+      // Create a properly formatted email object for EmailJS
       const emailJSParams = {
         ...templateParams,
         to_email: templateParams.to_email.trim(), // Ensure there are no trailing spaces
-        // Configure EmailJS to recognize this as a valid recipient field
-        // Add any other required formatting here
       };
       
       console.log('EmailJS params:', emailJSParams);
@@ -71,10 +68,10 @@ export const useEmailJS = () => {
     } catch (error: any) {
       console.error('Error en EmailJS:', error);
       
-      // Specific error handling for EmailJS
+      // Enhanced error handling for EmailJS
       if (error.status === 422) {
         if (error.text?.includes("recipients address is empty")) {
-          setError(`Error: La dirección "${templateParams.to_email}" no fue reconocida por EmailJS. Intente con otro formato.`);
+          setError(`Error: La dirección de correo "${templateParams.to_email}" no fue reconocida por EmailJS. Verifique que sea un correo válido.`);
         } else if (error.text?.includes("no template")) {
           setError(`La plantilla '${config.templateId}' no existe o no es accesible.`);
         } else {
@@ -92,6 +89,17 @@ export const useEmailJS = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Email validation function
+  const validateEmail = (email: string): boolean => {
+    if (!email || typeof email !== 'string') return false;
+    email = email.trim();
+    if (email === '') return false;
+    
+    // Basic email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
   };
 
   return {
