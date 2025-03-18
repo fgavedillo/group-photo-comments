@@ -37,76 +37,33 @@ export const useEmailJS = () => {
     setError(null);
 
     try {
-      // Validar el email del destinatario - sin limpiarlo primero, usar el valor original
-      const emailToValidate = templateParams.to_email;
-      
-      if (!emailToValidate) {
+      // Validate recipient email - critical fix
+      if (!templateParams.to_email) {
         throw new Error('El email del destinatario es requerido');
       }
 
-      // Validar que el email tenga formato básico (contiene @)
-      if (!emailToValidate.includes('@')) {
-        throw new Error(`Email inválido: ${emailToValidate}`);
-      }
-
-      // Validar la clave pública
-      if (!config.publicKey || config.publicKey.length < 10) {
-        throw new Error('La clave pública de EmailJS es inválida');
-      }
-
-      // Asegurar que los IDs sean correctos
-      const serviceId = config.serviceId || 'service_yz5opji'; // Usar el ID proporcionado o el predeterminado
-      const templateId = config.templateId || 'template_ah9tqde'; // Usar el ID proporcionado o el predeterminado
-      const publicKey = config.publicKey || 'RKDqUO9tTPGJrGKLQ'; // Usar la clave proporcionada o la predeterminada
-
-      // Crear un objeto de parámetros limpio y conservar los valores originales sin modificar
-      const cleanParams: Record<string, string> = {};
+      // Initialize EmailJS with the public key
+      emailjs.init(config.publicKey);
       
-      // Procesar cada parámetro manteniendo los valores originales siempre que sea posible
-      for (const [key, value] of Object.entries(templateParams)) {
-        // Omitir valores null/undefined
-        if (value === null || value === undefined) {
-          continue;
-        }
-        
-        // Conservar los strings originales sin trim ni modificaciones
-        if (typeof value === 'string') {
-          cleanParams[key] = value;
-        } else if (typeof value === 'number' || typeof value === 'boolean') {
-          cleanParams[key] = String(value);
-        } else if (typeof value === 'object') {
-          // Para objetos Date
-          if (Object.prototype.toString.call(value) === '[object Date]' && !isNaN(value as unknown as number)) {
-            cleanParams[key] = (value as Date).toISOString();
-          } else {
-            // Otros objetos convertir a JSON
-            try {
-              cleanParams[key] = JSON.stringify(value);
-            } catch (e) {
-              console.warn(`No se pudo convertir el objeto en el campo ${key} a string`);
-              continue;
-            }
-          }
-        } else {
-          cleanParams[key] = String(value);
-        }
-      }
+      console.log('Sending email via EmailJS to:', templateParams.to_email);
       
-      console.log('Enviando email con EmailJS. Parámetros:', cleanParams);
-      console.log('Configuración:', {
-        serviceId,
-        templateId,
-        publicKey: '********' // Por seguridad no mostramos la clave
-      });
+      // Create a separate email object for EmailJS that ensures the email is correctly formatted
+      // The recipient field must be formatted properly for EmailJS
+      const emailJSParams = {
+        ...templateParams,
+        to_email: templateParams.to_email.trim(), // Ensure there are no trailing spaces
+        // Configure EmailJS to recognize this as a valid recipient field
+        // Add any other required formatting here
+      };
+      
+      console.log('EmailJS params:', emailJSParams);
+      console.log('Using service:', config.serviceId, 'template:', config.templateId);
 
-      // Inicializar EmailJS para este envío
-      emailjs.init(publicKey);
-
-      // Enviar el email usando la API de EmailJS - modo directo
+      // Send the email using EmailJS
       const result = await emailjs.send(
-        serviceId,
-        templateId,
-        cleanParams
+        config.serviceId,
+        config.templateId,
+        emailJSParams
       );
       
       console.log('EmailJS response:', result);
@@ -114,21 +71,19 @@ export const useEmailJS = () => {
     } catch (error: any) {
       console.error('Error en EmailJS:', error);
       
-      // Manejo específico de errores de EmailJS
+      // Specific error handling for EmailJS
       if (error.status === 422) {
         if (error.text?.includes("recipients address is empty")) {
-          // Problema específico con el email, intentaremos solucionar el formato
-          const originalEmail = templateParams.to_email;
-          setError(`Error: El servidor de EmailJS rechazó la dirección: ${originalEmail}. Intente con otro formato o proveedor de email.`);
+          setError(`Error: La dirección "${templateParams.to_email}" no fue reconocida por EmailJS. Intente con otro formato.`);
         } else if (error.text?.includes("no template")) {
-          setError(`La plantilla '${config.templateId}' no existe o no es accesible. Verifique el ID de plantilla.`);
+          setError(`La plantilla '${config.templateId}' no existe o no es accesible.`);
         } else {
           setError(`EmailJS rechazó la solicitud: ${error.text}`);
         }
       } else if (error.status === 401 || error.status === 403) {
-        setError(`Error de autenticación en EmailJS. Verifique su clave pública y serviceId.`);
+        setError(`Error de autenticación en EmailJS. Verifique su clave pública.`);
       } else if (error.status === 429) {
-        setError(`Se ha excedido el límite de solicitudes a EmailJS. Intente más tarde.`);
+        setError(`Se ha excedido el límite de solicitudes a EmailJS.`);
       } else {
         setError(error instanceof Error ? error.message : 'Error al enviar el email');
       }

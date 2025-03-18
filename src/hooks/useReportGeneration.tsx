@@ -84,17 +84,17 @@ export const useReportGeneration = () => {
 
         for (const email of responsibleEmails) {
           try {
-            // Re-verify that the email is valid just before sending
+            // Verify the email is valid
             if (!email || typeof email !== 'string' || !email.includes('@')) {
               console.error('Invalid email detected:', email);
               errorCount++;
               continue;
             }
 
-            // Prepare parameters for EmailJS - without cleaning/modifying the email
+            // Prepare parameters for EmailJS
             const templateParams = {
               to_name: "Responsable de Incidencias",
-              to_email: email,  // Use the email as is without trim or modifications
+              to_email: email,
               from_name: "Sistema de Incidencias",
               date: currentDate,
               message: `Reporte automático de incidencias pendientes generado el ${currentDate}. Por favor, revise el panel de control para obtener información detallada.`,
@@ -104,7 +104,7 @@ export const useReportGeneration = () => {
             await sendEmail(
               {
                 serviceId: 'service_yz5opji',
-                templateId: 'template_ddq6b3h', // Specific template for reports
+                templateId: 'template_ddq6b3h',
                 publicKey: 'RKDqUO9tTPGJrGKLQ',
               },
               templateParams

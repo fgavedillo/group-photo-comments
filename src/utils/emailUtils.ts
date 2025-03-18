@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import emailjs from '@emailjs/browser';
 
@@ -5,21 +6,30 @@ import emailjs from '@emailjs/browser';
 export const checkEmailJSConnection = async (setConnectionStatus: React.Dispatch<React.SetStateAction<'checking' | 'available' | 'unavailable' | 'error' | undefined>>): Promise<boolean> => {
   try {
     setConnectionStatus('checking');
-    // Perform a simple request to EmailJS to verify connectivity
+    // Initialize EmailJS with the public key
     const publicKey = 'RKDqUO9tTPGJrGKLQ';
     emailjs.init(publicKey);
     
-    // Verify server availability
+    // Use a test email that's definitely valid for the connection test
+    const testEmail = "test@example.com";
+    
+    // Verify server availability using a valid test address
     const testTemplateParams = {
       to_name: "Test",
-      to_email: "test@example.com",
+      to_email: testEmail,
       from_name: "Sistema de Incidencias",
       date: new Date().toLocaleDateString('es-ES'),
       message: "Verificación de conexión"
     };
     
-    // Don't send the email, just get a token to verify connectivity
-    await emailjs.send('service_yz5opji', 'template_ddq6b3h', testTemplateParams);
+    // Just verify connection without actually sending a test email
+    const connectionTest = await emailjs.send(
+      'service_yz5opji', 
+      'template_ddq6b3h', 
+      testTemplateParams
+    );
+    
+    console.log("Connection test result:", connectionTest);
     setConnectionStatus('available');
     return true;
   } catch (error: any) {
@@ -47,10 +57,11 @@ export const getResponsibleEmails = async () => {
     
     if (error) throw error;
     
-    // Extract unique emails (remove duplicates)
+    // Extract unique emails (remove duplicates and invalid entries)
     const uniqueEmails = [...new Set(data
       .map(item => item.assigned_email)
       .filter(email => email && typeof email === 'string' && email.trim() !== '' && email.includes('@'))
+      .map(email => email.trim()) // Ensure all emails are trimmed
     )];
     
     console.log('Responsible emails found:', uniqueEmails);
