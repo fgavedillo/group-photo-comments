@@ -94,3 +94,42 @@ export const getResponsibleEmails = async () => {
     throw error;
   }
 };
+
+// NUEVA FUNCIÓN: Enviar reporte a través de la función Edge de Supabase
+export const sendReportViaEdgeFunction = async (filtered: boolean = false) => {
+  try {
+    console.log(`Iniciando envío de reporte a través de Edge Function (${filtered ? 'filtrado' : 'completo'})`);
+    
+    // Generar ID único para esta solicitud
+    const requestId = `manual-${Date.now()}`;
+    
+    // Invocar la función Edge para enviar el reporte
+    const { data, error } = await supabase.functions.invoke('send-daily-report', {
+      method: 'POST',
+      body: {
+        manual: true,
+        filteredByUser: filtered,
+        requestId
+      },
+    });
+    
+    console.log("Respuesta de la función Edge:", data);
+    
+    if (error) {
+      console.error("Error en función Edge:", error);
+      throw error;
+    }
+    
+    // Verificar si hay un problema con los destinatarios
+    if (data && data.success && (!data.recipients || data.recipients.length === 0)) {
+      if (data.stats && data.stats.failureCount > 0 && data.stats.successCount === 0) {
+        throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan responsables asignados a incidencias pendientes.");
+      }
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Error enviando reporte a través de Edge Function:", error);
+    throw error;
+  }
+};

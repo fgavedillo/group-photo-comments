@@ -26,7 +26,7 @@ export const useReportSender = () => {
       // ID único para esta solicitud
       const requestId = `manual-${Date.now()}`;
       
-      // Verificar si hay destinatarios cuando se usa el modo filtrado
+      // Si está en modo filtrado, primero verificar que haya destinatarios
       if (filtered) {
         try {
           // Obtener emails de responsables con incidencias asignadas
@@ -36,7 +36,7 @@ export const useReportSender = () => {
           if (!emails || emails.length === 0) {
             throw new Error("No se encontraron responsables con correos electrónicos válidos para incidencias pendientes");
           }
-        } catch (emailError) {
+        } catch (emailError: any) {
           console.error("Error obteniendo emails de responsables:", emailError);
           throw new Error(`No se pudieron obtener los correos de los responsables: ${emailError.message}`);
         }
@@ -66,14 +66,15 @@ export const useReportSender = () => {
       // Verificar si el envío fue exitoso
       if (data && data.success) {
         const recipientCount = data.recipients?.length || 0;
+        const successCount = data.stats?.successCount || 0;
         
-        if (recipientCount === 0) {
+        if (successCount === 0) {
           throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan responsables asignados a incidencias pendientes.");
         }
         
         toast({
           title: "Reporte enviado",
-          description: `Se ha enviado el reporte a ${recipientCount} destinatario(s) exitosamente`,
+          description: `Se ha enviado el reporte a ${successCount} destinatario(s) exitosamente`,
         });
         
         return data;

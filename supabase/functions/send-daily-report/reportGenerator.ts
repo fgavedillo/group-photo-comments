@@ -64,7 +64,12 @@ export async function generateAndSendReport(
           message: "No se encontraron responsables con incidencias asignadas para enviar reportes filtrados",
           timestamp: new Date().toISOString(),
           requestId,
-          recipients: []
+          recipients: [],
+          stats: {
+            totalEmails: 0,
+            successCount: 0,
+            failureCount: 0
+          }
         };
       }
       
@@ -124,7 +129,12 @@ export async function generateAndSendReport(
           message: "No hay destinatarios configurados para enviar reportes completos",
           timestamp: new Date().toISOString(),
           requestId,
-          recipients: []
+          recipients: [],
+          stats: {
+            totalEmails: 0,
+            successCount: 0,
+            failureCount: 0
+          }
         };
       }
       
@@ -189,6 +199,11 @@ export async function generateAndSendReport(
         code: error.code || "UNKNOWN_ERROR",
         message: error.message || "Error desconocido al generar reportes",
         details: error.stack
+      },
+      stats: {
+        totalEmails: 0,
+        successCount: 0,
+        failureCount: 0
       }
     };
     

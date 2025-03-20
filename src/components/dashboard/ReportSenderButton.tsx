@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileImage, RefreshCw, Filter, Info } from "lucide-react";
+import { FileImage, RefreshCw, Filter, Info, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 export const ReportSenderButton = () => {
   const { sendReport, isLoading, error, lastResponse } = useReportSender();
@@ -70,7 +70,7 @@ export const ReportSenderButton = () => {
               <CheckCircle className="h-4 w-4 text-green-500" />
               <AlertTitle>Envío exitoso</AlertTitle>
               <AlertDescription>
-                Se envió el reporte a {lastResponse.recipients?.length || 0} destinatario(s) exitosamente.
+                Se envió el reporte a {lastResponse.stats?.successCount || 0} destinatario(s) exitosamente.
                 {lastResponse.stats && (
                   <div className="text-xs mt-1 text-gray-500">
                     {lastResponse.stats.successCount} envíos exitosos, {lastResponse.stats.failureCount} fallidos.
