@@ -60,13 +60,20 @@ export const checkEmailJSConnection = async (setConnectionStatus: React.Dispatch
 // Función para obtener todos los correos de responsables con incidencias en estudio o en curso
 export const getResponsibleEmails = async () => {
   try {
+    console.log("Obteniendo emails de responsables...");
+    
     const { data, error } = await supabase
       .from('issues')
       .select('assigned_email')
       .in('status', ['en-estudio', 'en-curso'])
       .not('assigned_email', 'is', null);
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error SQL al obtener correos:", error);
+      throw error;
+    }
+    
+    console.log("Datos crudos de consulta:", data);
     
     // Extraer emails únicos con validación mejorada
     const uniqueEmails = [...new Set(data
@@ -78,7 +85,7 @@ export const getResponsibleEmails = async () => {
     console.log('Emails de responsables encontrados:', uniqueEmails);
     
     if (uniqueEmails.length === 0) {
-      throw new Error('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
+      console.warn('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
     }
     
     return uniqueEmails;

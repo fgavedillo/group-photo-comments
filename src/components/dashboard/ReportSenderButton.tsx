@@ -2,9 +2,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileImage, RefreshCw, Filter } from "lucide-react";
+import { FileImage, RefreshCw, Filter, Info } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, AlertCircle, Info } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 
 export const ReportSenderButton = () => {
   const { sendReport, isLoading, error, lastResponse } = useReportSender();
@@ -15,6 +15,7 @@ export const ReportSenderButton = () => {
       await sendReport(filtered);
     } catch (err) {
       // El error ya está manejado en el hook
+      console.error("Error manejado en el botón:", err);
     }
   };
   

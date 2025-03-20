@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
+import { getResponsibleEmails } from "@/utils/emailUtils";
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +26,22 @@ export const useReportSender = () => {
       // ID único para esta solicitud
       const requestId = `manual-${Date.now()}`;
       
+      // Verificar si hay destinatarios cuando se usa el modo filtrado
+      if (filtered) {
+        try {
+          // Obtener emails de responsables con incidencias asignadas
+          const emails = await getResponsibleEmails();
+          console.log("Emails de responsables encontrados:", emails);
+          
+          if (!emails || emails.length === 0) {
+            throw new Error("No se encontraron responsables con correos electrónicos válidos para incidencias pendientes");
+          }
+        } catch (emailError) {
+          console.error("Error obteniendo emails de responsables:", emailError);
+          throw new Error(`No se pudieron obtener los correos de los responsables: ${emailError.message}`);
+        }
+      }
+      
       // Invocar la función Edge para enviar el reporte
       const { data, error: functionError } = await supabase.functions.invoke('send-daily-report', {
         method: 'POST',
@@ -34,6 +51,8 @@ export const useReportSender = () => {
           requestId
         },
       });
+      
+      console.log("Respuesta de la función Edge:", data);
       
       // Manejar errores de la función
       if (functionError) {
@@ -47,6 +66,10 @@ export const useReportSender = () => {
       // Verificar si el envío fue exitoso
       if (data && data.success) {
         const recipientCount = data.recipients?.length || 0;
+        
+        if (recipientCount === 0) {
+          throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan responsables asignados a incidencias pendientes.");
+        }
         
         toast({
           title: "Reporte enviado",

@@ -57,6 +57,17 @@ export async function generateAndSendReport(
         console.log(`[RequestID:${requestId}] - ${email}: ${userIssues.length} pending issues`);
       }
       
+      // Si no hay destinatarios cuando se usa el modo filtrado, reportar error
+      if (Object.keys(issuesByEmail).length === 0) {
+        return {
+          success: false,
+          message: "No se encontraron responsables con incidencias asignadas para enviar reportes filtrados",
+          timestamp: new Date().toISOString(),
+          requestId,
+          recipients: []
+        };
+      }
+      
       // Send individual emails for each user with their pending issues
       for (const [email, userIssues] of Object.entries(issuesByEmail)) {
         if (userIssues.length === 0) {
@@ -106,6 +117,17 @@ export async function generateAndSendReport(
       console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Generating HTML for standard report with ${allIssues.length} issues`);
       const html = buildEmailHtml(report);
       
+      // Verificamos que haya destinatarios configurados
+      if (!RECIPIENT_EMAILS || RECIPIENT_EMAILS.length === 0) {
+        return {
+          success: false,
+          message: "No hay destinatarios configurados para enviar reportes completos",
+          timestamp: new Date().toISOString(),
+          requestId,
+          recipients: []
+        };
+      }
+      
       // Send email to each recipient
       for (const recipientEmail of RECIPIENT_EMAILS) {
         try {
@@ -125,6 +147,22 @@ export async function generateAndSendReport(
       }
       
       console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Standard reports: ${successCount} sent successfully, ${failureCount} failed`);
+    }
+    
+    // Si no se pudo enviar ningún correo con éxito, reportar error
+    if (successCount === 0) {
+      return {
+        success: false,
+        message: "No se pudo enviar ningún reporte debido a errores de correo",
+        timestamp: new Date().toISOString(),
+        requestId,
+        recipients: [],
+        stats: {
+          totalEmails: successCount + failureCount,
+          successCount,
+          failureCount
+        }
+      };
     }
     
     return { 
