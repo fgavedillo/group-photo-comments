@@ -2,18 +2,29 @@
 import { supabase } from "@/lib/supabase";
 import emailjs from '@emailjs/browser';
 
-// Function to check connection with EmailJS
+// Función para validar direcciones de correo electrónico
+export const isValidEmail = (email: string | null | undefined): boolean => {
+  if (!email || typeof email !== 'string') return false;
+  email = email.trim();
+  if (email === '') return false;
+  
+  // Validación básica de formato de email
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+// Función para verificar conexión con EmailJS
 export const checkEmailJSConnection = async (setConnectionStatus: React.Dispatch<React.SetStateAction<'checking' | 'available' | 'unavailable' | 'error' | undefined>>): Promise<boolean> => {
   try {
     setConnectionStatus('checking');
-    // Initialize EmailJS with the public key
+    // Inicializar EmailJS con la clave pública
     const publicKey = 'RKDqUO9tTPGJrGKLQ';
     emailjs.init(publicKey);
     
-    // Use a test email that's definitely valid for the connection test
+    // Usar un email de prueba que definitivamente sea válido para la prueba de conexión
     const testEmail = "test@example.com";
     
-    // Verify server availability using a valid test address
+    // Verificar disponibilidad del servidor usando una dirección de prueba válida
     const testTemplateParams = {
       to_name: "Test",
       to_email: testEmail,
@@ -22,31 +33,31 @@ export const checkEmailJSConnection = async (setConnectionStatus: React.Dispatch
       message: "Verificación de conexión"
     };
     
-    // Just verify connection without actually sending a test email
+    // Solo verificar conexión sin enviar realmente un correo de prueba
     const connectionTest = await emailjs.send(
       'service_yz5opji', 
       'template_ddq6b3h', 
       testTemplateParams
     );
     
-    console.log("Connection test result:", connectionTest);
+    console.log("Resultado de prueba de conexión:", connectionTest);
     setConnectionStatus('available');
     return true;
   } catch (error: any) {
-    console.error('Error when verifying connection with EmailJS:', error);
+    console.error('Error al verificar conexión con EmailJS:', error);
     
     if (error.status === 401 || error.status === 403) {
-      // Authentication problems
+      // Problemas de autenticación
       setConnectionStatus('error');
     } else {
-      // Other connection problems
+      // Otros problemas de conexión
       setConnectionStatus('unavailable');
     }
     return false;
   }
 };
 
-// Function to get all emails of responsible persons with issues under study or in progress
+// Función para obtener todos los correos de responsables con incidencias en estudio o en curso
 export const getResponsibleEmails = async () => {
   try {
     const { data, error } = await supabase
@@ -57,14 +68,14 @@ export const getResponsibleEmails = async () => {
     
     if (error) throw error;
     
-    // Extract unique emails with enhanced validation
+    // Extraer emails únicos con validación mejorada
     const uniqueEmails = [...new Set(data
       .map(item => item.assigned_email)
       .filter(email => isValidEmail(email))
-      .map(email => email!.trim()) // Ensure all emails are trimmed
+      .map(email => email!.trim())
     )];
     
-    console.log('Responsible emails found:', uniqueEmails);
+    console.log('Emails de responsables encontrados:', uniqueEmails);
     
     if (uniqueEmails.length === 0) {
       throw new Error('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
@@ -72,45 +83,7 @@ export const getResponsibleEmails = async () => {
     
     return uniqueEmails;
   } catch (error: any) {
-    console.error('Error getting responsible emails:', error);
-    throw error;
-  }
-};
-
-// Email validation helper
-export const isValidEmail = (email: string | null | undefined): boolean => {
-  if (!email || typeof email !== 'string') return false;
-  email = email.trim();
-  if (email === '') return false;
-  
-  // Basic email format validation
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-// Method for sending report via Edge function
-export const sendReportViaEdgeFunction = async () => {
-  try {
-    console.log("Invoking send-daily-report function...");
-    
-    const { data: functionResponse, error: functionError } = await supabase.functions.invoke('send-daily-report', {
-      method: 'POST',
-      body: { 
-        manual: true,
-        filteredByUser: true,
-        requestId: `manual-${Date.now()}`
-      },
-    });
-
-    if (functionError) {
-      console.error("Error in edge function:", functionError);
-      throw functionError;
-    }
-
-    console.log("Function response:", functionResponse);
-    return functionResponse;
-  } catch (error: any) {
-    console.error('Error invoking edge function:', error);
+    console.error('Error obteniendo emails de responsables:', error);
     throw error;
   }
 };
