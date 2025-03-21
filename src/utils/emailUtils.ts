@@ -58,25 +58,26 @@ export const checkEmailJSConnection = async (setConnectionStatus: React.Dispatch
 };
 
 // Función para obtener todos los correos de responsables con incidencias en estudio o en curso
-export const getResponsibleEmails = async () => {
+export const getResponsibleEmails = async (): Promise<string[]> => {
   try {
     console.log("Obteniendo emails de responsables...");
     
-    const { data, error } = await supabase
+    // Primero intentamos obtener correos usando assigned_email directamente
+    const { data: issuesData, error: issuesError } = await supabase
       .from('issues')
       .select('assigned_email')
       .in('status', ['en-estudio', 'en-curso'])
       .not('assigned_email', 'is', null);
     
-    if (error) {
-      console.error("Error SQL al obtener correos:", error);
-      throw error;
+    if (issuesError) {
+      console.error("Error SQL al obtener correos:", issuesError);
+      throw issuesError;
     }
     
-    console.log("Datos crudos de consulta:", data);
+    console.log("Datos crudos de consulta:", issuesData);
     
     // Extraer emails únicos con validación mejorada
-    const uniqueEmails = [...new Set(data
+    const uniqueEmails = [...new Set(issuesData
       .map(item => item.assigned_email)
       .filter(email => isValidEmail(email))
       .map(email => email!.trim())
@@ -84,8 +85,44 @@ export const getResponsibleEmails = async () => {
     
     console.log('Emails de responsables encontrados:', uniqueEmails);
     
+    // Si no encontramos correos, intentemos buscar también en el campo 'responsable'
+    // que podría contener direcciones de correo
     if (uniqueEmails.length === 0) {
-      console.warn('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
+      console.log("No se encontraron correos en assigned_email, probando con campo responsable...");
+      
+      const { data: responsablesData, error: responsablesError } = await supabase
+        .from('issues')
+        .select('responsable')
+        .in('status', ['en-estudio', 'en-curso'])
+        .not('responsable', 'is', null);
+      
+      if (responsablesError) {
+        console.error("Error SQL al obtener responsables:", responsablesError);
+        throw responsablesError;
+      }
+      
+      // Buscar posibles emails en el campo responsable
+      const emailsFromResponsable = [...new Set(responsablesData
+        .map(item => {
+          // Intentar encontrar un email en el campo responsable
+          const responsable = item.responsable || '';
+          const emailMatch = responsable.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
+          return emailMatch ? emailMatch[0] : null;
+        })
+        .filter(email => isValidEmail(email))
+        .map(email => email!.trim())
+      )];
+      
+      console.log('Emails encontrados en campo responsable:', emailsFromResponsable);
+      
+      // Combinar con cualquier correo que hayamos encontrado en assigned_email
+      const allEmails = [...uniqueEmails, ...emailsFromResponsable];
+      
+      if (allEmails.length === 0) {
+        console.warn('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
+      }
+      
+      return allEmails;
     }
     
     return uniqueEmails;
@@ -96,12 +133,22 @@ export const getResponsibleEmails = async () => {
 };
 
 // NUEVA FUNCIÓN: Enviar reporte a través de la función Edge de Supabase
-export const sendReportViaEdgeFunction = async (filtered: boolean = false) => {
+export const sendReportViaEdgeFunction = async (filtered: boolean = false): Promise<any> => {
   try {
     console.log(`Iniciando envío de reporte a través de Edge Function (${filtered ? 'filtrado' : 'completo'})`);
     
     // Generar ID único para esta solicitud
     const requestId = `manual-${Date.now()}`;
+    
+    // Si es filtrado, verificar primero que existan emails asignados
+    if (filtered) {
+      const emails = await getResponsibleEmails();
+      console.log("Verificando emails para envío filtrado:", emails);
+      
+      if (!emails || emails.length === 0) {
+        throw new Error("No se encontraron responsables con correos electrónicos válidos para incidencias pendientes");
+      }
+    }
     
     // Invocar la función Edge para enviar el reporte
     const { data, error } = await supabase.functions.invoke('send-daily-report', {
@@ -121,10 +168,8 @@ export const sendReportViaEdgeFunction = async (filtered: boolean = false) => {
     }
     
     // Verificar si hay un problema con los destinatarios
-    if (data && data.success && (!data.recipients || data.recipients.length === 0)) {
-      if (data.stats && data.stats.failureCount > 0 && data.stats.successCount === 0) {
-        throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan responsables asignados a incidencias pendientes.");
-      }
+    if (data && data.success && (!data.recipients || data.recipients.length === 0 || data.stats?.successCount === 0)) {
+      throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan responsables asignados a incidencias pendientes.");
     }
     
     return data;

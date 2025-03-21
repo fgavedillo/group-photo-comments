@@ -10,14 +10,25 @@ function groupIssuesByEmail(issues: ReportRow[]): Record<string, ReportRow[]> {
   const grouped: Record<string, ReportRow[]> = {};
   
   issues.forEach(issue => {
-    // Skip issues with no email assigned
-    if (!issue.assignedEmail) return;
+    // Check both assignedEmail and responsable fields for email addresses
+    let email = issue.assignedEmail;
     
-    if (!grouped[issue.assignedEmail]) {
-      grouped[issue.assignedEmail] = [];
+    // If no assigned email, try to find an email in the responsable field
+    if (!email && issue.responsable) {
+      const emailMatch = issue.responsable.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
+      if (emailMatch) {
+        email = emailMatch[0];
+      }
     }
     
-    grouped[issue.assignedEmail].push(issue);
+    // Skip issues with no email assigned
+    if (!email) return;
+    
+    if (!grouped[email]) {
+      grouped[email] = [];
+    }
+    
+    grouped[email].push(issue);
   });
   
   return grouped;

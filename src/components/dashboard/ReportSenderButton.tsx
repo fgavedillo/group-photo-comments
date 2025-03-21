@@ -65,7 +65,7 @@ export const ReportSenderButton = () => {
               <AlertTitle>Error de envío</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
-          ) : lastResponse?.success ? (
+          ) : lastResponse?.success && lastResponse.stats?.successCount > 0 ? (
             <Alert variant="default" className="bg-green-50 border-green-200">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <AlertTitle>Envío exitoso</AlertTitle>

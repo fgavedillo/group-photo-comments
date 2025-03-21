@@ -63,9 +63,8 @@ export const useReportSender = () => {
       // Guardar respuesta completa
       setLastResponse(data);
       
-      // Verificar si el envío fue exitoso
+      // Verificar explícitamente si el envío fue exitoso
       if (data && data.success) {
-        const recipientCount = data.recipients?.length || 0;
         const successCount = data.stats?.successCount || 0;
         
         if (successCount === 0) {
