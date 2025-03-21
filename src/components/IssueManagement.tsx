@@ -8,6 +8,19 @@ import { useIssueFiltering } from "./issues/useIssueFiltering";
 import { useEditingIssue } from "./issues/useEditingIssue";
 import { useRealTimeUpdates } from "./issues/useRealTimeUpdates";
 import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const { loadIssues } = useIssues();
@@ -57,17 +70,52 @@ const IssueManagementContent = ({
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
-      <IssueFiltersSection
-        groupBy={groupBy}
-        selectedStates={selectedStates}
-        responsableFilter={responsableFilter}
-        onGroupByChange={setGroupBy}
-        onStateToggle={handleStateToggle}
-        onResponsableFilterChange={(value) => {
-          console.log('IssueManagement - Cambiando filtro de responsable a:', value);
-          setResponsableFilter(value);
-        }}
-      />
+      <div className="flex justify-between items-center p-4 border-b">
+        <div className="flex-1">
+          <IssueFiltersSection
+            groupBy={groupBy}
+            selectedStates={selectedStates}
+            responsableFilter={responsableFilter}
+            onGroupByChange={setGroupBy}
+            onStateToggle={handleStateToggle}
+            onResponsableFilterChange={(value) => {
+              console.log('IssueManagement - Cambiando filtro de responsable a:', value);
+              setResponsableFilter(value);
+            }}
+          />
+        </div>
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="ml-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar sin responsable
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar incidencias sin responsable?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta acción eliminará permanentemente todas las incidencias que no tienen un responsable asignado.
+                Esta operación no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => issueActions.deleteIssuesWithoutResponsable()}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Eliminar
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
       
       <IssueGroupedView
         filteredMessages={filteredMessages}

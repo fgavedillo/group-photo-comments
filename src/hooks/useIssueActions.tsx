@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
@@ -139,6 +138,61 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     }
   };
 
+  const deleteIssuesWithoutResponsable = async () => {
+    try {
+      toast({
+        title: "Procesando",
+        description: "Eliminando incidencias sin responsable asignado..."
+      });
+
+      // Query to get the IDs of all issues without a responsable
+      const { data: issuesToDelete, error: queryError } = await supabase
+        .from('issues')
+        .select('id')
+        .is('responsable', null);
+
+      if (queryError) {
+        throw queryError;
+      }
+
+      if (!issuesToDelete || issuesToDelete.length === 0) {
+        toast({
+          title: "Información",
+          description: "No se encontraron incidencias sin responsable asignado."
+        });
+        return;
+      }
+
+      const issueIds = issuesToDelete.map(issue => issue.id);
+      console.log("Incidencias a eliminar:", issueIds);
+
+      // Delete the issues
+      const { error: deleteError } = await supabase
+        .from('issues')
+        .delete()
+        .is('responsable', null);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // Reload the issues to update the UI
+      await loadIssues();
+
+      toast({
+        title: "Eliminación completada",
+        description: `Se han eliminado ${issuesToDelete.length} incidencias sin responsable asignado.`
+      });
+    } catch (error) {
+      console.error('Error deleting issues without responsable:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron eliminar las incidencias sin responsable",
+        variant: "destructive"
+      });
+    }
+  };
+
   return {
     securityImprovements,
     actionPlans,
@@ -149,5 +203,6 @@ export const useIssueActions = (loadIssues: () => Promise<void>) => {
     handleActionPlanChange,
     handleAddSecurityImprovement,
     handleAssignedEmailChange,
+    deleteIssuesWithoutResponsable,
   };
 };
