@@ -32,6 +32,7 @@ serve(async (req) => {
     let manual = false;
     let filteredByUser = false;
     let clientRequestId = requestId;
+    let debugMode = false;
     
     // Check if this is a manual trigger or has filtering options
     if (req.method === "POST") {
@@ -39,6 +40,7 @@ serve(async (req) => {
         const body: SendDailyReportRequest = await req.json();
         manual = !!body.manual;
         filteredByUser = !!body.filteredByUser;
+        debugMode = !!body.debugMode;
         
         // Si el cliente proporcionó un ID de solicitud, úsalo para el seguimiento en logs
         if (body.requestId) {
@@ -46,17 +48,17 @@ serve(async (req) => {
           console.log(`[${new Date().toISOString()}] [RequestID: ${requestId}] Using client-provided requestId: ${clientRequestId}`);
         }
         
-        console.log(`[${new Date().toISOString()}] [RequestID: ${requestId}] Request params: manual=${manual}, filteredByUser=${filteredByUser}`);
+        console.log(`[${new Date().toISOString()}] [RequestID: ${requestId}] Request params: manual=${manual}, filteredByUser=${filteredByUser}, debugMode=${debugMode}`);
       } catch (parseError) {
         console.error(`[${new Date().toISOString()}] [RequestID: ${requestId}] Error parsing request body:`, parseError);
         // Continue with default values
       }
     }
     
-    console.log(`[${new Date().toISOString()}] [RequestID: ${requestId}] Starting report generation${manual ? " (manual)" : ""}${filteredByUser ? " (filtered)" : ""}`);
+    console.log(`[${new Date().toISOString()}] [RequestID: ${requestId}] Starting report generation${manual ? " (manual)" : ""}${filteredByUser ? " (filtered)" : ""}${debugMode ? " (debug mode)" : ""}`);
     
     const result = await Promise.race([
-      generateAndSendReport(manual, filteredByUser, requestId),
+      generateAndSendReport(manual, filteredByUser, requestId, debugMode),
       new Promise<never>((_, reject) => {
         // This promise will reject if the controller is aborted
         timeoutController.signal.addEventListener('abort', () => {

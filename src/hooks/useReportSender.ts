@@ -26,6 +26,8 @@ export const useReportSender = () => {
       // ID único para esta solicitud
       const requestId = `manual-${Date.now()}`;
       
+      console.log(`Iniciando envío de reporte ${filtered ? 'filtrado' : 'completo'} con ID: ${requestId}`);
+      
       // Si está en modo filtrado, primero verificar que haya destinatarios
       if (filtered) {
         try {
@@ -43,16 +45,23 @@ export const useReportSender = () => {
       }
       
       // Invocar la función Edge para enviar el reporte
+      console.log("Invocando función Edge send-daily-report con parámetros:", {
+        manual: true,
+        filteredByUser: filtered,
+        requestId
+      });
+      
       const { data, error: functionError } = await supabase.functions.invoke('send-daily-report', {
         method: 'POST',
         body: {
           manual: true,
           filteredByUser: filtered,
-          requestId
+          requestId,
+          debugMode: true // Añadir modo debug para obtener más información
         },
       });
       
-      console.log("Respuesta de la función Edge:", data);
+      console.log("Respuesta completa de la función Edge:", data);
       
       // Manejar errores de la función
       if (functionError) {
@@ -79,7 +88,7 @@ export const useReportSender = () => {
         return data;
       } else {
         // Manejar errores en la respuesta
-        const errorMsg = data?.message || 'No se pudo enviar el reporte';
+        const errorMsg = data?.error?.message || data?.message || 'No se pudo enviar el reporte';
         throw new Error(errorMsg);
       }
     } catch (err: any) {

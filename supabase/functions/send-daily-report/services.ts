@@ -11,12 +11,26 @@ const supabase = createClient(
 
 // Function to create error response with corsHeaders
 export function createErrorResponse(error: any, requestId: string, elapsedTime: number) {
+  console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error details:`, error);
+  
+  // Intentar extraer un mensaje de error más descriptivo
+  let errorMessage = error.message || "Error desconocido procesando la solicitud";
+  let errorDetails = error.stack || "No hay detalles adicionales disponibles";
+  
+  // Si hay información más específica en error.cause
+  if (error.cause) {
+    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error cause:`, error.cause);
+    if (error.cause.message) {
+      errorMessage = `${errorMessage} - ${error.cause.message}`;
+    }
+  }
+
   return new Response(
     JSON.stringify({
       success: false,
       error: {
-        message: error.message || "Error desconocido procesando la solicitud",
-        details: error.stack || "No hay detalles adicionales disponibles",
+        message: errorMessage,
+        details: errorDetails,
         requestId: requestId
       },
       elapsedTime: `${elapsedTime}ms`
@@ -69,7 +83,16 @@ export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
       assignedEmail: issue.assigned_email || null,
     }));
     
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetched ${reportRows.length} issues`);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetched ${reportRows.length} issues with the following statuses:`);
+    
+    // Log status distribution
+    const statusCounts: Record<string, number> = {};
+    reportRows.forEach(row => {
+      if (!statusCounts[row.status]) statusCounts[row.status] = 0;
+      statusCounts[row.status]++;
+    });
+    
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Issues by status:`, statusCounts);
     
     return reportRows;
   } catch (error) {
@@ -86,7 +109,7 @@ export async function sendEmail(
   requestId: string,
   cc?: string[]
 ): Promise<void> {
-  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Sending email to ${to}`);
+  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Sending email to ${to} with CC: ${cc?.join(", ") || "none"}`);
   
   try {
     // Prepare headers
@@ -126,18 +149,21 @@ export async function sendEmail(
     // Clear the timeout
     clearTimeout(timeoutId);
     
+    // Get the response body
+    const responseBody = await response.text();
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email function response:`, responseBody);
+    
     // Check for errors
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error response from send-email function:`, errorText);
+      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error response from send-email function:`, responseBody);
       
       try {
         // Try to parse as JSON to get more details
-        const errorData = JSON.parse(errorText);
-        throw new Error(`Error sending email: HTTP ${response.status} - ${errorData.error?.message || errorText}`);
+        const errorData = JSON.parse(responseBody);
+        throw new Error(`Error sending email: HTTP ${response.status} - ${errorData.error?.message || responseBody}`);
       } catch (parseError) {
         // If parsing fails, use the raw response
-        throw new Error(`Error sending email: HTTP ${response.status} - ${errorText}`);
+        throw new Error(`Error sending email: HTTP ${response.status} - ${responseBody}`);
       }
     }
     
