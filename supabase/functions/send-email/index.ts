@@ -1,4 +1,3 @@
-
 // Importa el módulo Deno.serve
 import { corsHeaders, handleCors } from './cors.ts';
 import { logger } from './logger.ts';
@@ -23,16 +22,29 @@ export async function sendEmailWithGmail(emailData: any) {
     };
   } catch (error) {
     logger.error(`[${requestId}] Error en sendEmailWithGmail:`, error);
-    return {
+    const errorResponse = {
       success: false,
-      message: error.message || "Error al enviar el email",
+      message: 'Error al enviar el email',
       error: {
-        code: "EMAIL_SEND_FAILED",
-        message: error.message,
-        details: error.stack
-      },
-      requestId
+        code: 'EMAIL_SEND_ERROR',
+        details: error.message,
+        size: {
+          html: emailData.html?.length || 0,
+          attachments: emailData.attachments?.length || 0
+        }
+      }
     };
+    
+    return new Response(
+      JSON.stringify(errorResponse),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      }
+    );
   }
 }
 

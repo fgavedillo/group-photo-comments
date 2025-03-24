@@ -1,4 +1,3 @@
-
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { corsHeaders, SEND_EMAIL_FUNCTION_URL, REQUEST_TIMEOUT } from "./config.ts";
 import { ReportRow } from "./types.ts";
@@ -44,15 +43,11 @@ export function createErrorResponse(error: any, requestId: string, elapsedTime: 
 
 // Fetch all issues from the database
 export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
-  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetching all issues from the database`);
+  console.log(`[${requestId}] Iniciando consulta de incidencias en la base de datos`);
   
   try {
-    // CORRECCIÓN: Mejorado el debug y estructura de la consulta
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Using Supabase URL: ${Deno.env.get("SUPABASE_URL") || "Not set"}`);
-    
-    // Fetch all issues with their related images
-    const { data: issues, error } = await supabase
-      .from("issues")
+    const { data, error } = await supabase
+      .from('issues')
       .select(`
         id,
         message,
@@ -60,61 +55,24 @@ export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
         status,
         area,
         responsable,
-        action_plan,
-        security_improvement,
         assigned_email,
-        issue_images(image_url)
+        security_improvement,
+        action_plan,
+        issue_images (image_url)
       `)
-      .order("id", { ascending: false });
+      .order('timestamp', { ascending: false });
       
     if (error) {
-      console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error fetching issues:`, error);
-      throw new Error(`Error fetching issues: ${error.message}`);
+      console.error(`[${requestId}] Error en consulta SQL:`, error);
+      throw error;
     }
+
+    console.log(`[${requestId}] Consulta exitosa. Incidencias encontradas: ${data?.length || 0}`);
+    console.log(`[${requestId}] Muestra de datos:`, data?.slice(0, 2));
     
-    if (!issues || issues.length === 0) {
-      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] No issues found in database`);
-      return [];
-    }
-    
-    // Transform the data for the report
-    const reportRows: ReportRow[] = issues.map(issue => ({
-      id: issue.id,
-      message: issue.message,
-      timestamp: issue.timestamp,
-      status: issue.status,
-      area: issue.area || "",
-      responsable: issue.responsable || "",
-      actionPlan: issue.action_plan || "",
-      securityImprovement: issue.security_improvement || "",
-      imageUrl: issue.issue_images?.length > 0 ? issue.issue_images[0].image_url : null,
-      assignedEmail: issue.assigned_email || null,
-    }));
-    
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetched ${reportRows.length} issues`);
-    
-    // Log status distribution
-    const statusCounts: Record<string, number> = {};
-    const emailCounts: Record<string, number> = {};
-    
-    reportRows.forEach(row => {
-      // Contar por estado
-      if (!statusCounts[row.status]) statusCounts[row.status] = 0;
-      statusCounts[row.status]++;
-      
-      // Contar por email asignado
-      if (row.assignedEmail) {
-        if (!emailCounts[row.assignedEmail]) emailCounts[row.assignedEmail] = 0;
-        emailCounts[row.assignedEmail]++;
-      }
-    });
-    
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Issues by status:`, statusCounts);
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Issues by assigned email:`, emailCounts);
-    
-    return reportRows;
+    return data || [];
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error in fetchAllIssues:`, error);
+    console.error(`[${requestId}] Error en fetchAllIssues:`, error);
     throw error;
   }
 }
@@ -127,9 +85,18 @@ export async function sendEmail(
   requestId: string,
   cc?: string[]
 ): Promise<void> {
-  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Sending email to ${to} with CC: ${cc?.join(", ") || "none"}`);
+  console.log(`[${requestId}] Iniciando envío de email a: ${to}`);
+  console.log(`[${requestId}] CC: ${cc?.join(', ') || 'No hay CC'}`);
   
   try {
+    // Limitar el tamaño del contenido
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    if (html.length > MAX_SIZE) {
+      // Eliminar imágenes base64 y reemplazar con enlaces
+      html = html.replace(/data:image\/[^;]+;base64,[^"]+/g, 
+        'https://tu-dominio.com/placeholder-image.png');
+    }
+    
     // Prepare headers
     const headers = new Headers();
     headers.set("Content-Type", "application/json");
@@ -186,9 +153,15 @@ export async function sendEmail(
     }
     
     // Success
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email sent successfully`);
+    console.log(`[${requestId}] Email enviado exitosamente a ${to}`);
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error in sendEmail:`, error);
+    console.error(`[${requestId}] Error en envío de email:`, error);
+    console.error(`[${requestId}] Destinatario: ${to}`);
+    console.error(`[${requestId}] Detalles adicionales:`, {
+      subjectLength: subject.length,
+      htmlLength: html.length,
+      ccCount: cc?.length || 0
+    });
     throw error;
   }
 }

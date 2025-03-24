@@ -1,4 +1,3 @@
-
 import { ReportRow, IssueReport, SendDailyReportResponse } from "./types.ts";
 import { RECIPIENT_EMAILS } from "./config.ts";
 import { formatDate, groupIssuesByStatus } from "./utils.ts";
@@ -7,47 +6,32 @@ import { buildEmailHtml } from "./email-template.ts";
 
 // Group issues by assigned email
 function groupIssuesByEmail(issues: ReportRow[], requestId: string): Record<string, ReportRow[]> {
-  const grouped: Record<string, ReportRow[]> = {};
-  let skippedCount = 0;
+  console.log(`[${requestId}] Iniciando agrupación de incidencias. Total: ${issues.length}`);
   
-  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Grouping ${issues.length} issues by email`);
+  // Asegurar que siempre haya al menos un destinatario por defecto
+  const groupedIssues: Record<string, ReportRow[]> = {
+    'francisco.garcia@lingotes.com': [] // Email del administrador como fallback
+  };
+  
+  let hasValidRecipients = false;
   
   issues.forEach(issue => {
-    // CRITICAL FIX: Only use assignedEmail field, not responsable name
-    const email = issue.assignedEmail;
-    
-    // Skip issues with no email assigned
-    if (!email) {
-      skippedCount++;
-      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Skipping issue ${issue.id} - no assigned email`);
-      return;
+    if (issue.assignedEmail?.trim()) {
+      hasValidRecipients = true;
+      if (!groupedIssues[issue.assignedEmail]) {
+        groupedIssues[issue.assignedEmail] = [];
+      }
+      groupedIssues[issue.assignedEmail].push(issue);
+    } else {
+      // Si no tiene email asignado, va al grupo del admin
+      groupedIssues['francisco.garcia@lingotes.com'].push(issue);
     }
-    
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Skipping issue ${issue.id} - invalid email format: ${email}`);
-      skippedCount++;
-      return;
-    }
-    
-    if (!grouped[email]) {
-      grouped[email] = [];
-    }
-    
-    grouped[email].push(issue);
   });
-  
-  // Log summary
-  const emailCount = Object.keys(grouped).length;
-  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Grouped issues into ${emailCount} unique email addresses. Skipped ${skippedCount} issues without emails.`);
-  
-  // Log detailed breakdown
-  Object.entries(grouped).forEach(([email, issues]) => {
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Email ${email}: ${issues.length} issues`);
-  });
-  
-  return grouped;
+
+  console.log(`[${requestId}] Destinatarios encontrados:`, Object.keys(groupedIssues));
+  console.log(`[${requestId}] ¿Hay destinatarios válidos?:`, hasValidRecipients);
+
+  return groupedIssues;
 }
 
 // Filter issues for pending actions only (not closed or denied)
@@ -85,21 +69,35 @@ export async function generateAndSendReport(
   requestId: string,
   debugMode: boolean = false
 ): Promise<SendDailyReportResponse> {
-  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Generating ${filteredByUser ? 'filtered' : 'full'} report${manual ? ' (manual trigger)' : ''}${debugMode ? ' [DEBUG MODE]' : ''}`);
+  console.log(`[${requestId}] Iniciando generación de reporte. Manual: ${manual}, Filtrado: ${filteredByUser}`);
   
   try {
-    // Fetch all issues from the database
-    const allIssues = await fetchAllIssues(requestId);
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Total issues fetched: ${allIssues.length}`);
+    console.log(`[${requestId}] Obteniendo incidencias de la base de datos...`);
+    const issues = await fetchAllIssues(requestId);
+    console.log(`[${requestId}] Total de incidencias recuperadas:`, issues.length);
+    
+    if (issues.length === 0) {
+      return {
+        success: false,
+        message: "No hay incidencias pendientes para reportar",
+        timestamp: new Date().toISOString(),
+        requestId
+      };
+    }
+
+    const groupedIssues = groupIssuesByEmail(issues, requestId);
+    
+    // Siempre debería haber al menos el email del admin
+    const recipients = Object.keys(groupedIssues);
+    console.log(`[${requestId}] Destinatarios finales:`, recipients);
     
     let successCount = 0;
     let failureCount = 0;
-    let recipients: string[] = [];
     
     if (filteredByUser) {
       // When filtering by user, we'll send individual emails to each assigned person
       // with only their pending issues
-      const pendingIssues = getPendingIssues(allIssues, requestId);
+      const pendingIssues = getPendingIssues(issues, requestId);
       const issuesByEmail = groupIssuesByEmail(pendingIssues, requestId);
       
       // Log email distribution plan
@@ -172,7 +170,7 @@ export async function generateAndSendReport(
     } else {
       // Standard report to all configured recipients
       // CORRECCIÓN: Para el reporte completo, enviamos a cada responsable no solo a los administradores
-      const pendingIssues = getPendingIssues(allIssues, requestId);
+      const pendingIssues = getPendingIssues(issues, requestId);
       
       if (pendingIssues.length === 0) {
         console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] No pending issues found, sending empty report`);
@@ -197,12 +195,12 @@ export async function generateAndSendReport(
       
       const report: IssueReport = {
         date: formatDate(new Date()),
-        issues: groupIssuesByStatus(allIssues),
-        totalCount: allIssues.length,
+        issues: groupIssuesByStatus(issues),
+        totalCount: issues.length,
       };
       
       // Generate HTML
-      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Generating HTML for standard report with ${allIssues.length} issues`);
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Generating HTML for standard report with ${issues.length} issues`);
       const html = buildEmailHtml(report);
       
       // Verificamos que haya destinatarios configurados
@@ -225,28 +223,21 @@ export async function generateAndSendReport(
       // Log recipients
       console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Recipients for complete report: ${uniqueRecipients.join(', ')}`);
       
-      // Send email to each recipient
-      for (const recipientEmail of uniqueRecipients) {
-        try {
-          if (debugMode) {
-            console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] [DEBUG] Would send standard report to ${recipientEmail}`);
-            recipients.push(recipientEmail);
-            successCount++;
-            continue;
-          }
-          
-          await sendEmail(
-            recipientEmail,
-            `Reporte Diario de Incidencias (${formatDate(new Date())})`,
-            html,
-            requestId
-          );
-          recipients.push(recipientEmail);
-          console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Standard report sent to ${recipientEmail}`);
-          successCount++;
-        } catch (emailError) {
-          console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Failed to send to ${recipientEmail}:`, emailError);
-          failureCount++;
+      // Dividir el reporte si es muy grande
+      const CHUNK_SIZE = 10; // Número de incidencias por email
+      for (const [email, issues] of Object.entries(groupedIssues)) {
+        const chunks = [];
+        for (let i = 0; i < issues.length; i += CHUNK_SIZE) {
+          chunks.push(issues.slice(i, i + CHUNK_SIZE));
+        }
+        
+        // Enviar múltiples emails si es necesario
+        for (let i = 0; i < chunks.length; i++) {
+          const subject = chunks.length > 1 
+            ? `Reporte de Incidencias (Parte ${i + 1}/${chunks.length})`
+            : 'Reporte de Incidencias';
+            
+          await sendEmail(email, subject, generateHtmlForChunk(chunks[i]), requestId);
         }
       }
       
@@ -282,25 +273,17 @@ export async function generateAndSendReport(
       }
     };
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] Error generating report:`, error);
-    
-    const errorResponse: SendDailyReportResponse = {
+    console.error(`[${requestId}] Error en generateAndSendReport:`, error);
+    return {
       success: false,
-      message: "Error al generar reportes",
+      message: "Error al generar o enviar el reporte",
       timestamp: new Date().toISOString(),
       requestId,
       error: {
-        code: error.code || "UNKNOWN_ERROR",
-        message: error.message || "Error desconocido al generar reportes",
+        code: 'REPORT_GENERATION_ERROR',
+        message: error.message,
         details: error.stack
-      },
-      stats: {
-        totalEmails: 0,
-        successCount: 0,
-        failureCount: 0
       }
     };
-    
-    return errorResponse;
   }
 }
