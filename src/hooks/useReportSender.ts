@@ -28,7 +28,8 @@ export const useReportSender = () => {
       
       console.log(`Iniciando envío de reporte ${filtered ? 'filtrado' : 'completo'} con ID: ${requestId}`);
       
-      // Si está en modo filtrado, primero verificar que haya destinatarios
+      // Especialmente para el modo filtrado, verificar primero la existencia de correos 
+      // para evitar llamar a la función Edge si no hay destinatarios
       if (filtered) {
         try {
           // Obtener emails de responsables con incidencias asignadas
@@ -48,7 +49,8 @@ export const useReportSender = () => {
       console.log("Invocando función Edge send-daily-report con parámetros:", {
         manual: true,
         filteredByUser: filtered,
-        requestId
+        requestId,
+        debugMode: true
       });
       
       const { data, error: functionError } = await supabase.functions.invoke('send-daily-report', {
@@ -57,7 +59,7 @@ export const useReportSender = () => {
           manual: true,
           filteredByUser: filtered,
           requestId,
-          debugMode: true // Añadir modo debug para obtener más información
+          debugMode: false // Cambiar a true solo para debug
         },
       });
       

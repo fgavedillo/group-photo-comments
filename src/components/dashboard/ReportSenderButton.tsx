@@ -12,6 +12,7 @@ export const ReportSenderButton = () => {
   
   const handleSendReport = async () => {
     try {
+      console.log(`Enviando reporte ${filtered ? 'personalizado' : 'completo'}...`);
       await sendReport(filtered);
     } catch (err) {
       // El error ya está manejado en el hook
@@ -90,7 +91,7 @@ export const ReportSenderButton = () => {
             El botón "Enviar Reporte" genera y envía por correo un resumen de las incidencias pendientes.
           </p>
           <ul className="list-disc pl-5 mt-2 text-xs">
-            <li><strong>Reporte Completo:</strong> Envía todas las incidencias a los administradores configurados.</li>
+            <li><strong>Reporte Completo:</strong> Envía todas las incidencias a los responsables configurados y a los administradores.</li>
             <li><strong>Reporte Personalizado:</strong> Envía a cada responsable solo sus incidencias asignadas según el campo de correo electrónico.</li>
           </ul>
         </AlertDescription>

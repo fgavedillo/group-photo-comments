@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import emailjs from '@emailjs/browser';
 
@@ -61,10 +62,10 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
   try {
     console.log("Obteniendo emails de responsables...");
     
-    // Obtener emails directamente del campo assigned_email
-    const { data: issuesData, error: issuesError } = await supabase
+    // CORRECCIÓN: Modificar la consulta para asegurar que obtenemos correctamente los correos
+    const { data: pendingIssues, error: issuesError } = await supabase
       .from('issues')
-      .select('assigned_email')
+      .select('assigned_email, status')
       .in('status', ['en-estudio', 'en-curso'])
       .not('assigned_email', 'is', null);
     
@@ -73,20 +74,24 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
       throw issuesError;
     }
     
-    console.log("Datos crudos de consulta:", issuesData);
+    console.log("Incidencias pendientes encontradas:", pendingIssues);
     
-    // Extraer emails únicos con validación mejorada
-    const uniqueEmails = [...new Set(issuesData
-      .map(item => item.assigned_email)
+    // Si no hay incidencias pendientes, devolver un array vacío
+    if (!pendingIssues || pendingIssues.length === 0) {
+      console.warn("No se encontraron incidencias pendientes");
+      return [];
+    }
+    
+    // Extraer y validar emails
+    const validEmails = pendingIssues
+      .map(issue => issue.assigned_email)
       .filter(email => isValidEmail(email))
-      .map(email => email!.trim())
-    )];
+      .map(email => email!.trim());
+    
+    // Eliminar duplicados
+    const uniqueEmails = [...new Set(validEmails)];
     
     console.log('Emails de responsables encontrados:', uniqueEmails);
-    
-    if (uniqueEmails.length === 0) {
-      console.warn('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
-    }
     
     return uniqueEmails;
   } catch (error: any) {
@@ -119,7 +124,8 @@ export const sendReportViaEdgeFunction = async (filtered: boolean = false): Prom
       body: {
         manual: true,
         filteredByUser: filtered,
-        requestId
+        requestId,
+        debugMode: true // Modo debug para obtener más información
       },
     });
     

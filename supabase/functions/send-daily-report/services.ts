@@ -47,6 +47,9 @@ export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
   console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetching all issues from the database`);
   
   try {
+    // CORRECCIÓN: Mejorado el debug y estructura de la consulta
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Using Supabase URL: ${Deno.env.get("SUPABASE_URL") || "Not set"}`);
+    
     // Fetch all issues with their related images
     const { data: issues, error } = await supabase
       .from("issues")
@@ -69,6 +72,11 @@ export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
       throw new Error(`Error fetching issues: ${error.message}`);
     }
     
+    if (!issues || issues.length === 0) {
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] No issues found in database`);
+      return [];
+    }
+    
     // Transform the data for the report
     const reportRows: ReportRow[] = issues.map(issue => ({
       id: issue.id,
@@ -83,16 +91,26 @@ export async function fetchAllIssues(requestId: string): Promise<ReportRow[]> {
       assignedEmail: issue.assigned_email || null,
     }));
     
-    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetched ${reportRows.length} issues with the following statuses:`);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Fetched ${reportRows.length} issues`);
     
     // Log status distribution
     const statusCounts: Record<string, number> = {};
+    const emailCounts: Record<string, number> = {};
+    
     reportRows.forEach(row => {
+      // Contar por estado
       if (!statusCounts[row.status]) statusCounts[row.status] = 0;
       statusCounts[row.status]++;
+      
+      // Contar por email asignado
+      if (row.assignedEmail) {
+        if (!emailCounts[row.assignedEmail]) emailCounts[row.assignedEmail] = 0;
+        emailCounts[row.assignedEmail]++;
+      }
     });
     
     console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Issues by status:`, statusCounts);
+    console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Issues by assigned email:`, emailCounts);
     
     return reportRows;
   } catch (error) {

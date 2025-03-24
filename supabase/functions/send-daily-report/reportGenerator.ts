@@ -54,11 +54,27 @@ function groupIssuesByEmail(issues: ReportRow[], requestId: string): Record<stri
 function getPendingIssues(issues: ReportRow[], requestId: string): ReportRow[] {
   console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Filtering for pending issues from ${issues.length} total issues`);
   
+  // CORRECCIÓN: Asegurarse de que estamos filtrando correctamente
   const pendingIssues = issues.filter(issue => 
     issue.status === 'en-estudio' || issue.status === 'en-curso'
   );
   
+  // Registro detallado para depuración
   console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Found ${pendingIssues.length} pending issues`);
+  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Status breakdown: ${
+    issues.reduce((acc, issue) => {
+      acc[issue.status] = (acc[issue.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  }`);
+  
+  // Registrar emails asignados de incidencias pendientes
+  const pendingEmails = pendingIssues
+    .map(issue => issue.assignedEmail)
+    .filter(email => email !== null);
+  
+  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Pending issues with emails: ${pendingEmails.length}`);
+  console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Unique emails found: ${[...new Set(pendingEmails)].join(', ')}`);
   
   return pendingIssues;
 }
@@ -155,6 +171,30 @@ export async function generateAndSendReport(
       console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Filtered reports: ${successCount} sent successfully, ${failureCount} failed`);
     } else {
       // Standard report to all configured recipients
+      // CORRECCIÓN: Para el reporte completo, enviamos a cada responsable no solo a los administradores
+      const pendingIssues = getPendingIssues(allIssues, requestId);
+      
+      if (pendingIssues.length === 0) {
+        console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] No pending issues found, sending empty report`);
+      }
+      
+      // Extraer correos únicos de responsables de incidencias pendientes
+      const pendingEmails = [...new Set(
+        pendingIssues
+          .map(issue => issue.assignedEmail)
+          .filter(email => email && email.includes('@'))
+      )];
+      
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Found ${pendingEmails.length} unique responsible emails for complete report`);
+      
+      // Si no hay correos pendientes, usar los destinatarios configurados en config.ts
+      const targetRecipients = pendingEmails.length > 0 ? 
+        [...pendingEmails, ...RECIPIENT_EMAILS] : 
+        RECIPIENT_EMAILS;
+      
+      // Eliminar duplicados finales
+      const uniqueRecipients = [...new Set(targetRecipients)];
+      
       const report: IssueReport = {
         date: formatDate(new Date()),
         issues: groupIssuesByStatus(allIssues),
@@ -166,7 +206,7 @@ export async function generateAndSendReport(
       const html = buildEmailHtml(report);
       
       // Verificamos que haya destinatarios configurados
-      if (!RECIPIENT_EMAILS || RECIPIENT_EMAILS.length === 0) {
+      if (uniqueRecipients.length === 0) {
         console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] No recipients configured for complete reports`);
         return {
           success: false,
@@ -183,10 +223,10 @@ export async function generateAndSendReport(
       }
       
       // Log recipients
-      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Configured recipients for complete report:`, RECIPIENT_EMAILS);
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Recipients for complete report: ${uniqueRecipients.join(', ')}`);
       
       // Send email to each recipient
-      for (const recipientEmail of RECIPIENT_EMAILS) {
+      for (const recipientEmail of uniqueRecipients) {
         try {
           if (debugMode) {
             console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] [DEBUG] Would send standard report to ${recipientEmail}`);
