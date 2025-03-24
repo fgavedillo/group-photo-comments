@@ -13,20 +13,20 @@ function groupIssuesByEmail(issues: ReportRow[], requestId: string): Record<stri
   console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Grouping ${issues.length} issues by email`);
   
   issues.forEach(issue => {
-    // Check both assignedEmail and responsable fields for email addresses
-    let email = issue.assignedEmail;
-    
-    // If no assigned email, try to find an email in the responsable field
-    if (!email && issue.responsable) {
-      const emailMatch = issue.responsable.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
-      if (emailMatch) {
-        email = emailMatch[0];
-        console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Extracted email ${email} from responsable field for issue ${issue.id}`);
-      }
-    }
+    // CRITICAL FIX: Only use assignedEmail field, not responsable name
+    const email = issue.assignedEmail;
     
     // Skip issues with no email assigned
     if (!email) {
+      skippedCount++;
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Skipping issue ${issue.id} - no assigned email`);
+      return;
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Skipping issue ${issue.id} - invalid email format: ${email}`);
       skippedCount++;
       return;
     }
@@ -97,7 +97,7 @@ export async function generateAndSendReport(
         console.error(`[${new Date().toISOString()}] [RequestID:${requestId}] No recipients found for filtered report`);
         return {
           success: false,
-          message: "No se encontraron responsables con incidencias asignadas para enviar reportes filtrados",
+          message: "No se encontraron incidencias con correos electrónicos asignados para enviar reportes filtrados",
           timestamp: new Date().toISOString(),
           requestId,
           recipients: [],
@@ -154,7 +154,7 @@ export async function generateAndSendReport(
       
       console.log(`[${new Date().toISOString()}] [RequestID:${requestId}] Filtered reports: ${successCount} sent successfully, ${failureCount} failed`);
     } else {
-      // Standard report to all recipients with all issues
+      // Standard report to all configured recipients
       const report: IssueReport = {
         date: formatDate(new Date()),
         issues: groupIssuesByStatus(allIssues),

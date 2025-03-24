@@ -15,10 +15,10 @@ export const corsHeaders = {
 };
 
 // Tiempo máximo de ejecución para la función (en milisegundos)
-export const MAX_EXECUTION_TIME = 50000; // 50 segundos (aumentado para dar más tiempo al proceso de envío)
+export const MAX_EXECUTION_TIME = 60000; // 60 segundos (aumentado para dar más tiempo al proceso de envío)
 
 // Configuración para las solicitudes
-export const REQUEST_TIMEOUT = 15000; // 15 segundos (aumentado para dar más tiempo a las operaciones de correo)
+export const REQUEST_TIMEOUT = 20000; // 20 segundos (aumentado para dar más tiempo a las operaciones de correo)
 
 // URL completa para la función send-email
 export const SEND_EMAIL_FUNCTION_URL = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email";

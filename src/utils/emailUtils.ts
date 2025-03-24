@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import emailjs from '@emailjs/browser';
 
@@ -62,7 +61,7 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
   try {
     console.log("Obteniendo emails de responsables...");
     
-    // Primero intentamos obtener correos usando assigned_email directamente
+    // Obtener emails directamente del campo assigned_email
     const { data: issuesData, error: issuesError } = await supabase
       .from('issues')
       .select('assigned_email')
@@ -85,44 +84,8 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
     
     console.log('Emails de responsables encontrados:', uniqueEmails);
     
-    // Si no encontramos correos, intentemos buscar también en el campo 'responsable'
-    // que podría contener direcciones de correo
     if (uniqueEmails.length === 0) {
-      console.log("No se encontraron correos en assigned_email, probando con campo responsable...");
-      
-      const { data: responsablesData, error: responsablesError } = await supabase
-        .from('issues')
-        .select('responsable')
-        .in('status', ['en-estudio', 'en-curso'])
-        .not('responsable', 'is', null);
-      
-      if (responsablesError) {
-        console.error("Error SQL al obtener responsables:", responsablesError);
-        throw responsablesError;
-      }
-      
-      // Buscar posibles emails en el campo responsable
-      const emailsFromResponsable = [...new Set(responsablesData
-        .map(item => {
-          // Intentar encontrar un email en el campo responsable
-          const responsable = item.responsable || '';
-          const emailMatch = responsable.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
-          return emailMatch ? emailMatch[0] : null;
-        })
-        .filter(email => isValidEmail(email))
-        .map(email => email!.trim())
-      )];
-      
-      console.log('Emails encontrados en campo responsable:', emailsFromResponsable);
-      
-      // Combinar con cualquier correo que hayamos encontrado en assigned_email
-      const allEmails = [...uniqueEmails, ...emailsFromResponsable];
-      
-      if (allEmails.length === 0) {
-        console.warn('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
-      }
-      
-      return allEmails;
+      console.warn('No se encontraron responsables con correos electrónicos válidos para incidencias pendientes');
     }
     
     return uniqueEmails;

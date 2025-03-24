@@ -41,7 +41,7 @@ export const ReportSenderButton = () => {
           ) : (
             <>
               <FileImage className="mr-2 h-4 w-4" />
-              Enviar Reporte {filtered ? '(Filtrado)' : '(Completo)'}
+              Enviar Reporte {filtered ? '(Personalizado)' : '(Completo)'}
             </>
           )}
         </Button>
@@ -53,7 +53,7 @@ export const ReportSenderButton = () => {
           className="text-xs"
         >
           <Filter className={`h-4 w-4 mr-2 ${filtered ? 'text-green-600' : ''}`} />
-          {filtered ? 'Desactivar filtro' : 'Activar filtro'}
+          {filtered ? 'Completo' : 'Personalizado'}
         </Button>
       </div>
       
@@ -90,8 +90,8 @@ export const ReportSenderButton = () => {
             El botón "Enviar Reporte" genera y envía por correo un resumen de las incidencias pendientes.
           </p>
           <ul className="list-disc pl-5 mt-2 text-xs">
-            <li><strong>Reporte Completo:</strong> Envía todas las incidencias a los administradores.</li>
-            <li><strong>Reporte Filtrado:</strong> Envía a cada responsable solo sus incidencias asignadas.</li>
+            <li><strong>Reporte Completo:</strong> Envía todas las incidencias a los administradores configurados.</li>
+            <li><strong>Reporte Personalizado:</strong> Envía a cada responsable solo sus incidencias asignadas según el campo de correo electrónico.</li>
           </ul>
         </AlertDescription>
       </Alert>
