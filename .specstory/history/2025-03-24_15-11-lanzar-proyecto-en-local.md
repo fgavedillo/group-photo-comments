@@ -858,7 +858,390 @@ tengo que reiniciar?
 
 _**Assistant**_
 
+Sí, después de hacer cambios en las Edge Functions de Supabase, necesitas reiniciar/redeployar las funciones para que los cambios surtan efecto. 
 
+Para hacerlo, tienes dos opciones:
+
+1. Desde la interfaz de Supabase:
+   - Ve al panel de Edge Functions
+   - Busca la función `send-daily-report`
+   - Haz clic en "Deploy" o "Redeploy"
+
+2. Usando la CLI de Supabase:
+   ```bash
+   supabase functions deploy send-daily-report
+   ```
+
+Después de reiniciar la función, intenta enviar el reporte nuevamente. Si el error persiste, podríamos revisar los logs nuevamente para ver si hay más información sobre el problema.
+
+---
+
+_**User**_
+
+puedes detallar más?
+
+---
+
+_**Assistant**_
+
+Ah, veo que el error es porque no tienes instalada la CLI de Supabase en tu sistema. Vamos a solucionarlo paso a paso:
+
+1. Primero, necesitas instalar la CLI de Supabase. Hay varias formas de hacerlo:
+
+   **Usando npm (recomendado en tu caso ya que tienes Node.js instalado):**
+   ```bash
+   npm install -g supabase
+   ```
+
+   **O usando Windows y PowerShell:**
+   ```powershell
+   scoop install supabase
+   ```
+
+2. Después de instalar la CLI, necesitas iniciar sesión:
+   ```bash
+   supabase login
+   ```
+
+3. Una vez logueado, desde la carpeta de tu proyecto puedes deployar la función:
+   ```bash
+   supabase functions deploy send-daily-report
+   ```
+
+Si prefieres no usar la CLI, también puedes hacer el deploy desde la interfaz web de Supabase:
+
+1. Ve a https://supabase.com
+2. Inicia sesión en tu cuenta
+3. Selecciona tu proyecto
+4. Ve a la sección "Edge Functions"
+5. Busca la función "send-daily-report"
+6. Haz clic en el botón "Deploy" o "Redeploy"
+
+¿Qué método prefieres usar? Puedo guiarte con más detalle en cualquiera de los dos.
+
+---
+
+_**User**_
+
+por qué falla?
+
+---
+
+_**Assistant**_
+
+Ah, ahora veo el problema. El error indica que no se puede instalar la CLI de Supabase usando npm. El mensaje específicamente dice:
+
+```
+Installing Supabase CLI as a global module is not supported.
+Please use one of the supported package managers: https://github.com/supabase/cli#install-the-cli
+```
+
+Para Windows, la forma correcta de instalar la CLI de Supabase es usando Scoop. Aquí están los pasos:
+
+1. Primero, instala Scoop (si no lo tienes). Abre PowerShell y ejecuta:
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+irm get.scoop.sh | iex
+```
+
+2. Una vez instalado Scoop, instala la CLI de Supabase:
+```powershell
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+```
+
+El error que estás viendo ocurre porque Supabase ya no soporta la instalación global vía npm, y recomienda usar gestores de paquetes específicos del sistema operativo como Scoop para Windows.
+
+¿Quieres que te guíe en el proceso de instalación de Scoop y Supabase CLI?
+
+---
+
+_**User**_
+
+instalado
+
+---
+
+_**Assistant**_
+
+Perfecto, ahora que tienes instalada la CLI de Supabase, los pasos para deployar la función son:
+
+1. Primero, inicia sesión en Supabase:
+```bash
+supabase login
+```
+Te pedirá tu token de acceso que puedes obtener en https://supabase.com/dashboard/account/tokens
+
+2. Luego, desde la carpeta de tu proyecto, ejecuta:
+```bash
+supabase functions deploy send-daily-report
+```
+
+Esto debería redeployar la función con los cambios que hicimos anteriormente en el código, donde:
+- Aseguramos que siempre haya un destinatario por defecto
+- Mejoramos el manejo de errores
+- Añadimos más logs
+
+Después de hacer el deploy, intenta enviar el reporte nuevamente desde la interfaz. ¿Te gustaría que revisemos algo más del código mientras se hace el deploy?
+
+---
+
+_**User**_
+
+ahora no lo reconoce
+
+---
+
+_**Assistant**_
+
+Ah, entiendo el problema. Aunque instalamos Supabase CLI con Scoop, PowerShell no lo está reconociendo. Esto puede suceder por dos razones:
+
+1. Es posible que necesites reiniciar PowerShell para que reconozca el nuevo comando
+2. O puede que Scoop no haya actualizado correctamente la variable PATH
+
+Prueba estas soluciones en orden:
+
+1. Primero, cierra y vuelve a abrir PowerShell
+
+2. Si sigue sin funcionar, verifica que Scoop está en tu PATH. Ejecuta:
+```powershell
+$env:Path
+```
+
+3. Si no ves Scoop en el PATH, puedes añadirlo manualmente:
+```powershell
+$env:Path += ";$HOME\scoop\shims"
+```
+
+4. También puedes intentar ejecutar Supabase directamente desde su ubicación:
+```powershell
+~/scoop/apps/supabase/current/supabase.exe login
+```
+
+¿Quieres que probemos alguna de estas soluciones? Dime cuál prefieres intentar primero.
+
+---
+
+_**User**_
+
+como hago commit y push por comando
+
+---
+
+_**Assistant**_
+
+Para hacer commit y push por comando, aquí están los pasos:
+
+1. Primero, añade los cambios al staging:
+```bash
+git add .
+```
+
+2. Haz el commit con un mensaje descriptivo:
+```bash
+git commit -m "fix: mejora en el manejo de destinatarios en reportes"
+```
+
+3. Finalmente, haz el push:
+```bash
+git push origin main
+```
+
+Si estás en una rama diferente a main, reemplaza "main" con el nombre de tu rama.
+
+Si es la primera vez que haces push en este repositorio, podrías necesitar:
+```bash
+git push -u origin main
+```
+
+También puedes verificar el estado de tus cambios antes de hacer commit con:
+```bash
+git status
+```
+
+¿Necesitas ayuda con alguno de estos comandos?
+
+---
+
+_**User**_
+
+cómo ajustamos desde aquí supabase?
+
+---
+
+_**Assistant**_
+
+Para ajustar la configuración de Supabase desde el código, necesitamos enfocarnos en los archivos relevantes. Basado en tu estructura de proyecto, los archivos principales son:
+
+1. Configuración del cliente Supabase (`src/integrations/supabase/client.ts`):
+```typescript:src/integrations/supabase/client.ts
+// ... existing code ...
+const SUPABASE_URL = "https://jzmzmjvtxcrxljnhhrjo.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "tu_clave_aquí";
+
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+```
+
+2. Configuración de las Edge Functions (`supabase/functions/send-daily-report/config.ts`):
+```typescript:supabase/functions/send-daily-report/config.ts
+export const APP_URL = "https://incidencias-gestion.lovable.dev";
+
+export const RECIPIENT_EMAILS = [
+  "francisco.garcia@lingotes.com",
+  // Añade aquí más destinatarios por defecto
+];
+
+export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <francisco.garcia@lingotes.com>";
+
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Aumentar tiempos de timeout si es necesario
+export const MAX_EXECUTION_TIME = 180000; // 3 minutos
+export const REQUEST_TIMEOUT = 60000; // 1 minuto
+```
+
+3. Configuración general de Supabase (`supabase/config.toml`):
+```toml
+# Ajusta los límites y configuraciones según necesites
+[functions]
+timeout_seconds = 180
+memory_size = 256
+```
+
+¿Hay alguna configuración específica que quieras ajustar? Por ejemplo:
+- Timeouts
+- Límites de memoria
+- URLs de las funciones
+- Destinatarios por defecto
+- Headers CORS
+- etc.
+
+---
+
+_**User**_
+
+cada vez que tenga que reiniciar algo indicameló
+
+---
+
+_**Assistant**_
+
+Sí, te indicaré claramente cuándo necesitas reiniciar algo. En el contexto de tu aplicación, hay varios componentes que pueden requerir reinicio:
+
+1. **Edge Functions de Supabase**
+   - Cuando modifiques cualquier archivo en `/supabase/functions/`
+   - Necesitarás ejecutar `supabase functions deploy nombre-funcion`
+
+2. **Servidor de desarrollo local**
+   - Cuando modifiques configuraciones en `vite.config.ts`
+   - Cuando modifiques variables de entorno
+   - Necesitarás reiniciar con `npm run dev`
+
+3. **Cliente de Supabase**
+   - Cuando cambies configuraciones en `src/integrations/supabase/client.ts`
+   - Necesitarás reiniciar el servidor de desarrollo
+
+4. **Base de datos**
+   - Cuando hagas cambios en `supabase/migrations/`
+   - Necesitarás ejecutar las migraciones
+
+¿Te gustaría que en cada cambio que proponga, incluya específicamente si requiere reinicio y qué comando usar?
+
+---
+
+_**User**_
+
+donde consigo la clave de supabase?
+
+---
+
+_**Assistant**_
+
+La clave de Supabase la puedes encontrar en:
+
+1. Ve a https://supabase.com
+2. Inicia sesión en tu cuenta
+3. Selecciona tu proyecto
+4. Ve a "Project Settings" (configuración del proyecto)
+5. En el menú lateral, busca "API"
+6. Ahí encontrarás:
+   - `Project URL` (tu SUPABASE_URL)
+   - `anon public` (tu SUPABASE_PUBLISHABLE_KEY)
+   - `service_role` (clave secreta, no uses esta en el frontend)
+
+La clave que necesitas para la CLI es diferente:
+1. Ve a https://supabase.com/dashboard/account/tokens
+2. Crea un nuevo token de acceso o usa uno existente
+3. Este token es el que usarás con `supabase login`
+
+¿Cuál de estas claves estás buscando específicamente?
+
+---
+
+_**User**_
+
+@https://jzmzmjvtxcrxljnhhrjo.supabase.co 
+anon public: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I
+service_role:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTczODE2MjQ1MSwiZXhwIjoyMDUzNzM4NDUxfQ.rcv7Yn2uo7QOxz0WPYc9THOzSiB3yA6jm_uZn0XbInM
+
+
+---
+
+_**Assistant**_
+
+Ahora que tienes las claves, necesitas usarlas en los lugares correctos:
+
+1. En `src/integrations/supabase/client.ts` usa la clave `anon public`:
+```typescript:src/integrations/supabase/client.ts
+const SUPABASE_URL = "https://jzmzmjvtxcrxljnhhrjo.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I";
+
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+```
+
+2. Para las Edge Functions y operaciones administrativas, usa la clave `service_role`. Esta clave no debe estar en el código del frontend, sino en variables de entorno o en la configuración de Supabase.
+
+Después de actualizar el cliente, necesitarás reiniciar el servidor de desarrollo (`npm run dev`).
+
+IMPORTANTE: No compartas estas claves públicamente ni las subas a repositorios públicos. Considera usar variables de entorno para manejarlas de forma segura.
+
+---
+
+_**User**_
+
+cómo hacemos push commit?
+
+---
+
+_**Assistant**_
+
+Para hacer push y commit de tus cambios, sigue estos pasos en orden:
+
+1. Primero, añade los cambios al staging:
+```bash
+git add .
+```
+
+2. Haz el commit con un mensaje descriptivo:
+```bash
+git commit -m "feat: actualizada configuración de Supabase y claves"
+```
+
+3. Finalmente, haz el push:
+```bash
+git push origin main
+```
+
+Si quieres verificar el estado antes y después de cada paso:
+- Antes de add: `git status` (verás archivos en rojo)
+- Después de add: `git status` (verás archivos en verde)
+- Después de commit: `git log` (verás tu commit)
+
+¿Necesitas ayuda con alguno de estos comandos?
 
 ---
 

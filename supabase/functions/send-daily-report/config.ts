@@ -1,9 +1,8 @@
-
 export const APP_URL = "https://incidencias-gestion.lovable.dev";
 
 export const RECIPIENT_EMAILS = [
   "francisco.garcia@lingotes.com",
-  // El usuario puede agregar más destinatarios según sea necesario
+  // Añade aquí más destinatarios por defecto
 ];
 
 // Cambio del remitente para mostrar el nombre del sistema
@@ -15,10 +14,10 @@ export const corsHeaders = {
 };
 
 // Tiempo máximo de ejecución para la función (en milisegundos)
-export const MAX_EXECUTION_TIME = 120000; // 120 segundos (aumentado para dar más tiempo al proceso)
+export const MAX_EXECUTION_TIME = 180000; // 3 minutos
 
 // Configuración para las solicitudes
-export const REQUEST_TIMEOUT = 30000; // 30 segundos (aumentado para dar más tiempo a las operaciones)
+export const REQUEST_TIMEOUT = 60000; // 1 minuto
 
 // URL completa para la función send-email
 export const SEND_EMAIL_FUNCTION_URL = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email";
