@@ -1,4 +1,3 @@
-
 import { supabase } from "@/lib/supabase";
 import emailjs from '@emailjs/browser';
 
@@ -62,28 +61,30 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
   try {
     console.log("Obteniendo emails de responsables...");
     
-    // CORRECCIÓN: Modificar la consulta para asegurar que obtenemos correctamente los correos
+    // Modificamos la consulta para asegurar que obtenemos solo incidencias con responsable Y correo asignado
     const { data: pendingIssues, error: issuesError } = await supabase
       .from('issues')
-      .select('assigned_email, status')
+      .select('assigned_email, responsable, status')
       .in('status', ['en-estudio', 'en-curso'])
-      .not('assigned_email', 'is', null);
+      .not('assigned_email', 'is', null)
+      .not('responsable', 'is', null);
     
     if (issuesError) {
       console.error("Error SQL al obtener correos:", issuesError);
       throw issuesError;
     }
     
-    console.log("Incidencias pendientes encontradas:", pendingIssues);
+    console.log("Incidencias con responsable y correo encontradas:", pendingIssues);
     
-    // Si no hay incidencias pendientes, devolver un array vacío
+    // Si no hay incidencias pendientes con correo y responsable, devolver un array vacío
     if (!pendingIssues || pendingIssues.length === 0) {
-      console.warn("No se encontraron incidencias pendientes");
+      console.warn("No se encontraron incidencias con responsable y correo asignado");
       return [];
     }
     
     // Extraer y validar emails
     const validEmails = pendingIssues
+      .filter(issue => issue.responsable && issue.responsable.trim() !== '')
       .map(issue => issue.assigned_email)
       .filter(email => isValidEmail(email))
       .map(email => email!.trim());
@@ -91,7 +92,7 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
     // Eliminar duplicados
     const uniqueEmails = [...new Set(validEmails)];
     
-    console.log('Emails de responsables encontrados:', uniqueEmails);
+    console.log('Emails de responsables válidos encontrados:', uniqueEmails);
     
     return uniqueEmails;
   } catch (error: any) {

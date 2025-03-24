@@ -28,21 +28,18 @@ export const useReportSender = () => {
       
       console.log(`Iniciando envío de reporte ${filtered ? 'filtrado' : 'completo'} con ID: ${requestId}`);
       
-      // Especialmente para el modo filtrado, verificar primero la existencia de correos 
-      // para evitar llamar a la función Edge si no hay destinatarios
-      if (filtered) {
-        try {
-          // Obtener emails de responsables con incidencias asignadas
-          const emails = await getResponsibleEmails();
-          console.log("Emails de responsables encontrados:", emails);
-          
-          if (!emails || emails.length === 0) {
-            throw new Error("No se encontraron responsables con correos electrónicos válidos para incidencias pendientes");
-          }
-        } catch (emailError: any) {
-          console.error("Error obteniendo emails de responsables:", emailError);
-          throw new Error(`No se pudieron obtener los correos de los responsables: ${emailError.message}`);
+      // Verificar primero la existencia de correos para evitar llamar a la función Edge si no hay destinatarios
+      try {
+        // Obtener emails de responsables con incidencias asignadas
+        const emails = await getResponsibleEmails();
+        console.log("Emails de responsables encontrados:", emails);
+        
+        if (!emails || emails.length === 0) {
+          throw new Error("No se encontraron incidencias con responsable y correo electrónico válidos");
         }
+      } catch (emailError: any) {
+        console.error("Error obteniendo emails de responsables:", emailError);
+        throw new Error(`No se pudieron encontrar incidencias con responsable y correo asignados: ${emailError.message}`);
       }
       
       // Invocar la función Edge para enviar el reporte
@@ -50,7 +47,7 @@ export const useReportSender = () => {
         manual: true,
         filteredByUser: filtered,
         requestId,
-        debugMode: true
+        debugMode: false
       });
       
       const { data, error: functionError } = await supabase.functions.invoke('send-daily-report', {
@@ -59,7 +56,7 @@ export const useReportSender = () => {
           manual: true,
           filteredByUser: filtered,
           requestId,
-          debugMode: false // Cambiar a true solo para debug
+          debugMode: false
         },
       });
       
@@ -79,7 +76,7 @@ export const useReportSender = () => {
         const successCount = data.stats?.successCount || 0;
         
         if (successCount === 0) {
-          throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan responsables asignados a incidencias pendientes.");
+          throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
         }
         
         toast({

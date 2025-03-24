@@ -2,9 +2,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileImage, RefreshCw, Filter, Info, AlertCircle } from "lucide-react";
+import { FileImage, RefreshCw, Filter, Info, AlertCircle, CheckCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle } from "lucide-react";
 
 export const ReportSenderButton = () => {
   const { sendReport, isLoading, error, lastResponse } = useReportSender();
@@ -94,6 +93,9 @@ export const ReportSenderButton = () => {
             <li><strong>Reporte Completo:</strong> Envía todas las incidencias a los responsables configurados y a los administradores.</li>
             <li><strong>Reporte Personalizado:</strong> Envía a cada responsable solo sus incidencias asignadas según el campo de correo electrónico.</li>
           </ul>
+          <p className="mt-2 font-medium text-blue-700">
+            Importante: Solo se envían reportes a incidencias que tienen asignados TANTO un responsable como un correo electrónico válido.
+          </p>
         </AlertDescription>
       </Alert>
     </div>
