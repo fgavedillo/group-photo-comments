@@ -1,7 +1,10 @@
+
 export const APP_URL = "https://incidencias-gestion.lovable.dev";
 
 export const RECIPIENT_EMAILS = [
   "francisco.garcia@lingotes.com",
+  "test@example.com", // Adding a test recipient
+  "notifications@example.com", // Adding another test recipient
   // Añade aquí más destinatarios por defecto
 ];
 
