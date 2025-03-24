@@ -65,8 +65,7 @@ url = ""
 # Port to use for the Functions endpoint.
 port = 9000
 
-# Individual function configurations are defined as separate sections
-# Adding proper sections for each function
+# Define individual function configurations
 [functions.send-daily-report]
 verify_jwt = false
 
