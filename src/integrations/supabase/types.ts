@@ -9,6 +9,157 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      companies: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      company_users: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          role: string
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          role?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_config: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          from_email: string
+          id: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_username: string
+          updated_at: string | null
+          use_tls: boolean | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          from_email: string
+          id?: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_username: string
+          updated_at?: string | null
+          use_tls?: boolean | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          from_email?: string
+          id?: string
+          smtp_host?: string
+          smtp_password?: string
+          smtp_port?: number
+          smtp_username?: string
+          updated_at?: string | null
+          use_tls?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_config_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_queue: {
+        Row: {
+          cc_addresses: string[] | null
+          created_at: string | null
+          error: string | null
+          html_content: string | null
+          id: string
+          is_periodic: boolean | null
+          last_success: string | null
+          period_type: string | null
+          processed_at: string | null
+          retry_count: number | null
+          scheduled_for: string | null
+          status: string | null
+          subject: string | null
+          to_addresses: string[] | null
+        }
+        Insert: {
+          cc_addresses?: string[] | null
+          created_at?: string | null
+          error?: string | null
+          html_content?: string | null
+          id?: string
+          is_periodic?: boolean | null
+          last_success?: string | null
+          period_type?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: string | null
+          subject?: string | null
+          to_addresses?: string[] | null
+        }
+        Update: {
+          cc_addresses?: string[] | null
+          created_at?: string | null
+          error?: string | null
+          html_content?: string | null
+          id?: string
+          is_periodic?: boolean | null
+          last_success?: string | null
+          period_type?: string | null
+          processed_at?: string | null
+          retry_count?: number | null
+          scheduled_for?: string | null
+          status?: string | null
+          subject?: string | null
+          to_addresses?: string[] | null
+        }
+        Relationships: []
+      }
       issue_images: {
         Row: {
           created_at: string | null

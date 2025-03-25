@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IssueManagement } from "@/components/IssueManagement";
 import { DashboardKPIs } from "@/components/DashboardKPIs";
 import { IssueTable } from "@/components/IssueTable";
-import { ReportsManagement } from "@/components/ReportsManagement";
 import { useMessages } from "@/hooks/useMessages";
 import { useMessageSender } from "@/hooks/useMessageSender";
 import { WelcomePage } from "@/components/WelcomePage";
@@ -70,7 +69,6 @@ const Index = () => {
             variant: "default",
           });
 
-          // Notificar al administrador
           const { data: userData } = await supabase
             .from('profiles')
             .select('email, first_name, last_name')
@@ -82,7 +80,6 @@ const Index = () => {
             await notifyAdmin(userData.email || session.user.email || '', fullName);
           }
         } else {
-          // Check if user is approved (has 'user' or 'admin' role)
           const { data: isApproved } = await supabase.rpc('has_role', {
             _role: 'user'
           });
@@ -134,9 +131,6 @@ const Index = () => {
                 <TabsTrigger value="kpis">
                   Indicadores
                 </TabsTrigger>
-                <TabsTrigger value="reports">
-                  Gestión de Reportes
-                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -174,10 +168,6 @@ const Index = () => {
               
               <TabsContent value="kpis" className="h-full m-0 data-[state=active]:flex flex-col">
                 <DashboardKPIs messages={messages} />
-              </TabsContent>
-
-              <TabsContent value="reports" className="h-full m-0 data-[state=active]:flex flex-col">
-                <ReportsManagement />
               </TabsContent>
             </>
           )}
