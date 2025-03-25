@@ -1,4 +1,3 @@
-
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -108,11 +107,11 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col">
-            <div className="border-b border-gray-100 shadow-sm">
+            <div className="sticky top-[7.5rem] z-30 bg-white border-b border-gray-100 shadow-sm">
               <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
             </div>
             
-            <div className="flex-1 overflow-auto">
+            <div className="flex-1 overflow-auto pt-2">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>

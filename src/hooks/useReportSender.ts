@@ -1,8 +1,6 @@
-
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/lib/supabase";
-import { getResponsibleEmails } from "@/utils/emailUtils";
+import { sendReportWithEmailJS } from '@/services/emailService';
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,63 +15,17 @@ export const useReportSender = () => {
     setError(null);
     
     try {
-      // Mostrar toast de inicio
       toast({
         title: "Enviando reporte",
         description: "Procesando solicitud...",
       });
       
-      // ID único para esta solicitud
-      const requestId = `manual-${Date.now()}`;
+      const result = await sendReportWithEmailJS(filtered);
       
-      console.log(`Iniciando envío de reporte ${filtered ? 'filtrado' : 'completo'} con ID: ${requestId}`);
+      setLastResponse(result);
       
-      // Verificar primero la existencia de correos para evitar llamar a la función Edge si no hay destinatarios
-      try {
-        // Obtener emails de responsables con incidencias asignadas
-        const emails = await getResponsibleEmails();
-        console.log("Emails de responsables encontrados:", emails);
-        
-        if (!emails || emails.length === 0) {
-          throw new Error("No se encontraron incidencias con responsable y correo electrónico válidos");
-        }
-      } catch (emailError: any) {
-        console.error("Error obteniendo emails de responsables:", emailError);
-        throw new Error(`No se pudieron encontrar incidencias con responsable y correo asignados: ${emailError.message}`);
-      }
-      
-      // Invocar la función Edge para enviar el reporte
-      console.log("Invocando función Edge send-daily-report con parámetros:", {
-        manual: true,
-        filteredByUser: filtered,
-        requestId,
-        debugMode: false
-      });
-      
-      const { data, error: functionError } = await supabase.functions.invoke('send-daily-report', {
-        method: 'POST',
-        body: {
-          manual: true,
-          filteredByUser: filtered,
-          requestId,
-          debugMode: false
-        },
-      });
-      
-      console.log("Respuesta completa de la función Edge:", data);
-      
-      // Manejar errores de la función
-      if (functionError) {
-        console.error("Error en función Edge:", functionError);
-        throw new Error(`Error en el servidor: ${functionError.message || 'No se pudo procesar la solicitud'}`);
-      }
-      
-      // Guardar respuesta completa
-      setLastResponse(data);
-      
-      // Verificar explícitamente si el envío fue exitoso
-      if (data && data.success) {
-        const successCount = data.stats?.successCount || 0;
+      if (result.success) {
+        const { successCount = 0 } = result.stats;
         
         if (successCount === 0) {
           throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
@@ -84,19 +36,15 @@ export const useReportSender = () => {
           description: `Se ha enviado el reporte a ${successCount} destinatario(s) exitosamente`,
         });
         
-        return data;
+        return result;
       } else {
-        // Manejar errores en la respuesta
-        const errorMsg = data?.error?.message || data?.message || 'No se pudo enviar el reporte';
-        throw new Error(errorMsg);
+        throw new Error(result.message || 'No se pudo enviar el reporte');
       }
     } catch (err: any) {
       console.error("Error al enviar reporte:", err);
       
-      // Guardar mensaje de error
       setError(err.message || 'Error desconocido al enviar el reporte');
       
-      // Mostrar toast de error
       toast({
         title: "Error",
         description: err.message || "No se pudo enviar el reporte",

@@ -1,4 +1,3 @@
-
 import { useIssues } from "@/hooks/useIssues";
 import { useIssueActions } from "@/hooks/useIssueActions";
 import { IssueContextProvider } from "./issues/IssueContext";
@@ -9,7 +8,7 @@ import { useEditingIssue } from "./issues/useEditingIssue";
 import { useRealTimeUpdates } from "./issues/useRealTimeUpdates";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +20,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useReportSender } from "@/hooks/useReportSender";
 
 export const IssueManagement = ({ messages }: { messages: any[] }) => {
   const { loadIssues } = useIssues();
@@ -52,9 +50,6 @@ const IssueManagementContent = ({
   
   // Suscripción a cambios en tiempo real
   useRealTimeUpdates(loadIssues);
-  
-  // Report sender hook
-  const { sendReport, isLoading } = useReportSender();
 
   // Funcionalidad de filtrado
   const {
@@ -71,14 +66,6 @@ const IssueManagementContent = ({
   useEffect(() => {
     console.log('IssueManagement - Estado del filtro de responsable:', responsableFilter);
   }, [responsableFilter]);
-
-  const handleSendReports = async () => {
-    try {
-      await sendReport(true);
-    } catch (error) {
-      console.error("Error sending reports:", error);
-    }
-  };
 
   return (
     <div className="h-full bg-white/50 rounded-lg shadow-sm">
@@ -97,18 +84,7 @@ const IssueManagementContent = ({
           />
         </div>
         
-        <div className="flex space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-            onClick={handleSendReports}
-            disabled={isLoading}
-          >
-            <Send className="h-4 w-4 mr-2" />
-            Enviar reportes
-          </Button>
-          
+        <div>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button 
@@ -142,12 +118,14 @@ const IssueManagementContent = ({
         </div>
       </div>
       
-      <IssueGroupedView
-        filteredMessages={filteredMessages}
-        groupBy={groupBy}
-        issueActions={issueActions}
-        onReload={loadIssues}
-      />
+      <div className="p-2">
+        <IssueGroupedView
+          filteredMessages={filteredMessages}
+          groupBy={groupBy}
+          issueActions={issueActions}
+          onReload={loadIssues}
+        />
+      </div>
     </div>
   );
 };

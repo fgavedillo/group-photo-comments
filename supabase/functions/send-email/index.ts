@@ -3,6 +3,10 @@ import { corsHeaders, handleCors } from './cors.ts';
 import { logger } from './logger.ts';
 import { validateEmailPayload } from './types.ts';
 import { sendEmail } from './emailService.ts';
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const RESEND_API_KEY = 're_M2FFkWg5_5fy9uyFfxrdb9ExipW7kDJe8'
 
 // Función para enviar emails usando Gmail
 export async function sendEmailWithGmail(emailData: any) {
@@ -49,83 +53,75 @@ export async function sendEmailWithGmail(emailData: any) {
 }
 
 // Handle incoming requests
-Deno.serve(async (req) => {
-  // CORS preflight check
-  const corsResponse = handleCors(req);
-  if (corsResponse) return corsResponse;
+serve(async (req) => {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
 
   try {
-    // Solo permitir POST para enviar correos
-    if (req.method !== 'POST') {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Método no permitido', 
-          message: 'Solo se permite el método POST para esta función'
-        }),
-        { 
-          status: 405, 
-          headers: { 
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+    const { to, subject, html } = await req.json()
+
+    // Validar datos requeridos
+    if (!to || !Array.isArray(to) || to.length === 0) {
+      throw new Error('Se requiere al menos un destinatario')
     }
 
-    // Obtener el cuerpo de la solicitud
-    const requestData = await req.json();
-    logger.log(`Solicitud recibida: ${JSON.stringify(requestData)}`);
-
-    // Validar los datos del correo electrónico
-    const validationResult = validateEmailPayload(requestData);
-    if (!validationResult.success) {
-      logger.error(`Error de validación: ${validationResult.error}`);
-      return new Response(
-        JSON.stringify({ 
-          error: 'Datos inválidos', 
-          message: validationResult.error
-        }),
-        { 
-          status: 400, 
-          headers: {
-            ...corsHeaders,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+    if (!subject) {
+      throw new Error('Se requiere un asunto para el correo')
     }
 
-    // Enviar el correo electrónico
-    const emailResult = await sendEmailWithGmail(validationResult.data);
+    if (!html) {
+      throw new Error('Se requiere contenido HTML para el correo')
+    }
 
-    return new Response(
-      JSON.stringify(emailResult),
-      { 
-        status: emailResult.success ? 200 : 500, 
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-  } catch (error) {
-    // Log del error
-    logger.error('Error al procesar la solicitud', error);
-
-    // Respuesta de error
-    return new Response(
-      JSON.stringify({ 
-        error: 'Error interno del servidor', 
-        message: error.message || 'Se produjo un error inesperado al procesar la solicitud'
+    // Enviar correo usando Resend
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'PRL Conecta <onboarding@resend.dev>',
+        to,
+        subject,
+        html,
       }),
-      { 
-        status: 500, 
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al enviar el correo')
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data
+      }),
+      {
         headers: {
           ...corsHeaders,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+          'Content-Type': 'application/json',
+        },
+        status: 200,
+      },
+    )
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json',
+        },
+        status: 400,
+      },
+    )
   }
-});
+})
