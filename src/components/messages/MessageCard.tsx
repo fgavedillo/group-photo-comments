@@ -46,7 +46,7 @@ export const MessageCard = ({ message }: MessageCardProps) => {
               <img 
                 src={message.imageUrl} 
                 alt="Imagen adjunta" 
-                className="max-w-xs rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                className="max-w-[150px] h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                 onClick={() => setSelectedImage(message.imageUrl)}
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   console.error('Error loading image:', message.imageUrl);

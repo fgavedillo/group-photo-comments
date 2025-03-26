@@ -5,10 +5,10 @@ export const WelcomePage = () => {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <h2 className="text-2xl font-bold text-center mb-8">
-        Bienvenido al Sistema de Gestión de Incidencias
+        Bienvenido a PRLconecta
       </h2>
       <p className="text-gray-600 text-center mb-8">
-        Por favor, identifíquese para acceder al sistema.
+        Su plataforma para la gestión de prevención de riesgos laborales
       </p>
       <Auth />
     </div>

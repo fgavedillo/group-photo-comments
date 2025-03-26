@@ -111,34 +111,34 @@ const Index = () => {
       <header className="bg-white border-b border-gray-100 py-4 px-6 sticky top-0 z-50 shadow-sm">
         <h1 className="text-xl font-semibold text-primary flex items-center gap-2">
           <Home className="h-5 w-5" />
-          <span>Sistema de Gestión de Incidencias</span>
+          <span>PRLconecta</span>
         </h1>
       </header>
 
-      <Tabs defaultValue="inicio" className="flex-1">
+      <Tabs defaultValue="chat" className="flex-1">
         <div className="sticky top-[4.5rem] bg-white z-40 border-b shadow-sm">
           <TabsList className="w-full h-14 justify-start rounded-none gap-1 px-6">
-            <TabsTrigger value="inicio" className="gap-2 px-4 py-2">
-              <Home className="h-4 w-4" />
-              <span>Inicio</span>
+            <TabsTrigger value="chat" className="gap-2 px-4 py-2">
+              <MessageSquare className="h-4 w-4" />
+              <span>Chat</span>
             </TabsTrigger>
             {!isAccessRestricted && (
               <>
-                <TabsTrigger value="chat" className="gap-2 px-4 py-2">
-                  <MessageSquare className="h-4 w-4" />
-                  <span>Chat</span>
-                </TabsTrigger>
                 <TabsTrigger value="issues" className="gap-2 px-4 py-2">
                   <LayoutList className="h-4 w-4" />
                   <span>Gestión de Incidencias</span>
+                </TabsTrigger>
+                <TabsTrigger value="kpis" className="gap-2 px-4 py-2">
+                  <BarChart2 className="h-4 w-4" />
+                  <span>Dashboard</span>
                 </TabsTrigger>
                 <TabsTrigger value="table" className="gap-2 px-4 py-2">
                   <FileText className="h-4 w-4" />
                   <span>Tabla de Incidencias</span>
                 </TabsTrigger>
-                <TabsTrigger value="kpis" className="gap-2 px-4 py-2">
-                  <BarChart2 className="h-4 w-4" />
-                  <span>Indicadores</span>
+                <TabsTrigger value="inicio" className="gap-2 px-4 py-2">
+                  <Home className="h-4 w-4" />
+                  <span>Perfil</span>
                 </TabsTrigger>
               </>
             )}
@@ -146,48 +146,48 @@ const Index = () => {
         </div>
         
         <div className="flex-1 overflow-auto p-6">
-          <TabsContent value="inicio" className="h-full m-0 animate-fade-in">
-            <WelcomePage />
-            {isAccessRestricted && (
-              <Card className="mt-6 border-yellow-200 bg-yellow-50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-yellow-800">Acceso Pendiente</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-yellow-700">
-                    Tu cuenta está pendiente de aprobación por un administrador. Solo podrás acceder al contenido completo después de que tu cuenta sea aprobada.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+          <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
+            <div className="sticky top-[7.5rem] z-30 bg-white border rounded-lg shadow-sm mb-4">
+              <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
+            </div>
+            
+            <div className="flex-1 overflow-auto bg-white rounded-lg shadow-sm">
+              <MessageList messages={messages} onMessageDelete={loadMessages} />
+            </div>
           </TabsContent>
-
+          
           {!isAccessRestricted && (
             <>
-              <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
-                <div className="sticky top-[7.5rem] z-30 bg-white border rounded-lg shadow-sm mb-4">
-                  <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
-                </div>
-                
-                <div className="flex-1 overflow-auto bg-white rounded-lg shadow-sm">
-                  <MessageList messages={messages} onMessageDelete={loadMessages} />
-                </div>
-              </TabsContent>
-              
               <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
                 <IssueManagement messages={messages} />
               </TabsContent>
 
+              <TabsContent value="kpis" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
+                <div className="bg-white rounded-lg shadow-sm p-4">
+                  <DashboardKPIs messages={messages} />
+                </div>
+              </TabsContent>
+              
               <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
                 <div className="bg-white rounded-lg shadow-sm p-4">
                   <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
                 </div>
               </TabsContent>
-              
-              <TabsContent value="kpis" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
-                <div className="bg-white rounded-lg shadow-sm p-4">
-                  <DashboardKPIs messages={messages} />
-                </div>
+
+              <TabsContent value="inicio" className="h-full m-0 animate-fade-in">
+                <WelcomePage />
+                {isAccessRestricted && (
+                  <Card className="mt-6 border-yellow-200 bg-yellow-50">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg font-semibold text-yellow-800">Acceso Pendiente</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-yellow-700">
+                        Tu cuenta está pendiente de aprobación por un administrador. Solo podrás acceder al contenido completo después de que tu cuenta sea aprobada.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
             </>
           )}

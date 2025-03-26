@@ -22,7 +22,7 @@ const Dashboard = () => {
   const { handleSendMessage } = useMessageSender(loadMessages);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentTab, setCurrentTab] = useState("perfil");
+  const [currentTab, setCurrentTab] = useState("chat");
   
   // Referencias para capturar elementos en la interfaz
   const dashboardRef = useRef<HTMLDivElement>(null);
@@ -50,7 +50,7 @@ const Dashboard = () => {
       <header className="bg-white border-b border-gray-100 py-4 px-6 sticky top-0 z-50 flex justify-between items-center shadow-sm">
         <h1 className="text-xl font-semibold text-primary flex items-center gap-2">
           <Home className="h-5 w-5" />
-          <span>Panel de Control</span>
+          <span>PRLconecta</span>
         </h1>
         <div className="flex items-center gap-3">
           {currentTab === "kpis" && (
@@ -64,20 +64,12 @@ const Dashboard = () => {
       </header>
 
       <Tabs 
-        defaultValue="perfil" 
+        defaultValue="chat" 
         className="flex-1"
         onValueChange={(value) => setCurrentTab(value)}
       >
         <div className="sticky top-[4.5rem] bg-white z-40 border-b overflow-x-auto shadow-sm">
           <TabsList className="w-full h-14 justify-start rounded-none gap-1 px-6">
-            <TabsTrigger value="perfil" className="gap-2 px-4 py-2">
-              <Home className="h-4 w-4" />
-              <span>Perfil</span>
-            </TabsTrigger>
-            <TabsTrigger value="kpis" className="gap-2 px-4 py-2">
-              <BarChart2 className="h-4 w-4" />
-              <span>Dashboard</span>
-            </TabsTrigger>
             <TabsTrigger value="chat" className="gap-2 px-4 py-2">
               <MessageSquare className="h-4 w-4" />
               <span>Chat</span>
@@ -86,52 +78,22 @@ const Dashboard = () => {
               <CheckCircle className="h-4 w-4" />
               <span>Gestión</span>
             </TabsTrigger>
+            <TabsTrigger value="kpis" className="gap-2 px-4 py-2">
+              <BarChart2 className="h-4 w-4" />
+              <span>Dashboard</span>
+            </TabsTrigger>
             <TabsTrigger value="table" className="gap-2 px-4 py-2">
               <FileText className="h-4 w-4" />
               <span>Tabla</span>
+            </TabsTrigger>
+            <TabsTrigger value="perfil" className="gap-2 px-4 py-2">
+              <Home className="h-4 w-4" />
+              <span>Perfil</span>
             </TabsTrigger>
           </TabsList>
         </div>
         
         <div className="flex-1 overflow-auto p-6">
-          <TabsContent value="perfil" className="h-full m-0 animate-fade-in">
-            <Card className="max-w-2xl mx-auto">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-primary">Tu Perfil</CardTitle>
-                <CardDescription>
-                  Bienvenido a tu panel de control personal
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-gray-50 p-6 rounded-lg space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Bienvenido a tu panel de control. Desde aquí puedes acceder a todas las funcionalidades de la aplicación.
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Utiliza la navegación superior para moverte entre las diferentes secciones.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                  <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3">
-                    <Settings className="h-8 w-8 text-primary" />
-                    <span>Configurar perfil</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <span>Ver informes</span>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="kpis" className="h-full m-0 animate-fade-in">
-            <div ref={dashboardRef}>
-              <DashboardKPIs messages={messages} />
-            </div>
-          </TabsContent>
-
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
             <div className="sticky top-[7.5rem] z-30 bg-white border rounded-lg shadow-sm mb-4">
               <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
@@ -152,10 +114,48 @@ const Dashboard = () => {
             <IssueManagement messages={messages} />
           </TabsContent>
 
+          <TabsContent value="kpis" className="h-full m-0 animate-fade-in">
+            <div ref={dashboardRef}>
+              <DashboardKPIs messages={messages} />
+            </div>
+          </TabsContent>
+
           <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
             <div ref={tableRef} className="bg-white rounded-lg shadow-sm p-4">
               <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
             </div>
+          </TabsContent>
+
+          <TabsContent value="perfil" className="h-full m-0 animate-fade-in">
+            <Card className="max-w-2xl mx-auto">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-primary">Tu Perfil</CardTitle>
+                <CardDescription>
+                  Bienvenido a tu espacio personal en PRLconecta
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="bg-gray-50 p-6 rounded-lg space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Bienvenido a tu espacio personal. Desde aquí puedes acceder a todas las funcionalidades de la aplicación.
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Utiliza la navegación superior para moverte entre las diferentes secciones.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                  <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3">
+                    <Settings className="h-8 w-8 text-primary" />
+                    <span>Configurar perfil</span>
+                  </Button>
+                  <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3">
+                    <FileText className="h-8 w-8 text-primary" />
+                    <span>Ver informes</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </div>
       </Tabs>
