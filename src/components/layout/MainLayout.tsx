@@ -1,40 +1,30 @@
-
 import React, { useState } from 'react';
-import { Select, SelectValue, SelectTrigger, SelectContent, SelectItem } from "@/components/ui/select";
+import { Select, Option } from '@/components/ui/select';
 import { MenuSection, MenuItem } from '@/components/ui/menu-section';
 import { DashboardIcon, IncidentsIcon, ReportsIcon, UsersIcon, SettingsIcon, ProfileIcon, NotificationsIcon } from '@/components/icons';
-import { useCompany } from '@/contexts/CompanyContext';
 
-export const CompanySelector = () => {
-  const { companies, currentCompany, setCurrentCompany } = useCompany();
-
-  const handleCompanyChange = (companyId: string) => {
-    const selected = companies.find(c => c.id === companyId);
-    if (selected) {
-      setCurrentCompany(selected);
-    }
-  };
+const CompanySelector = () => {
+  const [companies] = useState([
+    { id: 1, name: "Empresa A" },
+    { id: 2, name: "Empresa B" }
+  ]);
 
   return (
     <Select
-      value={currentCompany.id}
-      onValueChange={handleCompanyChange}
+      value={currentCompany}
+      onChange={handleCompanyChange}
+      className="w-64 bg-white rounded-md"
     >
-      <SelectTrigger className="w-64 bg-white rounded-md">
-        <SelectValue placeholder="Seleccionar empresa" />
-      </SelectTrigger>
-      <SelectContent>
-        {companies.map(company => (
-          <SelectItem key={company.id} value={company.id}>
-            {company.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
+      {companies.map(company => (
+        <Option key={company.id} value={company.id}>
+          {company.name}
+        </Option>
+      ))}
     </Select>
   );
 };
 
-export const MainMenu = () => {
+const MainMenu = () => {
   return (
     <nav className="space-y-1">
       {/* Sección de Empresa */}
@@ -57,4 +47,4 @@ export const MainMenu = () => {
       </MenuSection>
     </nav>
   );
-};
+}; 

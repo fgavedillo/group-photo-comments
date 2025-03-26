@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
@@ -14,6 +13,7 @@ export const ReportSenderButton = () => {
       console.log(`Enviando reporte ${filtered ? 'personalizado' : 'completo'}...`);
       await sendReport(filtered);
     } catch (err) {
+      // El error ya está manejado en el hook
       console.error("Error manejado en el botón:", err);
     }
   };
