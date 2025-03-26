@@ -1,62 +1,50 @@
-import { useState } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { sendReportWithEmailJS } from '@/services/emailService';
+
+import { useState } from "react";
+import { sendReportWithResend } from "@/services/resendService";
+
+interface ReportResponse {
+  success: boolean;
+  stats: {
+    successCount: number;
+    failureCount: number;
+    totalEmails: number;
+  };
+  timestamp: string;
+  error?: string;
+}
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [lastResponse, setLastResponse] = useState<any>(null);
-  const { toast } = useToast();
-
-  const sendReport = async (filtered: boolean = false) => {
-    if (isLoading) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
+  const [lastResponse, setLastResponse] = useState<ReportResponse | null>(null);
+  
+  const sendReport = async (filteredByUser: boolean = false) => {
     try {
-      toast({
-        title: "Enviando reporte",
-        description: "Procesando solicitud...",
-      });
+      setIsLoading(true);
+      setError(null);
       
-      const result = await sendReportWithEmailJS(filtered);
+      console.log(`Iniciando envío de reportes${filteredByUser ? ' personalizados' : ''}...`);
       
-      setLastResponse(result);
+      // Llamar al servicio de envío de reportes que utiliza Resend
+      const response = await sendReportWithResend(filteredByUser);
       
-      if (result.success) {
-        const { successCount = 0 } = result.stats;
-        
-        if (successCount === 0) {
-          throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
-        }
-        
-        toast({
-          title: "Reporte enviado",
-          description: `Se ha enviado el reporte a ${successCount} destinatario(s) exitosamente`,
-        });
-        
-        return result;
-      } else {
-        throw new Error(result.message || 'No se pudo enviar el reporte');
-      }
-    } catch (err: any) {
-      console.error("Error al enviar reporte:", err);
+      console.log('Respuesta del servicio de envío:', response);
+      setLastResponse(response);
       
-      setError(err.message || 'Error desconocido al enviar el reporte');
+      return response;
+    } catch (error: any) {
+      console.error('Error en useReportSender:', error);
       
-      toast({
-        title: "Error",
-        description: err.message || "No se pudo enviar el reporte",
-        variant: "destructive"
-      });
+      const errorMessage = error.error || error.message || 'Error desconocido al enviar reporte';
+      setError(errorMessage);
       
-      throw err;
+      // Propagar el error para manejarlo en el componente si es necesario
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   return {
     sendReport,
     isLoading,

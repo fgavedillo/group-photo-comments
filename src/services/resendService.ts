@@ -1,14 +1,16 @@
+
 import { getResponsibleEmails } from '@/utils/emailUtils';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 
 const RESEND_API_KEY = 're_M2FFkWg5_5fy9uyFfxrdb9ExipW7kDJe8';
 
 interface IssueData {
   id: string;
-  title: string;
+  title?: string;
+  message?: string;
   status: string;
-  responsable: string;
-  assigned_email: string;
+  responsable?: string;
+  assigned_email?: string;
   created_at: string;
 }
 
@@ -18,8 +20,7 @@ async function sendEmailWithResend(to: string[], subject: string, html: string) 
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-        'Origin': 'http://localhost:8080'
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         from: 'PRL Conecta <onboarding@resend.dev>',
@@ -59,7 +60,7 @@ export async function sendReportWithResend(filtered: boolean = false) {
       .in('status', ['en-estudio', 'en-curso']);
 
     if (issuesError) throw issuesError;
-    console.log('Incidencias encontradas:', issues);
+    console.log('Incidencias encontradas:', issues?.length || 0);
 
     if (!issues || issues.length === 0) {
       throw new Error("No hay incidencias pendientes para reportar");
@@ -78,9 +79,14 @@ export async function sendReportWithResend(filtered: boolean = false) {
       stats: results,
       timestamp: new Date().toISOString()
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error en sendReportWithResend:', error);
-    throw error;
+    return {
+      success: false,
+      stats: { successCount: 0, failureCount: 0, totalEmails: 0 },
+      timestamp: new Date().toISOString(),
+      error: error.message
+    };
   }
 }
 
@@ -171,13 +177,13 @@ function generateEmailTemplate(issues: IssueData[], isPersonalized: boolean): st
           ? '<p>No hay incidencias pendientes en este momento.</p>'
           : issues.map(issue => `
             <div class="issue">
-              <h3>${issue.title}</h3>
+              <h3>${issue.title || issue.message?.substring(0, 30) + '...' || 'Incidencia sin título'}</h3>
               <p><strong>Estado:</strong> <span class="status ${issue.status}">${issue.status}</span></p>
-              <p><strong>Responsable:</strong> ${issue.responsable}</p>
+              <p><strong>Responsable:</strong> ${issue.responsable || 'No asignado'}</p>
               <p><strong>Fecha de creación:</strong> ${new Date(issue.created_at).toLocaleDateString('es-ES')}</p>
             </div>
           `).join('')}
       </body>
     </html>
   `;
-} 
+}
