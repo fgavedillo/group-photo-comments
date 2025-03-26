@@ -1,28 +1,26 @@
-
 import { Auth } from "@/components/Auth";
 import { useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Shield, Check, BarChart2, MessageSquare } from "lucide-react";
-
 const Landing = () => {
   const navigate = useNavigate();
-
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: {
+        subscription
+      }
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         navigate('/dashboard');
       }
     });
-
     return () => {
       subscription.unsubscribe();
     };
   }, [navigate]);
-
-  return (
-    <div className="min-h-screen bg-gray-50">
+  return <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
       <div className="bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto px-4 py-16">
@@ -31,9 +29,7 @@ const Landing = () => {
               <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight">
                 Gestión de Prevención de Riesgos Laborales <span className="text-blue-600">Simplificada</span>
               </h1>
-              <p className="text-xl text-gray-700">
-                PRLconecta es la solución integral para la gestión de incidencias y prevención de riesgos laborales en tu empresa.
-              </p>
+              <p className="text-xl text-gray-700">PRLconecta es la solución para la gestión de incidencias de prevención de riesgos laborales en tu empresa.</p>
               <div className="pt-4 flex flex-wrap gap-4">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
                   Solicitar Demo
@@ -150,47 +146,12 @@ const Landing = () => {
       {/* SEO Footer */}
       <footer className="bg-gray-900 text-white py-16">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-            <div>
-              <h3 className="text-xl font-bold mb-4">PRLconecta</h3>
-              <p className="text-gray-400">
-                La solución definitiva para la gestión de prevención de riesgos laborales en empresas de todos los tamaños.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Soluciones</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Gestión de incidencias</li>
-                <li>Evaluación de riesgos</li>
-                <li>Formación en PRL</li>
-                <li>Cumplimiento normativo</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Recursos</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>Blog</li>
-                <li>Guías de PRL</li>
-                <li>Webinars</li>
-                <li>Casos de éxito</li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-bold mb-4">Contacto</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li>info@prlconecta.com</li>
-                <li>+34 900 123 456</li>
-                <li>Madrid, España</li>
-              </ul>
-            </div>
-          </div>
+          
           <div className="border-t border-gray-800 mt-10 pt-6 text-center text-gray-500">
             <p>© 2024 PRLconecta - Todos los derechos reservados</p>
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Landing;
