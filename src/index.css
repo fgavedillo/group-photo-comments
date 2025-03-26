@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,9 +8,23 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
-    --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 142.1 76.2% 36.3%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
     --ring: 142.1 76.2% 36.3%;
     --radius: 0.75rem;
   }
@@ -20,36 +34,86 @@
   }
 
   body {
-    @apply bg-whatsapp-bg text-foreground font-['Inter'];
+    @apply bg-background text-foreground font-['Poppins'];
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
 .message-bubble {
-  @apply relative bg-white rounded-lg p-4 shadow-sm border border-gray-100 max-w-[85%] ml-auto;
-  transition: transform 0.2s ease;
+  @apply relative bg-white rounded-lg p-4 shadow-md border border-gray-100 max-w-[85%] ml-auto transition-all duration-200;
 }
 
 .message-bubble:hover {
-  transform: translateY(-1px);
+  @apply transform -translate-y-1 shadow-lg;
 }
 
 .message-image {
-  @apply rounded-lg object-cover;
-  transition: transform 0.3s ease;
+  @apply rounded-lg object-cover transition-transform duration-300;
 }
 
 .message-image:hover {
-  transform: scale(1.01);
+  @apply scale-[1.01];
 }
 
 /* Estilos para enlaces en mensajes */
 .text-sm.text-foreground a {
-  @apply text-blue-600 hover:underline break-words;
+  @apply text-primary hover:underline break-words;
   word-break: break-all;
 }
 
-/* Mejoras para responsividad */
+/* Animaciones y transiciones */
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+/* Card styles */
+.card {
+  @apply bg-white rounded-lg border border-gray-100 shadow-sm transition-all duration-200;
+}
+
+.card:hover {
+  @apply shadow-md;
+}
+
+/* Button hover effects */
+button:not(.no-hover), 
+.button:not(.no-hover) {
+  @apply transition-all duration-200;
+}
+
+button:hover:not(:disabled):not(.no-hover), 
+.button:hover:not(:disabled):not(.no-hover) {
+  @apply transform -translate-y-0.5;
+}
+
+/* Tab styling */
+.tabs-list {
+  @apply flex overflow-x-auto pb-1;
+}
+
+.tab {
+  @apply px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 border-transparent;
+}
+
+.tab.active {
+  @apply border-primary text-primary;
+}
+
+/* Improvements for responsivity */
 @media (max-width: 640px) {
   .message-bubble {
     @apply max-w-[95%] p-3;
@@ -74,14 +138,4 @@
   .tabs-list {
     @apply justify-between;
   }
-}
-
-/* Animación para nuevos mensajes */
-@keyframes fade-in {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out forwards;
 }
