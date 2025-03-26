@@ -1,26 +1,26 @@
 
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+// Use hardcoded values instead of environment variables
+const supabaseUrl = "https://jzmzmjvtxcrxljnhhrjo.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Faltan las variables de entorno de Supabase')
-}
-
-// Crear una única instancia del cliente
+// Create a single client instance
 const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
   }
-})
+});
 
-// Exportar la instancia única
-export { supabase }
-export default supabase
+// Export the single instance
+export { supabase };
+export default supabase;
 
-// Define una interfaz consistente para los payloads de email
+// Add a function to get the client for use in services
+export const getSupabaseClient = () => supabase;
+
+// Define a consistent interface for email payloads
 export interface EmailPayload {
   to: string[];
   subject: string;

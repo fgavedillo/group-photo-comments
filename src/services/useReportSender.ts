@@ -1,6 +1,5 @@
-import { generateReport } from './reportGenerator'; // Ajusta esta importación según tu código
 
-// Definir la API key directamente (por ahora)
+// Define the API key directly (for now)
 const RESEND_API_KEY = 're_aTq2dBeF_FXKGPGc3ViQGpRm7stAY3iJ9';
 
 console.log('******************************************');
@@ -10,7 +9,7 @@ console.log('******************************************');
 export const sendReport = async (reportId: string, recipients: string[]) => {
   console.log('Función de envío de reportes deshabilitada', { reportId, recipients });
   
-  // Devolver una respuesta simulada
+  // Return a simulated response
   return {
     success: true,
     message: 'Funcionalidad de envío de reportes deshabilitada temporalmente',
@@ -18,4 +17,4 @@ export const sendReport = async (reportId: string, recipients: string[]) => {
   };
 };
 
-export default sendReport; 
+export default sendReport;

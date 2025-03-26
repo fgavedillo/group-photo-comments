@@ -54,7 +54,8 @@ export const UsersList = () => {
 
       if (companyUsersError) throw companyUsersError;
 
-      const formattedUsers = companyUsers.map(user => ({
+      // Properly transform the array
+      const formattedUsers: User[] = companyUsers.map(user => ({
         id: user.profiles.id,
         email: user.profiles.email || '',
         first_name: user.profiles.first_name,
@@ -71,7 +72,7 @@ export const UsersList = () => {
         variant: "destructive"
       });
       
-      // Cargar datos de ejemplo en caso de error
+      // Load sample data in case of error
       const mockUsers: User[] = [
         { id: '1', email: 'admin@example.com', first_name: 'Admin', last_name: 'User', role: 'admin' },
         { id: '2', email: 'user@example.com', first_name: 'Regular', last_name: 'User', role: 'user' },

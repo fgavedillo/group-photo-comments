@@ -1,4 +1,5 @@
-import { getSupabaseClient } from '../lib/supabaseClient';
+
+import { supabase } from '../lib/supabaseClient';
 
 interface QueueEmailRequest {
   to: string[];
@@ -11,10 +12,8 @@ interface QueueEmailRequest {
 }
 
 export const queueEmail = async (request: QueueEmailRequest) => {
-  const supabase = getSupabaseClient();
-  
   try {
-    // Verificar que tenemos una sesión activa
+    // Verify we have an active session
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {
@@ -55,8 +54,6 @@ export const queueEmail = async (request: QueueEmailRequest) => {
 };
 
 export const getQueueStatus = async (id: string) => {
-  const supabase = getSupabaseClient();
-  
   try {
     const { data, error } = await supabase
       .from('email_queue')
@@ -70,4 +67,4 @@ export const getQueueStatus = async (id: string) => {
     console.error('Error al obtener estado del email:', error);
     throw error;
   }
-}; 
+};
