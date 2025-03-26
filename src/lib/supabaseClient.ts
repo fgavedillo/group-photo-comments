@@ -1,5 +1,5 @@
+
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '../types/supabase' // ajusta esta ruta si es necesario
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -9,7 +9,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Crear una única instancia del cliente
-const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

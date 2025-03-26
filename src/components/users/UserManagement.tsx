@@ -2,13 +2,9 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Motion, AnimatePresence } from 'framer-motion';
-
-interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
-}
+import { UsersList } from './UsersList';
+import { RolesManager } from './RolesManager';
+import { DepartmentsManager } from './DepartmentsManager';
 
 type Tab = 'usuarios' | 'roles' | 'departamentos';
 
