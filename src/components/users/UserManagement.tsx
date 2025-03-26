@@ -2,13 +2,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Motion, AnimatePresence } from 'framer-motion';
-
-interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
-}
+import { UsersList } from './UsersList';
 
 type Tab = 'usuarios' | 'roles' | 'departamentos';
 
@@ -44,11 +38,17 @@ const UserManagement = () => {
           </TabsContent>
           
           <TabsContent value="roles" className="animate-fade-in">
-            <RolesManager />
+            <div>
+              <h3 className="text-lg font-medium">Gestión de Roles</h3>
+              <p className="text-muted-foreground mt-2">Esta funcionalidad está en desarrollo.</p>
+            </div>
           </TabsContent>
           
           <TabsContent value="departamentos" className="animate-fade-in">
-            <DepartmentsManager />
+            <div>
+              <h3 className="text-lg font-medium">Gestión de Departamentos</h3>
+              <p className="text-muted-foreground mt-2">Esta funcionalidad está en desarrollo.</p>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>

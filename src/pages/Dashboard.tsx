@@ -9,13 +9,14 @@ import { useMessages } from "@/hooks/useMessages";
 import { useMessageSender } from "@/hooks/useMessageSender";
 import { Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
-import { LogOut, FileText, MessageSquare, BarChart2, Settings, CheckCircle, Home } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { LogOut, FileText, MessageSquare, BarChart2, Settings, CheckCircle, Home, Users } from "lucide-react";
+import supabase from "@/lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { ReportButton } from "@/components/dashboard/ReportButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { UserManagementTab } from "@/components/users/UserManagementTab";
 
 const Dashboard = () => {
   const { messages, loadMessages, isLoading } = useMessages();
@@ -23,10 +24,39 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentTab, setCurrentTab] = useState("chat");
+  const [userRole, setUserRole] = useState<string | null>(null);
   
   // Referencias para capturar elementos en la interfaz
   const dashboardRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const { data: isAdmin } = await supabase.rpc('has_role', {
+          _role: 'admin'
+        });
+        
+        if (isAdmin) {
+          setUserRole('admin');
+        } else {
+          const { data: isUser } = await supabase.rpc('has_role', {
+            _role: 'user'
+          });
+          
+          if (isUser) {
+            setUserRole('user');
+          } else {
+            setUserRole('pending');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user role:', error);
+      }
+    };
+    
+    checkUserRole();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -87,8 +117,8 @@ const Dashboard = () => {
               <span>Tabla</span>
             </TabsTrigger>
             <TabsTrigger value="perfil" className="gap-2 px-4 py-2">
-              <Home className="h-4 w-4" />
-              <span>Perfil</span>
+              <Users className="h-4 w-4" />
+              <span>Usuarios</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -127,33 +157,15 @@ const Dashboard = () => {
           </TabsContent>
 
           <TabsContent value="perfil" className="h-full m-0 animate-fade-in">
-            <Card className="max-w-2xl mx-auto">
+            <Card className="max-w-4xl mx-auto mb-6">
               <CardHeader>
-                <CardTitle className="text-2xl font-bold text-primary">Tu Perfil</CardTitle>
+                <CardTitle className="text-2xl font-bold text-primary">Gestión de Usuarios</CardTitle>
                 <CardDescription>
-                  Bienvenido a tu espacio personal en PRLconecta
+                  Administra los usuarios que tienen acceso a PRLconecta
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-gray-50 p-6 rounded-lg space-y-3">
-                  <p className="text-sm text-gray-600">
-                    Bienvenido a tu espacio personal. Desde aquí puedes acceder a todas las funcionalidades de la aplicación.
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Utiliza la navegación superior para moverte entre las diferentes secciones.
-                  </p>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                  <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3">
-                    <Settings className="h-8 w-8 text-primary" />
-                    <span>Configurar perfil</span>
-                  </Button>
-                  <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-3">
-                    <FileText className="h-8 w-8 text-primary" />
-                    <span>Ver informes</span>
-                  </Button>
-                </div>
+              <CardContent>
+                <UserManagementTab />
               </CardContent>
             </Card>
           </TabsContent>

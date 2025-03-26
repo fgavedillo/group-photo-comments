@@ -1,21 +1,17 @@
 
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '../types/supabase' // ajusta esta ruta si es necesario
 
-// Uso de variables de entorno o valores estáticos para desarrollo
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-supabase-url.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key'
+// Use environment variables or fallback to static values for development
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://jzmzmjvtxcrxljnhhrjo.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6bXptanZ0eGNyeGxqbmhocmpvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzgxNjI0NTEsImV4cCI6MjA1MzczODQ1MX0.IHa8Bm-N1H68IiCJzPtTpRIcKQvytVFBm16BnSXp00I'
 
-// Crear una única instancia del cliente
-const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+// Create a single instance of the Supabase client
+const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
   }
 })
 
-// Exportar la instancia única
-export const getSupabaseClient = () => supabase
-
-// También exportamos la instancia directamente
+// Export the single instance
 export default supabase
