@@ -11,7 +11,7 @@ export const ScrollButton = ({ onClick, newMessagesCount }: ScrollButtonProps) =
   return (
     <Button
       onClick={onClick}
-      className="fixed bottom-20 right-6 rounded-full shadow-lg animate-bounce z-50 flex items-center gap-1 p-2"
+      className="fixed bottom-6 right-6 rounded-full shadow-lg animate-bounce z-50 flex items-center gap-1 p-2"
       size="sm"
       variant="secondary"
     >

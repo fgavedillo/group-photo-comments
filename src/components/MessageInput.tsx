@@ -77,16 +77,16 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`bg-white p-4 ${className}`}>
-      <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-4 py-2">
+    <form onSubmit={handleSubmit} className={`bg-white py-2 ${className}`}>
+      <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-3 py-1.5">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`p-2 text-primary hover:text-primary-hover transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`p-1.5 text-primary hover:text-primary-hover transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={isProcessing ? "Procesando imagen..." : "Añadir imagen"}
           disabled={isProcessing}
         >
-          <ImagePlus size={20} />
+          <ImagePlus size={18} />
         </button>
         
         <input
@@ -103,26 +103,26 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={isProcessing ? "Procesando imagen..." : "Escribe un mensaje..."}
-          className="flex-1 px-4 py-2 bg-transparent text-sm focus:outline-none"
+          className="flex-1 px-3 py-1.5 bg-transparent text-sm focus:outline-none"
           disabled={isProcessing}
         />
         
         <button
           type="submit"
           disabled={(!message.trim() && !selectedImage) || isProcessing}
-          className="p-2 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
+          className="p-1.5 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
           title="Enviar mensaje"
         >
-          <Send size={20} />
+          <Send size={18} />
         </button>
       </div>
       
       {imagePreview && (
-        <div className="mt-2 relative">
+        <div className="mt-1 relative inline-block">
           <img 
             src={imagePreview} 
             alt="Vista previa" 
-            className="w-20 h-20 object-cover rounded-lg"
+            className="w-16 h-16 object-cover rounded-lg"
           />
           <button
             type="button"
@@ -130,8 +130,8 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
               setImagePreview(null);
               setSelectedImage(null);
             }}
-            className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
-            style={{ width: "18px", height: "18px", fontSize: "12px", lineHeight: "10px" }}
+            className="absolute top-0.5 right-0.5 bg-black/50 text-white rounded-full p-0.5 hover:bg-black/70 transition-colors"
+            style={{ width: "16px", height: "16px", fontSize: "10px", lineHeight: "8px" }}
           >
             ×
           </button>

@@ -19,6 +19,7 @@ export const useScrollToBottom = ({ messages }: ScrollToBottomHookProps) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (containerRef.current) {
+          // Dejamos espacio para que no cubra la barra de mensajes
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
           setShowScrollButton(false);
           setNewMessagesCount(0);

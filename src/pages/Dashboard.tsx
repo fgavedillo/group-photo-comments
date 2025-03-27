@@ -124,12 +124,13 @@ const Dashboard = () => {
         </div>
         
         <div className="flex-1 overflow-auto">
-          <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
-            <div className="sticky top-[4.5rem] z-30 bg-white border-b shadow-sm">
+          <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in relative">
+            {/* Barra de chat fija - estilo WhatsApp pero en la parte superior */}
+            <div className="sticky top-[7.5rem] z-30 bg-white border-b shadow-sm pb-1">
               <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
             </div>
             
-            <div className="flex-1 overflow-auto pt-2 bg-white rounded-lg shadow-sm mt-2 mx-6">
+            <div className="flex-1 overflow-auto pt-1 bg-white rounded-lg shadow-sm mx-6 mt-1">
               {isLoading ? (
                 <div className="flex items-center justify-center h-40 py-8">
                   <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
