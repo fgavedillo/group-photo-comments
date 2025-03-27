@@ -19,7 +19,7 @@ export const useScrollToBottom = ({ messages }: ScrollToBottomHookProps) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (containerRef.current) {
-          // Scroll to the bottom - we've now fixed the message input bar at the top
+          // Account for the fixed message input at the top when scrolling
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
           setShowScrollButton(false);
           setNewMessagesCount(0);
@@ -45,6 +45,7 @@ export const useScrollToBottom = ({ messages }: ScrollToBottomHookProps) => {
       const container = containerRef.current;
       if (container) {
         const { scrollTop, scrollHeight, clientHeight } = container;
+        // Adjust the threshold to account for the fixed message input
         const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 20;
         
         if (isNearBottom && !isManualScrollingRef.current) {
@@ -63,6 +64,7 @@ export const useScrollToBottom = ({ messages }: ScrollToBottomHookProps) => {
     const container = containerRef.current;
     if (container) {
       const { scrollTop, scrollHeight, clientHeight } = container;
+      // Account for the fixed message input when determining if we're at the bottom
       const isNearBottom = Math.abs(scrollHeight - scrollTop - clientHeight) <= 5;
       
       isManualScrollingRef.current = true;
