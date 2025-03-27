@@ -77,12 +77,12 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`bg-white py-2 ${className}`}>
-      <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-3 py-1.5">
+    <form onSubmit={handleSubmit} className={`bg-white ${className}`}>
+      <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-3 py-1">
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className={`p-1.5 text-primary hover:text-primary-hover transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`p-1 text-primary hover:text-primary-hover transition-colors ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
           title={isProcessing ? "Procesando imagen..." : "Añadir imagen"}
           disabled={isProcessing}
         >
@@ -103,14 +103,14 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder={isProcessing ? "Procesando imagen..." : "Escribe un mensaje..."}
-          className="flex-1 px-3 py-1.5 bg-transparent text-sm focus:outline-none"
+          className="flex-1 px-2 py-1 bg-transparent text-sm focus:outline-none"
           disabled={isProcessing}
         />
         
         <button
           type="submit"
           disabled={(!message.trim() && !selectedImage) || isProcessing}
-          className="p-1.5 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
+          className="p-1 text-primary hover:text-primary-hover transition-colors disabled:opacity-50"
           title="Enviar mensaje"
         >
           <Send size={18} />
@@ -122,7 +122,7 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
           <img 
             src={imagePreview} 
             alt="Vista previa" 
-            className="w-16 h-16 object-cover rounded-lg"
+            className="w-14 h-14 object-cover rounded-lg"
           />
           <button
             type="button"

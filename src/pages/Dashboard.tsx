@@ -125,8 +125,8 @@ const Dashboard = () => {
         
         <div className="flex-1 overflow-auto">
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in relative">
-            {/* Barra de chat fija - estilo WhatsApp pero en la parte superior */}
-            <div className="sticky top-[7.5rem] z-30 bg-white border-b shadow-sm pb-1">
+            {/* Barra de chat fija - estilo WhatsApp en la parte superior */}
+            <div className="sticky top-[7.5rem] z-30 bg-white border-b shadow-sm">
               <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
             </div>
             
