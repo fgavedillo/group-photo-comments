@@ -19,7 +19,7 @@ export const useScrollToBottom = ({ messages }: ScrollToBottomHookProps) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         if (containerRef.current) {
-          // Dejamos espacio para que no cubra la barra de mensajes
+          // Scroll to the bottom - we've now fixed the message input bar at the top
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
           setShowScrollButton(false);
           setNewMessagesCount(0);

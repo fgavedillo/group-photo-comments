@@ -77,7 +77,7 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className={`bg-white ${className}`}>
+    <form onSubmit={handleSubmit} className={`bg-white py-0 ${className}`}>
       <div className="flex gap-2 items-center bg-white rounded-full border border-gray-200 px-3 py-1">
         <button
           type="button"

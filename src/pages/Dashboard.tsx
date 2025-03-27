@@ -1,4 +1,3 @@
-
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -123,54 +122,52 @@ const Dashboard = () => {
           </TabsList>
         </div>
         
-        <div className="flex-1 overflow-auto">
-          <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in relative">
-            {/* Barra de chat fija - estilo WhatsApp en la parte superior */}
-            <div className="sticky top-[7.5rem] z-30 bg-white border-b shadow-sm">
-              <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
-            </div>
-            
-            <div className="flex-1 overflow-auto pt-1 bg-white rounded-lg shadow-sm mx-6 mt-1">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-40 py-8">
-                  <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
-                </div>
-              ) : (
-                <MessageList messages={messages} onMessageDelete={loadMessages} />
-              )}
-            </div>
-          </TabsContent>
+        <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in relative">
+          {/* Posicionamos la barra de chat directamente debajo del menú de navegación */}
+          <div className="sticky top-[4.5rem] z-30 bg-white border-b shadow-sm">
+            <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
+          </div>
           
-          <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in p-6">
-            <IssueManagement messages={messages} />
-          </TabsContent>
+          <div className="flex-1 overflow-auto pt-1 bg-white rounded-lg shadow-sm mx-6 mt-1">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-40 py-8">
+                <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : (
+              <MessageList messages={messages} onMessageDelete={loadMessages} />
+            )}
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in p-6">
+          <IssueManagement messages={messages} />
+        </TabsContent>
 
-          <TabsContent value="kpis" className="h-full m-0 animate-fade-in p-6">
-            <div ref={dashboardRef}>
-              <DashboardKPIs messages={messages} />
-            </div>
-          </TabsContent>
+        <TabsContent value="kpis" className="h-full m-0 animate-fade-in p-6">
+          <div ref={dashboardRef}>
+            <DashboardKPIs messages={messages} />
+          </div>
+        </TabsContent>
 
-          <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in p-6">
-            <div ref={tableRef} className="bg-white rounded-lg shadow-sm p-4">
-              <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
-            </div>
-          </TabsContent>
+        <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in p-6">
+          <div ref={tableRef} className="bg-white rounded-lg shadow-sm p-4">
+            <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
+          </div>
+        </TabsContent>
 
-          <TabsContent value="perfil" className="h-full m-0 animate-fade-in p-6">
-            <Card className="max-w-4xl mx-auto mb-6">
-              <CardHeader>
-                <CardTitle className="text-2xl font-bold text-primary">Gestión de Usuarios</CardTitle>
-                <CardDescription>
-                  Administra los usuarios que tienen acceso a PRLconecta
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <UserManagementTab />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </div>
+        <TabsContent value="perfil" className="h-full m-0 animate-fade-in p-6">
+          <Card className="max-w-4xl mx-auto mb-6">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-primary">Gestión de Usuarios</CardTitle>
+              <CardDescription>
+                Administra los usuarios que tienen acceso a PRLconecta
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UserManagementTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
     </div>
   );
