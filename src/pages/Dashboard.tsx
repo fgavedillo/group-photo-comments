@@ -1,4 +1,3 @@
-
 import { MessageInput } from "@/components/MessageInput";
 import { MessageList } from "@/components/MessageList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -124,13 +123,10 @@ const Dashboard = () => {
         </div>
         
         <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in relative">
-          {/* Ahora la barra de mensajes está fija, no se mueve con el scroll */}
-          <div className="fixed top-[8.25rem] left-0 right-0 z-30 bg-white border-b shadow-sm">
+          {/* Posicionamos la barra de chat directamente debajo del menú de navegación */}
+          <div className="sticky top-[4.5rem] z-30 bg-white border-b shadow-sm">
             <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
           </div>
-          
-          {/* Añadimos un espacio en blanco para compensar la altura de la barra de mensajes fija */}
-          <div className="h-[60px]"></div>
           
           <div className="flex-1 overflow-auto pt-1 bg-white rounded-lg shadow-sm mx-6 mt-1">
             {isLoading ? (
