@@ -123,13 +123,13 @@ const Dashboard = () => {
           </TabsList>
         </div>
         
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto">
           <TabsContent value="chat" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
-            <div className="sticky top-[7.5rem] z-30 bg-white border rounded-lg shadow-sm mb-4">
+            <div className="sticky top-[4.5rem] z-30 bg-white border-b shadow-sm">
               <MessageInput onSend={handleSendMessage} className="max-w-4xl mx-auto" />
             </div>
             
-            <div className="flex-1 overflow-auto pt-2 bg-white rounded-lg shadow-sm">
+            <div className="flex-1 overflow-auto pt-2 bg-white rounded-lg shadow-sm mt-2 mx-6">
               {isLoading ? (
                 <div className="flex items-center justify-center h-40 py-8">
                   <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full"></div>
@@ -140,23 +140,23 @@ const Dashboard = () => {
             </div>
           </TabsContent>
           
-          <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
+          <TabsContent value="issues" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in p-6">
             <IssueManagement messages={messages} />
           </TabsContent>
 
-          <TabsContent value="kpis" className="h-full m-0 animate-fade-in">
+          <TabsContent value="kpis" className="h-full m-0 animate-fade-in p-6">
             <div ref={dashboardRef}>
               <DashboardKPIs messages={messages} />
             </div>
           </TabsContent>
 
-          <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in">
+          <TabsContent value="table" className="h-full m-0 data-[state=active]:flex flex-col animate-fade-in p-6">
             <div ref={tableRef} className="bg-white rounded-lg shadow-sm p-4">
               <IssueTable issues={messages as unknown as Issue[]} onIssuesUpdate={loadMessages} />
             </div>
           </TabsContent>
 
-          <TabsContent value="perfil" className="h-full m-0 animate-fade-in">
+          <TabsContent value="perfil" className="h-full m-0 animate-fade-in p-6">
             <Card className="max-w-4xl mx-auto mb-6">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold text-primary">Gestión de Usuarios</CardTitle>

@@ -118,11 +118,11 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
       </div>
       
       {imagePreview && (
-        <div className="mt-4 relative">
+        <div className="mt-2 relative">
           <img 
             src={imagePreview} 
             alt="Vista previa" 
-            className="w-32 h-32 object-cover rounded-lg"
+            className="w-20 h-20 object-cover rounded-lg"
           />
           <button
             type="button"
@@ -130,7 +130,8 @@ export const MessageInput = ({ onSend, className = "" }: MessageInputProps) => {
               setImagePreview(null);
               setSelectedImage(null);
             }}
-            className="absolute top-2 right-2 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
+            className="absolute top-1 right-1 bg-black/50 text-white rounded-full p-1 hover:bg-black/70 transition-colors"
+            style={{ width: "18px", height: "18px", fontSize: "12px", lineHeight: "10px" }}
           >
             ×
           </button>
