@@ -1,50 +1,34 @@
-import React, { useState } from 'react';
-import { Select, Option } from '@/components/ui/select';
-import { MenuSection, MenuItem } from '@/components/ui/menu-section';
-import { DashboardIcon, IncidentsIcon, ReportsIcon, UsersIcon, SettingsIcon, ProfileIcon, NotificationsIcon } from '@/components/icons';
 
-const CompanySelector = () => {
-  const [companies] = useState([
-    { id: 1, name: "Empresa A" },
-    { id: 2, name: "Empresa B" }
-  ]);
+import React from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+const MainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <Select
-      value={currentCompany}
-      onChange={handleCompanyChange}
-      className="w-64 bg-white rounded-md"
-    >
-      {companies.map(company => (
-        <Option key={company.id} value={company.id}>
-          {company.name}
-        </Option>
-      ))}
-    </Select>
+    <div className="min-h-screen">
+      <header className="border-b">
+        <div className="flex items-center justify-between h-16 px-4">
+          <h1 className="text-xl font-bold">PRL Conecta</h1>
+          
+          <div className="flex items-center space-x-4">
+            <Select defaultValue="default">
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Seleccionar empresa" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Empresa por defecto</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </header>
+      
+      <div className="flex">
+        <main className="flex-1 p-4">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 };
 
-const MainMenu = () => {
-  return (
-    <nav className="space-y-1">
-      {/* Sección de Empresa */}
-      <MenuSection title="Empresa">
-        <MenuItem icon={<DashboardIcon />} href="/dashboard">Dashboard</MenuItem>
-        <MenuItem icon={<IncidentsIcon />} href="/incidents">Incidencias</MenuItem>
-        <MenuItem icon={<ReportsIcon />} href="/reports">Informes</MenuItem>
-      </MenuSection>
-
-      {/* Sección de Administración */}
-      <MenuSection title="Administración">
-        <MenuItem icon={<UsersIcon />} href="/users">Usuarios</MenuItem>
-        <MenuItem icon={<SettingsIcon />} href="/settings">Configuración</MenuItem>
-      </MenuSection>
-
-      {/* Sección de Usuario */}
-      <MenuSection title="Mi Cuenta">
-        <MenuItem icon={<ProfileIcon />} href="/profile">Perfil</MenuItem>
-        <MenuItem icon={<NotificationsIcon />} href="/notifications">Notificaciones</MenuItem>
-      </MenuSection>
-    </nav>
-  );
-}; 
+export default MainLayout;

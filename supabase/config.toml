@@ -66,14 +66,5 @@ url = ""
 port = 9000
 
 # Define individual function configurations
-[functions.send-daily-report]
-verify_jwt = false
-
-[functions.send-email]
-verify_jwt = false
-
-[functions.send-simple-email]
-verify_jwt = false
-
-[functions.send-test-report]
+[[functions.notify-admin]]
 verify_jwt = false

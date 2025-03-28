@@ -1,73 +1,57 @@
-import { getSupabaseClient } from '../lib/supabaseClient';
 
-interface QueueEmailRequest {
+import { supabase } from '../lib/supabaseClient';
+
+export interface EmailQueueItem {
   to: string[];
-  cc?: string[];
   subject: string;
   html: string;
-  isPeriodic?: boolean;
-  periodType?: 'daily' | 'weekly' | 'monthly';
-  scheduledFor?: Date;
+  scheduledFor: Date;
+  isRecurring?: boolean;
+  recurringType?: 'daily' | 'weekly' | 'monthly';
 }
 
-export const queueEmail = async (request: QueueEmailRequest) => {
-  const supabase = getSupabaseClient();
-  
+export async function queueEmail(emailData: EmailQueueItem) {
   try {
-    // Verificar que tenemos una sesión activa
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      throw new Error('No hay sesión activa - por favor inicia sesión');
-    }
-
-    console.log('Session found:', !!session); // Debug log
-
     const { data, error } = await supabase
       .from('email_queue')
       .insert({
-        to_addresses: request.to,
-        cc_addresses: request.cc,
-        subject: request.subject,
-        html_content: request.html,
-        is_periodic: request.isPeriodic || false,
-        period_type: request.periodType,
-        scheduled_for: request.scheduledFor || new Date().toISOString(),
+        to_addresses: emailData.to,
+        subject: emailData.subject,
+        html_content: emailData.html,
+        scheduled_for: emailData.scheduledFor.toISOString(),
+        is_periodic: emailData.isRecurring || false,
+        period_type: emailData.recurringType || null,
         status: 'pending'
       })
-      .select()
-      .single();
+      .select();
 
     if (error) {
-      console.error('Error de inserción:', error); // Debug log
+      console.error("Error al encolar email:", error);
       throw error;
     }
 
-    return {
-      success: true,
-      message: 'Email añadido a la cola de envío',
-      data
-    };
+    return { success: true, data };
   } catch (error) {
-    console.error('Error completo:', error); // Debug log
+    console.error("Error al encolar email:", error);
     throw error;
   }
-};
+}
 
-export const getQueueStatus = async (id: string) => {
-  const supabase = getSupabaseClient();
-  
+export async function getQueuedEmails() {
   try {
     const { data, error } = await supabase
       .from('email_queue')
       .select('*')
-      .eq('id', id)
-      .single();
+      .order('scheduled_for', { ascending: true });
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error("Error al obtener emails encolados:", error);
+      throw error;
+    }
+
+    return { success: true, data };
   } catch (error) {
-    console.error('Error al obtener estado del email:', error);
+    console.error("Error al obtener emails encolados:", error);
     throw error;
   }
-}; 
+}

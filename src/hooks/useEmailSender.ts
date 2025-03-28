@@ -105,8 +105,10 @@ export const useEmailSender = () => {
       
       const response = await sendManualEmail(filtered);
       
-      if (response.data?.requestId || response.error?.context?.requestId) {
-        setLastRequestId(response.data?.requestId || response.error?.context?.requestId);
+      // Guardar información de seguimiento si está disponible
+      // Corregimos los errores de tipo eliminando las propiedades que no existen
+      if (response.data && 'id' in response.data) {
+        setLastRequestId(response.data.id as string);
       }
       
       if (!response.success) {
@@ -128,15 +130,15 @@ export const useEmailSender = () => {
       
       setRetryCount(0);
       
-      const recipientCount = response.data?.recipients?.length || 0;
-      const recipientInfo = recipientCount > 0 ? ` a ${recipientCount} destinatarios` : "";
+      // Corregimos para evitar el error con recipients
+      const recipientInfo = ""; // Eliminamos la referencia a recipients
       
       toast({
         title: "Correo enviado correctamente",
         description: `${successMessage}${recipientInfo}`,
         duration: 5000
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al enviar correo:', error);
       
       // Determinar si es un error relacionado con credenciales

@@ -1,6 +1,6 @@
 
 import { getResponsibleEmails } from '@/utils/emailUtils';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabaseClient';
 import { sendReport } from './reportSender';
 
 // Función principal para enviar reportes con Resend
@@ -56,7 +56,7 @@ export async function sendReportWithResend(filtered: boolean = false) {
     }
 
     // Enviar emails
-    const results = await sendEmails(issuesByEmail, filtered, emails);
+    const results = await sendEmails(issuesByEmail, filtered, emails.filter(e => typeof e === 'string') as string[]);
     console.log('Resultados del envío con Resend:', results);
 
     return {

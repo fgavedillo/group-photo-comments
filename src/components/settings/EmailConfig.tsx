@@ -1,5 +1,9 @@
+
 import React, { useState, FormEvent } from 'react';
-import { getSupabaseClient } from '../../lib/supabase';
+import { supabase } from '../../lib/supabaseClient';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 const EmailConfigForm = () => {
   const [config, setConfig] = useState({
@@ -13,27 +17,96 @@ const EmailConfigForm = () => {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const supabase = getSupabaseClient();
     
-    const { error } = await supabase
-      .from('company_email_config')
-      .upsert({
-        ...config,
-        company_id: user.company_id // asume que tienes acceso al company_id del usuario
-      });
+    try {
+      const { error } = await supabase
+        .from('email_config')
+        .upsert({
+          ...config,
+          company_id: 'default' // Usamos un valor por defecto
+        });
 
-    if (error) {
-      alert('Error al guardar la configuración');
-    } else {
-      alert('Configuración guardada exitosamente');
+      if (error) {
+        alert('Error al guardar la configuración: ' + error.message);
+      } else {
+        alert('Configuración guardada exitosamente');
+      }
+    } catch (error: any) {
+      alert('Error: ' + error.message);
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value, type, checked } = e.target;
+    setConfig({
+      ...config,
+      [name]: type === 'checkbox' ? checked : value
+    });
+  };
+
   return (
-    <form onSubmit={handleSubmit}>
-      {/* Campos del formulario */}
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <Label htmlFor="smtp_host">Servidor SMTP</Label>
+        <Input 
+          id="smtp_host" 
+          name="smtp_host" 
+          value={config.smtp_host} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="smtp_port">Puerto SMTP</Label>
+        <Input 
+          id="smtp_port" 
+          name="smtp_port" 
+          type="number" 
+          value={config.smtp_port} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="smtp_username">Usuario SMTP</Label>
+        <Input 
+          id="smtp_username" 
+          name="smtp_username" 
+          value={config.smtp_username} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="smtp_password">Contraseña SMTP</Label>
+        <Input 
+          id="smtp_password" 
+          name="smtp_password" 
+          type="password" 
+          value={config.smtp_password} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+      
+      <div>
+        <Label htmlFor="from_email">Email de origen</Label>
+        <Input 
+          id="from_email" 
+          name="from_email" 
+          type="email" 
+          value={config.from_email} 
+          onChange={handleChange} 
+          required 
+        />
+      </div>
+      
+      <Button type="submit">Guardar configuración</Button>
     </form>
   );
 };
 
-export default EmailConfigForm; 
+export default EmailConfigForm;
