@@ -1,39 +1,9 @@
 
 import { getResponsibleEmails } from '@/utils/emailUtils';
 import { supabase } from '@/lib/supabase';
+import { sendReport } from './reportSender';
 
-export async function sendEmailWithResend(to: string[], subject: string, html: string) {
-  try {
-    const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-    
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: 'PRL Conecta <onboarding@resend.dev>',
-        to,
-        subject,
-        html,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Error al enviar el correo');
-    }
-
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error enviando email con Resend:', error);
-    throw error;
-  }
-}
-
-// Esta función imita la misma estructura que sendReportWithEmailJS
+// Función principal para enviar reportes con Resend
 export async function sendReportWithResend(filtered: boolean = false) {
   try {
     // Obtener emails de responsables
@@ -99,10 +69,9 @@ async function sendEmails(
     // Enviar a cada responsable sus incidencias específicas
     for (const [email, issues] of Object.entries(issuesByEmail)) {
       try {
-        await sendEmailWithResend(
+        await sendReport(
           [email],
-          'Reporte de Incidencias Asignadas - PRL Conecta',
-          generateEmailTemplate(issues, true)
+          generateEmailHTML(issues, true)
         );
         successCount++;
       } catch (error) {
@@ -114,10 +83,9 @@ async function sendEmails(
     // Enviar reporte completo a todos
     try {
       const allIssues = issuesByEmail.all || [];
-      await sendEmailWithResend(
+      await sendReport(
         allEmails,
-        'Reporte Completo de Incidencias - PRL Conecta',
-        generateEmailTemplate(allIssues, false)
+        generateEmailHTML(allIssues, false)
       );
       successCount = allEmails.length;
     } catch (error) {
@@ -133,7 +101,7 @@ async function sendEmails(
   };
 }
 
-function generateEmailTemplate(issues: any[], isPersonalized: boolean): string {
+function generateEmailHTML(issues: any[], isPersonalized: boolean): string {
   const date = new Date().toLocaleDateString('es-ES', {
     day: '2-digit',
     month: 'long',
