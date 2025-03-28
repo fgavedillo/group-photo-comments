@@ -3,6 +3,7 @@ import emailjs from '@emailjs/browser';
 import { getResponsibleEmails } from '@/utils/emailUtils';
 import { supabase } from '@/lib/supabase';
 import { useEmailJS, EmailJSTemplateParams } from '@/hooks/useEmailJS';
+import { sendReportWithResend } from './resendService';
 
 /**
  * Interfaz para la respuesta del envío de email
@@ -67,74 +68,33 @@ const validateEmail = (email: string): boolean => {
 /**
  * Envía un reporte por correo manual (filtrado o completo)
  */
-export const sendManualEmail = async (filtered: boolean = false): Promise<ApiResponse<EmailSendResponse>> => {
+export async function sendManualEmail(filtered: boolean = false, useResend: boolean = false) {
   try {
-    console.log(`Iniciando envío de correo manual (${filtered ? 'filtrado' : 'completo'})`);
+    console.log(`Enviando email manual (${filtered ? 'filtrado' : 'completo'}) usando ${useResend ? 'Resend' : 'EmailJS'}`);
     
-    // Generar ID único para esta solicitud
-    const requestId = `manual-email-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    // Usar el servicio seleccionado
+    const result = useResend 
+      ? await sendReportWithResend(filtered)
+      : await sendReportWithEmailJS(filtered);
     
-    // Enviar solicitud con timeout apropiado
-    return await callApi<EmailSendResponse>(
-      DAILY_REPORT_FUNCTION,
-      'POST',
-      { 
-        manual: true,
-        filteredByUser: filtered,
-        requestId
-      },
-      { 
-        timeout: 60000, // 60 segundos de timeout
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
+    return {
+      success: true,
+      data: {
+        ...result,
+        service: useResend ? 'resend' : 'emailjs'
       }
-    );
+    };
   } catch (error) {
-    console.error('Error general en el envío de correo:', error);
-    
-    // Verificar si es un error de red
-    const isNetworkError = 
-      error.message?.includes('Failed to fetch') || 
-      error.message?.includes('Network Error') ||
-      error.message?.includes('network');
-    
+    console.error('Error en sendManualEmail:', error);
     return {
       success: false,
       error: {
-        message: isNetworkError
-          ? 'Error de conexión: No se pudo contactar al servidor. Verifique su conexión a internet.'
-          : error.message || 'No se pudo enviar el correo programado',
-        details: `
-          Error general en la función de envío de correo:
-          - Mensaje: ${error.message || 'No disponible'}
-          - Stack: ${error.stack || 'No disponible'}
-          
-          ${isNetworkError ? `
-          Es posible que:
-          1. Su conexión a internet esté fallando
-          2. El servidor de Supabase no esté disponible
-          3. La función edge no esté publicada correctamente
-          
-          Recomendación: Verifique su conexión y que la función edge esté publicada.
-          ` : `
-          Esto puede ser un error en el código del cliente o un problema con la conexión.
-          Recomendación: Revise la consola del navegador para más detalles.
-          `}
-        `,
-        code: isNetworkError ? 'NETWORK_ERROR' : 'CLIENT_ERROR',
-        context: { 
-          originalError: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          }
-        }
+        message: error.message || 'Error al enviar email',
+        details: error.toString()
       }
     };
   }
-};
+}
 
 /**
  * Prueba la conexión con el servidor de correo
@@ -387,7 +347,7 @@ export async function sendTestEmail(toEmail: string) {
     // Crear un mensaje de prueba con texto plano
     const mensajePrueba = `
 Hola ${nombreDestinatario},
-
+    
 Este es un mensaje de prueba enviado desde PRL Conecta.
 
 Información del sistema:
@@ -457,7 +417,7 @@ async function sendEmail(to: string[], subject: string, reportText: string) {
     // Generar el mensaje completo como texto preformateado
     const mensajeCompleto = `
 Estimado/a usuario,
-
+    
 A continuación se detalla el reporte de incidencias:
 
 ${reportText}

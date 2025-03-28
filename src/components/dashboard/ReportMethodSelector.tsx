@@ -2,12 +2,12 @@
 import { Button } from "@/components/ui/button";
 
 interface ReportMethodSelectorProps {
-  alternativeMethod: 'emailjs' | 'edge';
+  useResend: boolean;
   toggleSendMethod: () => void;
 }
 
 export const ReportMethodSelector = ({ 
-  alternativeMethod, 
+  useResend, 
   toggleSendMethod 
 }: ReportMethodSelectorProps) => {
   return (
@@ -16,8 +16,9 @@ export const ReportMethodSelector = ({
       size="sm"
       onClick={toggleSendMethod}
       className="text-xs"
+      title={`Actualmente usando: ${useResend ? 'Resend' : 'EmailJS'}`}
     >
-      Usar {alternativeMethod === 'emailjs' ? 'función Edge' : 'EmailJS'}
+      Usar {useResend ? 'EmailJS' : 'Resend'}
     </Button>
   );
 };

@@ -1,25 +1,16 @@
+
 import { getResponsibleEmails } from '@/utils/emailUtils';
 import { supabase } from '@/lib/supabase';
 
-const RESEND_API_KEY = 're_M2FFkWg5_5fy9uyFfxrdb9ExipW7kDJe8';
-
-interface IssueData {
-  id: string;
-  title: string;
-  status: string;
-  responsable: string;
-  assigned_email: string;
-  created_at: string;
-}
-
-async function sendEmailWithResend(to: string[], subject: string, html: string) {
+export async function sendEmailWithResend(to: string[], subject: string, html: string) {
   try {
+    const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
+    
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
-        'Origin': 'http://localhost:8080'
       },
       body: JSON.stringify({
         from: 'PRL Conecta <onboarding@resend.dev>',
@@ -35,18 +26,19 @@ async function sendEmailWithResend(to: string[], subject: string, html: string) 
       throw new Error(data.message || 'Error al enviar el correo');
     }
 
-    return data;
+    return { success: true, data };
   } catch (error) {
-    console.error('Error enviando email:', error);
+    console.error('Error enviando email con Resend:', error);
     throw error;
   }
 }
 
+// Esta función imita la misma estructura que sendReportWithEmailJS
 export async function sendReportWithResend(filtered: boolean = false) {
   try {
     // Obtener emails de responsables
     const emails = await getResponsibleEmails();
-    console.log('Emails encontrados:', emails);
+    console.log('Emails encontrados para Resend:', emails);
     
     if (!emails || emails.length === 0) {
       throw new Error("No se encontraron incidencias con responsable y correo electrónico válidos");
@@ -59,16 +51,15 @@ export async function sendReportWithResend(filtered: boolean = false) {
       .in('status', ['en-estudio', 'en-curso']);
 
     if (issuesError) throw issuesError;
-    console.log('Incidencias encontradas:', issues);
-
+    
     if (!issues || issues.length === 0) {
       throw new Error("No hay incidencias pendientes para reportar");
     }
 
     // Filtrar y agrupar incidencias por responsable si es necesario
     const issuesByEmail = filtered
-      ? groupIssuesByEmail(issues as IssueData[])
-      : { all: issues as IssueData[] };
+      ? groupIssuesByEmail(issues)
+      : { all: issues };
 
     // Enviar emails
     const results = await sendEmails(issuesByEmail, filtered, emails);
@@ -84,7 +75,7 @@ export async function sendReportWithResend(filtered: boolean = false) {
   }
 }
 
-function groupIssuesByEmail(issues: IssueData[]) {
+function groupIssuesByEmail(issues: any[]) {
   return issues.reduce((acc, issue) => {
     if (issue.assigned_email) {
       if (!acc[issue.assigned_email]) {
@@ -93,11 +84,11 @@ function groupIssuesByEmail(issues: IssueData[]) {
       acc[issue.assigned_email].push(issue);
     }
     return acc;
-  }, {} as Record<string, IssueData[]>);
+  }, {} as Record<string, any[]>);
 }
 
 async function sendEmails(
-  issuesByEmail: Record<string, IssueData[]>,
+  issuesByEmail: Record<string, any[]>,
   filtered: boolean,
   allEmails: string[]
 ) {
@@ -142,7 +133,7 @@ async function sendEmails(
   };
 }
 
-function generateEmailTemplate(issues: IssueData[], isPersonalized: boolean): string {
+function generateEmailTemplate(issues: any[], isPersonalized: boolean): string {
   const date = new Date().toLocaleDateString('es-ES', {
     day: '2-digit',
     month: 'long',
@@ -171,13 +162,13 @@ function generateEmailTemplate(issues: IssueData[], isPersonalized: boolean): st
           ? '<p>No hay incidencias pendientes en este momento.</p>'
           : issues.map(issue => `
             <div class="issue">
-              <h3>${issue.title}</h3>
+              <h3>${issue.title || issue.message}</h3>
               <p><strong>Estado:</strong> <span class="status ${issue.status}">${issue.status}</span></p>
-              <p><strong>Responsable:</strong> ${issue.responsable}</p>
-              <p><strong>Fecha de creación:</strong> ${new Date(issue.created_at).toLocaleDateString('es-ES')}</p>
+              <p><strong>Responsable:</strong> ${issue.responsable || 'No asignado'}</p>
+              <p><strong>Fecha de creación:</strong> ${new Date(issue.created_at || issue.timestamp).toLocaleDateString('es-ES')}</p>
             </div>
           `).join('')}
       </body>
     </html>
   `;
-} 
+}

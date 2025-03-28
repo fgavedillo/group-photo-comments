@@ -1,6 +1,8 @@
+
 import { Resend } from 'resend';
 
-const resend = new Resend('re_M2FFkWg5_5fy9uyFfxrdb9ExipW7kDJe8');
+// Usar la API key desde las variables de entorno
+const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY || 're_M2FFkWg5_5fy9uyFfxrdb9ExipW7kDJe8');
 
 export async function sendReport(recipients: string[], reportData: any) {
   try {

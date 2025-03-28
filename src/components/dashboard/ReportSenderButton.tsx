@@ -1,16 +1,26 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileImage, RefreshCw, Filter, AlertCircle, CheckCircle } from "lucide-react";
+import { FileImage, RefreshCw, Filter, AlertCircle, CheckCircle, Mail } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ReportMethodSelector } from "./ReportMethodSelector";
 
 export const ReportSenderButton = () => {
-  const { sendReport, isLoading, error, lastResponse } = useReportSender();
+  const { 
+    sendReport, 
+    isLoading, 
+    error, 
+    lastResponse, 
+    useResend, 
+    toggleSendMethod 
+  } = useReportSender();
+  
   const [filtered, setFiltered] = useState(false);
   
   const handleSendReport = async () => {
     try {
-      console.log(`Enviando reporte ${filtered ? 'personalizado' : 'completo'}...`);
+      console.log(`Enviando reporte ${filtered ? 'personalizado' : 'completo'} con ${useResend ? 'Resend' : 'EmailJS'}...`);
       await sendReport(filtered);
     } catch (err) {
       // El error ya está manejado en el hook
@@ -58,6 +68,16 @@ export const ReportSenderButton = () => {
           <Filter className={`h-4 w-4 mr-2 ${filtered ? 'text-green-600' : ''}`} />
           {filtered ? "Modo Global" : "Modo Individual"}
         </Button>
+        
+        <ReportMethodSelector
+          useResend={useResend}
+          toggleSendMethod={toggleSendMethod}
+        />
+        
+        <div className="ml-auto text-xs text-gray-500 flex items-center gap-1">
+          <Mail className="h-3 w-3" />
+          <span>Usando: {useResend ? 'Resend' : 'EmailJS'}</span>
+        </div>
       </div>
       
       {error ? (
@@ -66,15 +86,15 @@ export const ReportSenderButton = () => {
           <AlertTitle>Error de envío</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      ) : lastResponse?.success && lastResponse.stats?.successCount > 0 ? (
+      ) : lastResponse?.success && lastResponse.data?.stats?.successCount > 0 ? (
         <Alert variant="default" className="bg-green-50 border-green-200">
           <CheckCircle className="h-4 w-4 text-green-500" />
           <AlertTitle>Envío exitoso</AlertTitle>
           <AlertDescription>
-            Se envió el reporte a {lastResponse.stats?.successCount || 0} destinatario(s) exitosamente.
-            {lastResponse.stats && (
+            Se envió el reporte con {useResend ? 'Resend' : 'EmailJS'} a {lastResponse.data?.stats?.successCount || 0} destinatario(s) exitosamente.
+            {lastResponse.data?.stats && (
               <div className="text-xs mt-1 text-gray-500">
-                {lastResponse.stats.successCount} envíos exitosos, {lastResponse.stats.failureCount} fallidos.
+                {lastResponse.data.stats.successCount} envíos exitosos, {lastResponse.data.stats.failureCount} fallidos.
               </div>
             )}
           </AlertDescription>
