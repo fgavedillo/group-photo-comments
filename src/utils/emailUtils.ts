@@ -1,3 +1,4 @@
+
 import { supabase } from "@/lib/supabase";
 import emailjs from '@emailjs/browser';
 
@@ -61,30 +62,43 @@ export const getResponsibleEmails = async (): Promise<string[]> => {
   try {
     console.log("Obteniendo emails de responsables...");
     
-    // Modificamos la consulta para asegurar que obtenemos solo incidencias con responsable Y correo asignado
+    // Obtener todas las incidencias pendientes primero
     const { data: pendingIssues, error: issuesError } = await supabase
       .from('issues')
       .select('assigned_email, responsable, status')
-      .in('status', ['en-estudio', 'en-curso'])
-      .not('assigned_email', 'is', null)
-      .not('responsable', 'is', null);
+      .in('status', ['en-estudio', 'en-curso']);
     
     if (issuesError) {
       console.error("Error SQL al obtener correos:", issuesError);
       throw issuesError;
     }
     
-    console.log("Incidencias con responsable y correo encontradas:", pendingIssues);
+    console.log("Incidencias pendientes obtenidas:", pendingIssues?.length || 0);
     
-    // Si no hay incidencias pendientes con correo y responsable, devolver un array vacío
+    // Si no hay incidencias pendientes, devolver un array vacío
     if (!pendingIssues || pendingIssues.length === 0) {
+      console.warn("No se encontraron incidencias pendientes");
+      return [];
+    }
+    
+    // Filtrar las incidencias que tienen responsable Y correo asignado
+    const issuesWithResponsible = pendingIssues.filter(issue => 
+      issue.responsable && 
+      issue.responsable.trim() !== '' && 
+      issue.assigned_email && 
+      issue.assigned_email.trim() !== ''
+    );
+    
+    console.log("Incidencias con responsable y correo encontradas:", issuesWithResponsible);
+    
+    // Si no hay incidencias con responsable y correo, devolver un array vacío
+    if (issuesWithResponsible.length === 0) {
       console.warn("No se encontraron incidencias con responsable y correo asignado");
       return [];
     }
     
     // Extraer y validar emails
-    const validEmails = pendingIssues
-      .filter(issue => issue.responsable && issue.responsable.trim() !== '')
+    const validEmails = issuesWithResponsible
       .map(issue => issue.assigned_email)
       .filter(email => isValidEmail(email))
       .map(email => email!.trim());

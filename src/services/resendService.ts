@@ -14,25 +14,50 @@ export async function sendReportWithResend(filtered: boolean = false) {
       throw new Error("No se encontraron incidencias con responsable y correo electrónico válidos");
     }
 
-    // Obtener incidencias pendientes
+    // Obtener incidencias pendientes (en estudio o en curso)
     const { data: issues, error: issuesError } = await supabase
       .from('issues')
       .select('*')
       .in('status', ['en-estudio', 'en-curso']);
 
-    if (issuesError) throw issuesError;
+    if (issuesError) {
+      console.error("Error al obtener incidencias:", issuesError);
+      throw issuesError;
+    }
+    
+    console.log('Incidencias pendientes encontradas:', issues?.length || 0);
     
     if (!issues || issues.length === 0) {
       throw new Error("No hay incidencias pendientes para reportar");
     }
 
+    // Filtrar incidencias que tienen responsable y correo asignados
+    const validIssues = issues.filter(issue => 
+      issue.responsable && 
+      issue.responsable.trim() !== '' && 
+      issue.assigned_email && 
+      issue.assigned_email.trim() !== ''
+    );
+    
+    console.log('Incidencias con responsable y correo:', validIssues.length);
+    
+    if (validIssues.length === 0) {
+      throw new Error("No hay incidencias con responsable y correo asignados para reportar");
+    }
+
     // Filtrar y agrupar incidencias por responsable si es necesario
     const issuesByEmail = filtered
-      ? groupIssuesByEmail(issues)
-      : { all: issues };
+      ? groupIssuesByEmail(validIssues)
+      : { all: validIssues };
+    
+    // Verificar que hay destinatarios después de agrupar (solo si es modo personalizado)
+    if (filtered && Object.keys(issuesByEmail).length === 0) {
+      throw new Error("No hay destinatarios con incidencias asignadas para enviar el reporte personalizado");
+    }
 
     // Enviar emails
     const results = await sendEmails(issuesByEmail, filtered, emails);
+    console.log('Resultados del envío con Resend:', results);
 
     return {
       success: true,
@@ -45,53 +70,69 @@ export async function sendReportWithResend(filtered: boolean = false) {
   }
 }
 
-function groupIssuesByEmail(issues: any[]) {
+function groupIssuesByEmail(issues) {
   return issues.reduce((acc, issue) => {
-    if (issue.assigned_email) {
-      if (!acc[issue.assigned_email]) {
-        acc[issue.assigned_email] = [];
+    if (issue.assigned_email && issue.assigned_email.trim() !== '') {
+      const email = issue.assigned_email.trim();
+      if (!acc[email]) {
+        acc[email] = [];
       }
-      acc[issue.assigned_email].push(issue);
+      acc[email].push(issue);
     }
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {});
 }
 
 async function sendEmails(
-  issuesByEmail: Record<string, any[]>,
-  filtered: boolean,
-  allEmails: string[]
+  issuesByEmail,
+  filtered,
+  allEmails
 ) {
   let successCount = 0;
   let failureCount = 0;
 
-  if (filtered) {
-    // Enviar a cada responsable sus incidencias específicas
-    for (const [email, issues] of Object.entries(issuesByEmail)) {
+  try {
+    if (filtered) {
+      // Enviar a cada responsable sus incidencias específicas
+      for (const [email, issues] of Object.entries(issuesByEmail)) {
+        try {
+          if (!email || email.trim() === '') {
+            console.warn('Saltando email vacío');
+            continue;
+          }
+          
+          await sendReport(
+            [email],
+            generateEmailHTML(issues, true)
+          );
+          successCount++;
+        } catch (error) {
+          console.error(`Error enviando a ${email}:`, error);
+          failureCount++;
+        }
+      }
+    } else {
+      // Enviar reporte completo a todos los responsables
       try {
+        const allIssues = issuesByEmail.all || [];
+        const uniqueEmails = [...new Set(allEmails.filter(email => email && email.trim() !== ''))];
+        
+        if (uniqueEmails.length === 0) {
+          throw new Error("No hay destinatarios válidos para enviar el reporte");
+        }
+        
         await sendReport(
-          [email],
-          generateEmailHTML(issues, true)
+          uniqueEmails,
+          generateEmailHTML(allIssues, false)
         );
-        successCount++;
+        successCount = uniqueEmails.length;
       } catch (error) {
-        console.error(`Error enviando a ${email}:`, error);
-        failureCount++;
+        console.error('Error enviando reporte completo:', error);
+        failureCount = allEmails.length;
       }
     }
-  } else {
-    // Enviar reporte completo a todos
-    try {
-      const allIssues = issuesByEmail.all || [];
-      await sendReport(
-        allEmails,
-        generateEmailHTML(allIssues, false)
-      );
-      successCount = allEmails.length;
-    } catch (error) {
-      console.error('Error enviando reporte completo:', error);
-      failureCount = allEmails.length;
-    }
+  } catch (error) {
+    console.error('Error general en sendEmails:', error);
   }
 
   return {
@@ -101,7 +142,7 @@ async function sendEmails(
   };
 }
 
-function generateEmailHTML(issues: any[], isPersonalized: boolean): string {
+function generateEmailHTML(issues, isPersonalized) {
   const date = new Date().toLocaleDateString('es-ES', {
     day: '2-digit',
     month: 'long',

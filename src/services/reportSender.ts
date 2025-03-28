@@ -11,12 +11,14 @@ export async function sendReport(recipients: string[], reportData: any) {
       throw new Error("No se proporcionaron destinatarios para el envío del correo");
     }
 
-    // Preparar el cuerpo del mensaje
+    // Preparar el cuerpo del mensaje (como HTML)
     const emailContent = typeof reportData === 'string' 
       ? reportData 
       : `<div>${JSON.stringify(reportData, null, 2)}</div>`;
 
-    // Realizar la petición a la API de Resend mediante la función Edge
+    console.log(`Enviando correo a ${recipients.length} destinatarios con Resend`);
+    
+    // Realizar la petición a la función Edge de Supabase
     const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email', {
       method: 'POST',
       headers: {
@@ -33,11 +35,25 @@ export async function sendReport(recipients: string[], reportData: any) {
       }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok || !data.success) {
-      throw new Error(data.error || 'Error al enviar el correo con Resend');
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error en respuesta de Resend:', errorText);
+      let errorMessage = `Error ${response.status}: ${response.statusText}`;
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch (e) {
+        // Si no es JSON, usar el texto completo
+        errorMessage = errorText;
+      }
+      
+      throw new Error(errorMessage);
     }
+
+    const data = await response.json();
 
     return { 
       success: true, 
@@ -46,6 +62,6 @@ export async function sendReport(recipients: string[], reportData: any) {
     };
   } catch (error) {
     console.error('Error al enviar reporte con Resend:', error);
-    throw new Error('Error al enviar el reporte: ' + error.message);
+    throw new Error('Error al enviar el reporte: ' + (error.message || "Error desconocido"));
   }
-} 
+}

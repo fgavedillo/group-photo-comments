@@ -18,22 +18,83 @@ Deno.serve(async (req) => {
 
   try {
     logger.info("Recibida solicitud para enviar correo con Resend");
-    const { to, subject, html } = await req.json();
-
+    
+    // Parsear cuerpo de la solicitud
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid JSON body"
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 400,
+        },
+      );
+    }
+    
+    const { to, subject, html } = body;
+    
     // Validar datos requeridos
     if (!to || !Array.isArray(to) || to.length === 0) {
-      throw new Error('Se requiere al menos un destinatario');
+      logger.error("Error: Se requiere al menos un destinatario");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Se requiere al menos un destinatario'
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 400,
+        },
+      );
     }
 
     if (!subject) {
-      throw new Error('Se requiere un asunto para el correo');
+      logger.error("Error: Se requiere un asunto para el correo");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Se requiere un asunto para el correo'
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 400,
+        },
+      );
     }
 
     if (!html) {
-      throw new Error('Se requiere contenido HTML para el correo');
+      logger.error("Error: Se requiere contenido HTML para el correo");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Se requiere contenido HTML para el correo'
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 400,
+        },
+      );
     }
 
-    logger.info(`Enviando correo a: ${to.join(', ')}`);
+    const recipientsStr = to.join(', ');
+    logger.info(`Enviando correo a: ${recipientsStr}`);
 
     // Enviar correo usando Resend
     const emailResponse = await resend.emails.send({
@@ -46,7 +107,20 @@ Deno.serve(async (req) => {
     logger.info("Respuesta de Resend:", emailResponse);
 
     if (emailResponse.error) {
-      throw new Error(emailResponse.error.message || 'Error al enviar el correo');
+      logger.error("Error en Resend:", emailResponse.error);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: emailResponse.error.message || 'Error al enviar el correo'
+        }),
+        {
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json',
+          },
+          status: 400,
+        },
+      );
     }
 
     return new Response(
@@ -67,14 +141,14 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message || 'Error desconocido'
       }),
       {
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
         },
-        status: 400,
+        status: 500,
       },
     );
   }

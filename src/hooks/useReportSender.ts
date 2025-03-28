@@ -30,7 +30,11 @@ export const useReportSender = () => {
         description: `Procesando solicitud con ${useResend ? 'Resend' : 'EmailJS'}...`,
       });
       
+      console.log(`Iniciando proceso de envío usando ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtrado' : 'completo'})`);
+      
       const result = await sendManualEmail(filtered, useResend);
+      
+      console.log('Resultado de envío de reporte:', result);
       
       setLastResponse(result);
       
@@ -50,14 +54,19 @@ export const useReportSender = () => {
       } else {
         throw new Error(result.error?.message || 'No se pudo enviar el reporte');
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error al enviar reporte:", err);
       
-      setError(err.message || 'Error desconocido al enviar el reporte');
+      // Mensaje amigable que siempre indica verificar incidencias
+      const friendlyError = err.message?.includes("NetworkError") ?
+        "Error de conexión al enviar el reporte. Verifica tu conexión a internet y que la función Edge esté correctamente publicada." :
+        err.message || 'Error desconocido al enviar el reporte';
+      
+      setError(friendlyError);
       
       toast({
         title: "Error",
-        description: err.message || "No se pudo enviar el reporte",
+        description: friendlyError,
         variant: "destructive"
       });
       
