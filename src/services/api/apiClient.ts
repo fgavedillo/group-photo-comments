@@ -42,17 +42,21 @@ export async function createRequestHeaders(): Promise<Headers> {
 /**
  * Base function to make API requests with timeout and error handling
  */
-export async function callApi<T = any>(
-  url: string, 
-  method: string, 
-  payload: any, 
-  config: ApiRequestConfig = {}
-): Promise<ApiResponse<T>> {
+export async function callApi<T = any>({
+  url,
+  method = 'GET',
+  data = null
+}: {
+  url: string;
+  method?: string;
+  data?: any;
+  config?: ApiRequestConfig;
+}): Promise<ApiResponse<T>> {
   const requestId = crypto.randomUUID();
   console.log(`[ID:${requestId}] Starting API request to ${url}`);
   
   // Set default timeout
-  const timeoutDuration = config.timeout || 60000; // Default 60s timeout
+  const timeoutDuration = 60000; // Default 60s timeout
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutDuration);
   
@@ -61,16 +65,18 @@ export async function callApi<T = any>(
   
   try {
     // Get headers (with auth tokens)
-    const headers = config.headers ? new Headers(config.headers) : await createRequestHeaders();
+    const headers = new Headers({
+      'Content-Type': 'application/json'
+    });
     
     console.log(`[ID:${requestId}] Sending ${method} request with timeout of ${timeoutDuration/1000}s`);
-    console.log(`[ID:${requestId}] Payload:`, JSON.stringify(payload));
+    console.log(`[ID:${requestId}] Payload:`, JSON.stringify(data));
     
     // Make the request
     const response = await fetch(url, {
       method: method,
       headers: headers,
-      body: method !== 'GET' ? JSON.stringify(payload) : undefined,
+      body: method !== 'GET' ? JSON.stringify(data) : undefined,
       signal: controller.signal
     });
     
@@ -87,12 +93,12 @@ export async function callApi<T = any>(
     }
     
     // Parse successful response
-    const data = await response.json();
+    const responseData = await response.json();
     
     return {
       success: true,
       data: {
-        ...data,
+        ...responseData,
         requestId,
         elapsedTime: `${elapsedTime.toFixed(2)}ms`
       }

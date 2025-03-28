@@ -1,55 +1,69 @@
 
-import { callApi } from './api/apiClient';
-import supabase from '../lib/supabaseClient';
+import supabase from "@/lib/supabaseClient";
 
-export interface EmailQueueItem {
+/**
+ * Interface for email queue entry
+ */
+export interface QueuedEmail {
+  id?: string;
   to: string[];
   subject: string;
   html: string;
   scheduledFor?: Date;
-  isRecurring?: boolean;
-  recurringPattern?: string;
+  status?: 'pending' | 'sent' | 'failed';
+  created_at?: string;
+  updated_at?: string;
+  error?: string;
+  user_id?: string;
 }
 
 /**
- * Añade un email a la cola de envío
+ * Adds an email to the queue for sending
  */
-export async function queueEmail(emailData: EmailQueueItem) {
+export async function queueEmail(email: QueuedEmail) {
   try {
+    console.log('Encolando email para:', email.to);
+    
+    // Validar que tenga destinatarios
+    if (!email.to || email.to.length === 0) {
+      throw new Error('Se requiere al menos un destinatario para encolar el email');
+    }
+    
+    // Crear objeto para insertar
+    const queueEntry = {
+      to: email.to,
+      subject: email.subject,
+      html: email.html,
+      status: 'pending',
+      scheduled_for: email.scheduledFor || new Date(),
+    };
+    
+    // Insertar en tabla
     const { data, error } = await supabase
       .from('email_queue')
-      .insert({
-        to_addresses: emailData.to,
-        subject: emailData.subject,
-        html_content: emailData.html,
-        scheduled_for: emailData.scheduledFor ? emailData.scheduledFor.toISOString() : new Date().toISOString(),
-        status: 'pending'
-      })
+      .insert(queueEntry)
       .select()
       .single();
     
     if (error) {
-      console.error('Error al encolar el email:', error);
-      throw error;
+      console.error('Error al encolar email:', error);
+      throw new Error(`Error al encolar email: ${error.message}`);
     }
     
+    console.log('Email encolado exitosamente:', data);
     return {
       success: true,
-      data: data,
-      message: 'Email añadido a la cola de envío'
+      message: 'Email encolado exitosamente',
+      data
     };
   } catch (error) {
     console.error('Error en queueEmail:', error);
-    return {
-      success: false,
-      error: error,
-      message: 'Error al encolar el email'
-    };
+    throw error;
   }
 }
 
 /**
- * Obtiene los emails pendientes de la cola
+ * Obtener emails pendientes de enviar
  */
 export async function getPendingEmails() {
   try {
@@ -60,92 +74,88 @@ export async function getPendingEmails() {
       .order('scheduled_for', { ascending: true });
     
     if (error) {
+      console.error('Error al obtener emails pendientes:', error);
       throw error;
     }
     
-    return {
-      success: true,
-      data: data || []
-    };
+    return data || [];
   } catch (error) {
-    console.error('Error obteniendo emails pendientes:', error);
-    return {
-      success: false,
-      error: error
-    };
+    console.error('Error en getPendingEmails:', error);
+    throw error;
   }
 }
 
 /**
- * Envia un email desde la cola
+ * Marcar un email como enviado
  */
-export async function sendQueuedEmail(emailId: string) {
+export async function markEmailAsSent(id: string) {
   try {
-    // Actualizamos el estado mientras procesamos
-    const { data: emailData, error: selectError } = await supabase
-      .from('email_queue')
-      .select('*')
-      .eq('id', emailId)
-      .single();
-    
-    if (selectError) {
-      throw selectError;
-    }
-    
-    if (!emailData) {
-      throw new Error(`No se encontró el email con ID ${emailId}`);
-    }
-    
-    // Marcamos como en proceso
-    await supabase
-      .from('email_queue')
-      .update({ status: 'processing' })
-      .eq('id', emailId);
-    
-    // Realizamos el envío con la API adecuada
-    const result = await callApi({
-      url: '/send-email',
-      method: 'POST',
-      data: {
-        to: emailData.to_addresses,
-        subject: emailData.subject,
-        html: emailData.html_content
-      }
-    });
-    
-    if (!result.success) {
-      throw new Error(result.error?.message || 'Error al enviar el email');
-    }
-    
-    // Marcamos como enviado
-    await supabase
+    const { data, error } = await supabase
       .from('email_queue')
       .update({
         status: 'sent',
-        processed_at: new Date().toISOString()
+        updated_at: new Date().toISOString()
       })
-      .eq('id', emailId);
+      .eq('id', id)
+      .select()
+      .single();
     
-    return {
-      success: true,
-      data: result.data
-    };
+    if (error) {
+      console.error(`Error al marcar email ${id} como enviado:`, error);
+      throw error;
+    }
+    
+    return data;
   } catch (error) {
-    console.error('Error enviando email desde cola:', error);
-    
-    // Marcamos como fallido
-    await supabase
+    console.error('Error en markEmailAsSent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Marcar un email como fallido
+ */
+export async function markEmailAsFailed(id: string, errorMessage: string) {
+  try {
+    const { data, error } = await supabase
       .from('email_queue')
       .update({
         status: 'failed',
-        error: error.message || 'Error desconocido',
-        processed_at: new Date().toISOString()
+        error: errorMessage,
+        updated_at: new Date().toISOString()
       })
-      .eq('id', emailId);
+      .eq('id', id)
+      .select()
+      .single();
     
-    return {
-      success: false,
-      error: error
-    };
+    if (error) {
+      console.error(`Error al marcar email ${id} como fallido:`, error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error en markEmailAsFailed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Procesar emails pendientes manualmente
+ */
+export async function processEmailQueue() {
+  try {
+    // Llamar a la función Edge para procesar la cola
+    const { data, error } = await supabase.functions.invoke('process-email-queue');
+    
+    if (error) {
+      console.error('Error al procesar cola de emails:', error);
+      throw new Error(`Error al procesar cola: ${error.message}`);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error en processEmailQueue:', error);
+    throw error;
   }
 }

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { sendManualEmail } from '@/services/emailService';
+import { callApi } from '@/services/api/apiClient';
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -35,37 +36,16 @@ export const useReportSender = () => {
       // Usar la nueva función directamente para Resend
       if (useResend) {
         // Llamar directamente a la Edge Function
-        const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report', {
+        const response = await callApi({
+          url: 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report',
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filtered
-          }),
+          data: { filtered }
         });
         
-        if (!response.ok) {
-          const errorText = await response.text();
-          let errorMessage = `Error ${response.status}: ${response.statusText}`;
-          
-          try {
-            const errorData = JSON.parse(errorText);
-            if (errorData.error?.message) {
-              errorMessage = errorData.error.message;
-            }
-          } catch (e) {
-            errorMessage = errorText;
-          }
-          
-          throw new Error(errorMessage);
-        }
+        setLastResponse(response);
         
-        const result = await response.json();
-        setLastResponse(result);
-        
-        if (result.success) {
-          const { successCount = 0 } = result.data?.stats || {};
+        if (response.success) {
+          const { successCount = 0 } = response.data?.stats || {};
           
           if (successCount === 0) {
             throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
@@ -76,9 +56,9 @@ export const useReportSender = () => {
             description: `Se ha enviado el reporte con Resend a ${successCount} destinatario(s) exitosamente`,
           });
           
-          return result;
+          return response;
         } else {
-          throw new Error(result.error?.message || 'No se pudo enviar el reporte');
+          throw new Error(response.error?.message || 'No se pudo enviar el reporte');
         }
       } else {
         // Usar la función existente para EmailJS
@@ -102,7 +82,7 @@ export const useReportSender = () => {
           throw new Error(result.error?.message || 'No se pudo enviar el reporte');
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error al enviar reporte:", err);
       
       // Mensaje amigable que siempre indica verificar incidencias

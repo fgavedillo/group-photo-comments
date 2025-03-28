@@ -1,21 +1,15 @@
 
 import { serve } from "https://deno.land/std@0.198.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
+import { corsHeaders, handleCors } from "./cors.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") || 're_2TqHgv5B_62eNDe38YRyhnXfzSjmp2ShP');
 
-// CORS headers permitidos para las funciones de API
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-};
-
 serve(async (req) => {
   // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   try {
