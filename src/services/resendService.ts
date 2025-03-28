@@ -1,6 +1,6 @@
 
 import { getResponsibleEmails } from '@/utils/emailUtils';
-import { supabase } from '@/lib/supabaseClient';
+import supabase from '@/lib/supabaseClient';
 import { sendReport } from './reportSender';
 
 // Función principal para enviar reportes con Resend
@@ -55,8 +55,15 @@ export async function sendReportWithResend(filtered: boolean = false) {
       throw new Error("No hay destinatarios con incidencias asignadas para enviar el reporte personalizado");
     }
 
+    // Asegurarnos de que los emails son strings válidos
+    const validEmailStrings = emails.filter(e => typeof e === 'string') as string[];
+    
+    if (validEmailStrings.length === 0) {
+      throw new Error("No hay direcciones de correo válidas para enviar el reporte");
+    }
+
     // Enviar emails
-    const results = await sendEmails(issuesByEmail, filtered, emails.filter(e => typeof e === 'string') as string[]);
+    const results = await sendEmails(issuesByEmail, filtered, validEmailStrings);
     console.log('Resultados del envío con Resend:', results);
 
     return {
