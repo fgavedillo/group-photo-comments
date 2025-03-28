@@ -1,9 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
 
-// Usar la API key desde las variables de entorno
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY || 're_2TqHgv5B_62eNDe38YRyhnXfzSjmp2ShP';
-
 export async function sendReport(recipients: string[], reportData: any) {
   try {
     // Verificar que tenemos destinatarios
@@ -19,7 +16,7 @@ export async function sendReport(recipients: string[], reportData: any) {
     console.log(`Enviando correo a ${recipients.length} destinatarios con Resend`);
     
     // Realizar la petición a la función Edge de Supabase
-    const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-email', {
+    const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -7,7 +7,7 @@ export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastResponse, setLastResponse] = useState<any>(null);
-  const [useResend, setUseResend] = useState(false);
+  const [useResend, setUseResend] = useState(true); // Default to using Resend
   const { toast } = useToast();
 
   const toggleSendMethod = () => {
@@ -32,27 +32,75 @@ export const useReportSender = () => {
       
       console.log(`Iniciando proceso de envío usando ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtrado' : 'completo'})`);
       
-      const result = await sendManualEmail(filtered, useResend);
-      
-      console.log('Resultado de envío de reporte:', result);
-      
-      setLastResponse(result);
-      
-      if (result.success) {
-        const { successCount = 0 } = result.data?.stats || {};
-        
-        if (successCount === 0) {
-          throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
-        }
-        
-        toast({
-          title: "Reporte enviado",
-          description: `Se ha enviado el reporte con ${useResend ? 'Resend' : 'EmailJS'} a ${successCount} destinatario(s) exitosamente`,
+      // Usar la nueva función directamente para Resend
+      if (useResend) {
+        // Llamar directamente a la Edge Function
+        const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filtered
+          }),
         });
         
-        return result;
+        if (!response.ok) {
+          const errorText = await response.text();
+          let errorMessage = `Error ${response.status}: ${response.statusText}`;
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.error?.message) {
+              errorMessage = errorData.error.message;
+            }
+          } catch (e) {
+            errorMessage = errorText;
+          }
+          
+          throw new Error(errorMessage);
+        }
+        
+        const result = await response.json();
+        setLastResponse(result);
+        
+        if (result.success) {
+          const { successCount = 0 } = result.data?.stats || {};
+          
+          if (successCount === 0) {
+            throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
+          }
+          
+          toast({
+            title: "Reporte enviado",
+            description: `Se ha enviado el reporte con Resend a ${successCount} destinatario(s) exitosamente`,
+          });
+          
+          return result;
+        } else {
+          throw new Error(result.error?.message || 'No se pudo enviar el reporte');
+        }
       } else {
-        throw new Error(result.error?.message || 'No se pudo enviar el reporte');
+        // Usar la función existente para EmailJS
+        const result = await sendManualEmail(filtered, false);
+        setLastResponse(result);
+        
+        if (result.success) {
+          const { successCount = 0 } = result.data?.stats || {};
+          
+          if (successCount === 0) {
+            throw new Error("No se pudo enviar el reporte a ningún destinatario. Verifica que existan incidencias con responsable y correo asignados.");
+          }
+          
+          toast({
+            title: "Reporte enviado",
+            description: `Se ha enviado el reporte con EmailJS a ${successCount} destinatario(s) exitosamente`,
+          });
+          
+          return result;
+        } else {
+          throw new Error(result.error?.message || 'No se pudo enviar el reporte');
+        }
       }
     } catch (err) {
       console.error("Error al enviar reporte:", err);

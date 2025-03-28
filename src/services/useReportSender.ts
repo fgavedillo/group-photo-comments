@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { callApi, ApiResponse } from './api/apiClient';
+import { callApi } from './api/apiClient';
 import { useToast } from '@/hooks/use-toast';
 
 export function useReportSender() {
@@ -14,7 +14,7 @@ export function useReportSender() {
       setIsLoading(true);
       
       const result = await callApi({
-        url: useResend ? '/send-resend-report' : '/send-report',
+        url: useResend ? 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report' : 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-report',
         method: 'POST',
         data: { filtered }
       });

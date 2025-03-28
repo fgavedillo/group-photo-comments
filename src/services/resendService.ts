@@ -77,7 +77,7 @@ export async function sendReportWithResend(filtered: boolean = false) {
   }
 }
 
-function groupIssuesByEmail(issues) {
+function groupIssuesByEmail(issues: any[]) {
   return issues.reduce((acc, issue) => {
     if (issue.assigned_email && issue.assigned_email.trim() !== '') {
       const email = issue.assigned_email.trim();
@@ -91,9 +91,9 @@ function groupIssuesByEmail(issues) {
 }
 
 async function sendEmails(
-  issuesByEmail,
-  filtered,
-  allEmails
+  issuesByEmail: any,
+  filtered: boolean,
+  allEmails: string[]
 ) {
   let successCount = 0;
   let failureCount = 0;
@@ -110,7 +110,7 @@ async function sendEmails(
           
           await sendReport(
             [email],
-            generateEmailHTML(issues, true)
+            generateEmailHTML(issues as any[], true)
           );
           successCount++;
         } catch (error) {
@@ -149,7 +149,7 @@ async function sendEmails(
   };
 }
 
-function generateEmailHTML(issues, isPersonalized) {
+function generateEmailHTML(issues: any[], isPersonalized: boolean) {
   const date = new Date().toLocaleDateString('es-ES', {
     day: '2-digit',
     month: 'long',

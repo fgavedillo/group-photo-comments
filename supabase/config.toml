@@ -68,3 +68,6 @@ port = 9000
 # Define individual function configurations
 [[functions.notify-admin]]
 verify_jwt = false
+
+[[functions.send-resend-report]]
+verify_jwt = false
