@@ -48,17 +48,20 @@ jwt_expiry = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
 
-# Define Functions section correctly
+# Define Functions section with proper structure
 [functions]
 # Port to use for the Functions endpoint.
 port = 9000
 
 # Define individual functions with their configurations
-[functions.notify-admin]
+[[functions.function]]
+name = "notify-admin"
 verify_jwt = false
 
-[functions.send-resend-report]
+[[functions.function]]
+name = "send-resend-report"
 verify_jwt = false
 
-[functions.send-daily-report]
+[[functions.function]]
+name = "send-daily-report"
 verify_jwt = false
