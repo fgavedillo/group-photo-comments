@@ -21,12 +21,20 @@ const logInfo = (message: string, data?: any, requestId?: string) => {
   console.log(`${logPrefix} ${message}`, data || "");
 };
 
-// Configuración del remitente
-const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
+// Configuración del remitente - se utilizará el correo verificado de Resend en producción
+// Obtenemos el email de testeo para modo sandbox
+const VERIFIED_EMAIL = Deno.env.get("RESEND_VERIFIED_EMAIL") || "avedillo81@gmail.com";
+const FROM_NAME = "Sistema de Gestión";
+const FROM_EMAIL = `${FROM_NAME} <${VERIFIED_EMAIL}>`;
+
+// Determinar si estamos en modo de prueba (sin dominio verificado)
+const IN_TEST_MODE = true; // Por defecto asumimos modo de prueba para evitar errores
 
 console.log(`[${new Date().toISOString()}] Cargando función send-resend-report`);
 console.log(`[${new Date().toISOString()}] Usando FROM address: ${FROM_EMAIL}`);
-console.log(`[${new Date().toISOString()}] Configuration validated successfully`);
+console.log(`[${new Date().toISOString()}] Modo de prueba: ${IN_TEST_MODE ? "Activado" : "Desactivado"}`);
+console.log(`[${new Date().toISOString()}] Email verificado: ${VERIFIED_EMAIL}`);
+console.log(`[${new Date().toISOString()}] Configuración validada correctamente`);
 
 serve(async (req) => {
   const startTime = Date.now();
@@ -57,8 +65,14 @@ serve(async (req) => {
     }
     
     // Registrar información detallada sobre los destinatarios
-    logInfo(`Destinatarios (${to.length}):`, to, logId);
-    to.forEach((recipient, index) => {
+    logInfo(`Destinatarios originales (${to.length}):`, to, logId);
+    
+    // En modo de prueba, enviamos solo al email verificado pero mantenemos registro de destinatarios originales
+    const recipients = IN_TEST_MODE ? [VERIFIED_EMAIL] : to;
+    const originalRecipients = to;
+    
+    logInfo(`Destinatarios efectivos (${recipients.length}):`, recipients, logId);
+    recipients.forEach((recipient, index) => {
       logInfo(`Destinatario ${index + 1}: ${recipient}`, null, logId);
     });
     
@@ -70,12 +84,29 @@ serve(async (req) => {
       throw new Error("El contenido HTML es requerido");
     }
     
+    // Añadir aviso en modo de prueba
+    let emailContent = html;
+    if (IN_TEST_MODE && to.length > 1) {
+      const testModeWarning = `
+        <div style="background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; margin: 20px 0; border-radius: 5px; color: #856404;">
+          <h3 style="margin-top: 0;">⚠️ Modo de Prueba - Resend</h3>
+          <p>Este correo se está enviando en <strong>modo de prueba</strong>. En producción, sería enviado a los siguientes destinatarios:</p>
+          <ul>
+            ${originalRecipients.map(email => `<li>${email}</li>`).join('')}
+          </ul>
+          <p>Para enviar a todos los destinatarios, verifica un dominio en <a href="https://resend.com/domains">resend.com/domains</a>.</p>
+        </div>
+        ${emailContent}
+      `;
+      emailContent = testModeWarning;
+    }
+    
     // Preparar datos del email para Resend
     const emailData = {
       from: FROM_EMAIL,
-      to: to,
-      subject: subject,
-      html: html,
+      to: recipients,
+      subject: IN_TEST_MODE ? `[PRUEBA] ${subject}` : subject,
+      html: emailContent,
       // Agregar encabezados para rastreo
       headers: {
         "X-Entity-Ref-ID": logId
@@ -83,11 +114,12 @@ serve(async (req) => {
       // Agregar etiquetas para mejor seguimiento
       tags: [
         { name: "source", value: "prlconecta" },
-        { name: "category", value: "transactional" }
+        { name: "category", value: "transactional" },
+        { name: "mode", value: IN_TEST_MODE ? "test" : "production" }
       ]
     };
     
-    logInfo("Intentando enviar email a:", to, requestId);
+    logInfo("Intentando enviar email a:", recipients, requestId);
     logInfo("Configuración completa del email:", emailData, requestId);
     
     // Enviar email con Resend
@@ -112,15 +144,17 @@ serve(async (req) => {
         data: { 
           message: "Email enviado correctamente con Resend",
           id: result.id,
-          recipients: to,
+          recipients: originalRecipients, // Devolvemos los destinatarios originales
+          actualRecipients: recipients,    // Y los destinatarios reales
           emailSent: true,
           requestId: logId,
           elapsedTime: `${elapsedTime}ms`,
           fromEmail: FROM_EMAIL,
           actualFromEmail: result.from,
+          testMode: IN_TEST_MODE,
           senderDetails: {
-            email: FROM_EMAIL.split("<")[1].replace(">", "").trim(),
-            name: FROM_EMAIL.split("<")[0].trim()
+            email: VERIFIED_EMAIL,
+            name: FROM_NAME
           },
           stats: {
             successCount: 1,

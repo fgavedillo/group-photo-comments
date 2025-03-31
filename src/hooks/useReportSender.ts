@@ -90,9 +90,22 @@ export const useReportSender = () => {
         setLastResponse(response);
         
         if (response.success) {
+          // Extraer datos para el mensaje dependiendo de si estamos en modo de prueba
+          const recipientInfo = response.data?.recipients ? 
+            `${response.data.recipients.length} destinatarios previstos` : 
+            "destinatarios configurados";
+            
+          const testModeInfo = response.data?.testMode ? 
+            " (modo de prueba - enviado solo al correo verificado)" : 
+            "";
+            
+          const senderInfo = response.data?.senderDetails ? 
+            `\nRemitente: ${response.data.senderDetails.name} <${response.data.senderDetails.email}>` : 
+            "";
+          
           toast({
             title: "Reporte enviado correctamente",
-            description: `El reporte ha sido enviado a ${response.data?.recipients?.length || 0} destinatarios.`,
+            description: `El reporte ha sido enviado a ${recipientInfo}${testModeInfo}.${senderInfo}`,
           });
           
           return response;
@@ -106,9 +119,12 @@ export const useReportSender = () => {
         setLastResponse(result);
         
         if (result.success) {
+          // La propiedad recipients podría no existir en esta respuesta
+          const recipientCount = result.data?.stats?.totalEmails || "varios";
+          
           toast({
             title: "Reporte enviado",
-            description: `Reporte enviado correctamente con EmailJS a ${result.data?.recipients?.length || 0} destinatarios`,
+            description: `Reporte enviado correctamente con EmailJS a ${recipientCount} destinatarios`,
           });
           
           return result;
@@ -128,6 +144,8 @@ export const useReportSender = () => {
         friendlyError = "Función Edge no encontrada. Asegúrese de que está correctamente desplegada en Supabase.";
       } else if (err.message?.includes("CORS")) {
         friendlyError = "Error CORS. El servidor no está permitiendo solicitudes desde este origen.";
+      } else if (err.message?.includes("You can only send testing emails")) {
+        friendlyError = "Error de Resend: Solo puedes enviar emails de prueba a tu propio correo verificado. Por favor, verifica un dominio en resend.com/domains.";
       } else {
         friendlyError = err.message || 'Error desconocido al enviar el reporte';
       }
