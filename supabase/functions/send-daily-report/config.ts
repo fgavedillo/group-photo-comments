@@ -8,8 +8,8 @@ export const RECIPIENT_EMAILS = [
   // Añade aquí más destinatarios por defecto
 ];
 
-// Cambio del remitente para mostrar el nombre del sistema
-export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <francisco.garcia@lingotes.com>";
+// Cambio del remitente para mostrar el nombre del sistema y usar el dominio verificado
+export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <notificaciones@prlconecta.es>";
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

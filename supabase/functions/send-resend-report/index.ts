@@ -1,10 +1,11 @@
+
 import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
 import { corsHeaders, handleCors } from "./cors.ts";
 import { Resend } from "https://esm.sh/@resend/node@0.5.0";
 
 // Initialize Resend with API key from environment
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
-const fromEmail = "PRL Conecta <onboarding@resend.dev>"; // Using verified sender
+const fromEmail = "PRL Conecta <notificaciones@prlconecta.es>"; // Using verified domain
 
 if (!resendApiKey) {
   console.error("RESEND_API_KEY environment variable is not set");

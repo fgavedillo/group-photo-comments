@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
 
     // Enviar correo usando Resend
     const emailResponse = await resend.emails.send({
-      from: 'PRL Conecta <onboarding@resend.dev>',
+      from: 'PRL Conecta <notificaciones@prlconecta.es>',
       to: to,
       subject: subject,
       html: html,
