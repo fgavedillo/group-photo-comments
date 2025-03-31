@@ -5,7 +5,7 @@ import { Resend } from "https://esm.sh/@resend/node@0.5.0";
 
 // Initialize Resend with API key from environment
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
-const fromEmail = "PRL Conecta <notificaciones@prlconecta.es>"; // Using verified domain
+const fromEmail = "Sistema de Gestión <info@prlconecta.es>"; // Using verified domain
 
 if (!resendApiKey) {
   console.error("RESEND_API_KEY environment variable is not set");

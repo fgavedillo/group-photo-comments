@@ -9,7 +9,7 @@ export const RECIPIENT_EMAILS = [
 ];
 
 // Cambio del remitente para mostrar el nombre del sistema y usar el dominio verificado
-export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <notificaciones@prlconecta.es>";
+export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <info@prlconecta.es>";
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

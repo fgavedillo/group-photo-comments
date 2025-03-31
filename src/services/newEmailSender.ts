@@ -15,7 +15,7 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Sistema de Gestión <notificaciones@prlconecta.es>',
+        from: 'Sistema de Gestión <info@prlconecta.es>',
         to: recipients,
         subject: subject,
         html: reportHtml,
