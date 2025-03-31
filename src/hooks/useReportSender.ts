@@ -40,7 +40,11 @@ export const useReportSender = () => {
           data: { 
             to: ['test@example.com'],
             subject: 'Test Report',
-            html: '<p>This is a test report</p>'
+            html: '<p>This is a test report</p>',
+            filtered: filtered
+          },
+          headers: {
+            'Content-Type': 'application/json',
           }
         });
         

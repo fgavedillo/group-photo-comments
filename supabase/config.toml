@@ -52,12 +52,12 @@ enable_signup = true
 # Port to use for the Functions endpoint.
 port = 9000
 
-# Define individual function configurations
-[[functions.notify-admin]]
+# Define individual function configurations correctly using key-value format
+[functions.notify-admin]
 verify_jwt = false
 
-[[functions.send-resend-report]]
+[functions.send-resend-report]
 verify_jwt = false
 
-[[functions.send-daily-report]]
+[functions.send-daily-report]
 verify_jwt = false
