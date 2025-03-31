@@ -48,5 +48,3 @@ redirect_uri = ""
 
 [functions]
 port = 54321
-
-# Removed all edge functions related to email sending

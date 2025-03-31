@@ -1,5 +1,4 @@
 
-// Componente simplificado sin opciones de método de envío
 import { Button } from "@/components/ui/button";
 
 // Este componente mantiene la interfaz pero sin funcionalidad
