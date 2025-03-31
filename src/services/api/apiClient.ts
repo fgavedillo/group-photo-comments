@@ -50,7 +50,7 @@ export async function callApi<T = any>({
     // Get headers
     const headers = new Headers({
       'Content-Type': 'application/json',
-      ...config.headers
+      ...(config.headers || {})
     });
     
     console.log(`[ID:${requestId}] Sending ${method} request with ${timeoutDuration/1000}s timeout`);

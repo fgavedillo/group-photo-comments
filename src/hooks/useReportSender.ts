@@ -42,9 +42,6 @@ export const useReportSender = () => {
             subject: 'Test Report',
             html: '<p>This is a test report</p>',
             filtered: filtered
-          },
-          headers: {
-            'Content-Type': 'application/json',
           }
         });
         
@@ -81,7 +78,7 @@ export const useReportSender = () => {
       console.error("Error sending report:", err);
       
       const friendlyError = err.message?.includes("NetworkError") ?
-        "Connection error when sending report. Check your internet connection and that the Edge Function is correctly published." :
+        "Connection error. Check your internet connection and that the Edge Function is correctly published." :
         err.message || 'Unknown error sending report';
       
       setError(friendlyError);
