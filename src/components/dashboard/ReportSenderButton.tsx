@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { FileText } from "lucide-react";
 
-// Componente simplificado sin funcionalidad real
+// Componente simplificado sin funcionalidad de envío de reportes
 export const ReportSenderButton = () => {
   return (
     <div className="space-y-3">
