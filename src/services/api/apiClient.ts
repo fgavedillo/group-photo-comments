@@ -36,12 +36,12 @@ export async function callApi<T = any>({
   config?: ApiRequestConfig;
 }): Promise<ApiResponse<T>> {
   const requestId = crypto.randomUUID();
-  console.log(`[ID:${requestId}] Iniciando solicitud API a ${url}`);
+  console.log(`[ID:${requestId}] Starting API request to ${url}`);
   
   // Set default timeout
   const timeoutDuration = config.timeout || 60000; // Default 60s timeout
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutDuration);
+  const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
   
   // Measure performance
   const startTime = performance.now();
@@ -53,7 +53,7 @@ export async function callApi<T = any>({
       ...config.headers
     });
     
-    console.log(`[ID:${requestId}] Enviando solicitud ${method} con timeout de ${timeoutDuration/1000}s`);
+    console.log(`[ID:${requestId}] Sending ${method} request with ${timeoutDuration/1000}s timeout`);
     if (data) {
       console.log(`[ID:${requestId}] Payload:`, JSON.stringify(data));
     }
@@ -69,20 +69,20 @@ export async function callApi<T = any>({
     });
     
     // Clear timeout as we got a response
-    clearTimeout(timeout);
+    clearTimeout(timeoutId);
     
     // Log performance metrics
     const elapsedTime = performance.now() - startTime;
-    console.log(`[ID:${requestId}] Respuesta recibida en ${elapsedTime.toFixed(2)}ms, Status: ${response.status}`);
+    console.log(`[ID:${requestId}] Response received in ${elapsedTime.toFixed(2)}ms, Status: ${response.status}`);
     
     // Handle response errors
     if (!response.ok) {
-      let errorMessage = `Error HTTP ${response.status}: ${response.statusText}`;
+      let errorMessage = `HTTP Error ${response.status}: ${response.statusText}`;
       let errorDetails = '';
       
       try {
         const errorJson = await response.json();
-        console.error(`[ID:${requestId}] Detalle de error:`, errorJson);
+        console.error(`[ID:${requestId}] Error details:`, errorJson);
         
         if (errorJson.error?.message) {
           errorMessage = errorJson.error.message;
@@ -92,11 +92,11 @@ export async function callApi<T = any>({
           errorDetails = errorJson.error.details;
         }
       } catch (parseError) {
-        console.error(`[ID:${requestId}] No se pudo parsear la respuesta de error como JSON`);
+        console.error(`[ID:${requestId}] Could not parse error response as JSON`);
         try {
           errorDetails = await response.text();
         } catch (textError) {
-          errorDetails = 'No se pudo obtener detalles del error';
+          errorDetails = 'Could not get error details';
         }
       }
       
@@ -128,25 +128,25 @@ export async function callApi<T = any>({
         elapsedTime: `${elapsedTime.toFixed(2)}ms`
       }
     };
-  } catch (error) {
+  } catch (error: any) {
     // Clear timeout in case of error
-    clearTimeout(timeout);
+    clearTimeout(timeoutId);
     
     // Handle different types of errors
-    let errorMessage = error.message || 'Error de red desconocido';
+    let errorMessage = error.message || 'Unknown network error';
     let errorCode = 'NETWORK_ERROR';
     
     if (error.name === 'AbortError') {
-      errorMessage = `La solicitud ha excedido el tiempo máximo de espera (${timeoutDuration/1000}s)`;
+      errorMessage = `Request timed out after ${timeoutDuration/1000}s`;
       errorCode = 'TIMEOUT_ERROR';
     } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
-      errorMessage = 'Error de conexión. Verifica tu conexión a internet y que el servidor esté disponible.';
+      errorMessage = 'Connection error. Check your internet connection and server availability.';
     } else if (error.message?.includes('CORS')) {
-      errorMessage = 'Error de política de CORS. La solicitud fue bloqueada por el navegador.';
+      errorMessage = 'CORS policy error. The request was blocked by the browser.';
       errorCode = 'CORS_ERROR';
     }
     
-    console.error(`[ID:${requestId}] Error de solicitud: ${errorMessage}`);
+    console.error(`[ID:${requestId}] Request error: ${errorMessage}`);
     
     return {
       success: false,
