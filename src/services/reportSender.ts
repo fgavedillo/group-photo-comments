@@ -45,7 +45,15 @@ export async function sendReport(recipients: string[], reportData: any) {
       </div>
     `;
 
-    // Generar tabla simple de incidencias (datos de prueba o datos reales)
+    // Obtener datos de incidencias para el reporte
+    let issuesData = [];
+    
+    // Si se proporcionan datos en reportData, usarlos
+    if (reportData && reportData.issuesData) {
+      issuesData = reportData.issuesData;
+    }
+    
+    // Generar tabla simple de incidencias
     const simpleTableHTML = generateSimpleTable(reportData?.issuesData || []);
 
     // Realizar la petición a la función Edge usando el cliente API mejorado
@@ -95,57 +103,43 @@ export async function sendReport(recipients: string[], reportData: any) {
 
 // Función para generar una tabla simple HTML
 function generateSimpleTable(issues: any[] = []) {
-  // Si no hay datos, usar datos de prueba
+  // Si no hay datos, usar solo un mensaje indicativo
   if (!issues || issues.length === 0) {
-    issues = [
-      {
-        id: 1,
-        message: "Fallo en sistema de ventilación",
-        area: "Producción",
-        status: "en-estudio",
-        responsable: "Juan Pérez",
-        timestamp: new Date().toISOString(),
-        imageUrl: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop"
-      },
-      {
-        id: 2,
-        message: "Derrame de producto químico",
-        area: "Laboratorio",
-        status: "en-curso",
-        responsable: "María González",
-        timestamp: new Date(Date.now() - 86400000).toISOString(),
-        imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&auto=format&fit=crop"
-      }
-    ];
-  } else {
-    // Asegurar que cada incidencia tiene su imagen correcta
-    issues = issues.map(issue => {
-      // Si el issue ya tiene una propiedad imageUrl, la usamos directamente
-      if (issue.imageUrl) {
-        return issue;
-      }
-      
-      // Si no tiene imageUrl pero sí una propiedad image_url (del campo de la base de datos), usarla
-      if (issue.image_url) {
-        return {
-          ...issue,
-          imageUrl: issue.image_url
-        };
-      }
-      
-      // En este punto, intentamos buscar la imagen en la propiedad correcta según la estructura de datos
-      if (issue.issue_images && issue.issue_images.length > 0) {
-        return {
-          ...issue,
-          imageUrl: issue.issue_images[0].image_url
-        };
-      }
-      
-      return issue;
-    });
+    return `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 800px; margin: 0 auto;">
+        <h2 style="color: #003366; margin-top: 30px;">Listado de Incidencias</h2>
+        <p>No hay incidencias disponibles para mostrar en este momento.</p>
+      </div>
+    `;
   }
+  
+  // Procesar las incidencias para asegurar que cada una tenga la URL de imagen correcta
+  const processedIssues = issues.map(issue => {
+    // Crear una copia del issue para no modificar el original
+    const processedIssue = { ...issue };
+    
+    // 1. Si ya tiene imageUrl definida, la mantenemos
+    if (processedIssue.imageUrl) {
+      return processedIssue;
+    }
+    
+    // 2. Si tiene image_url (campo directo de la base de datos), la usamos
+    if (processedIssue.image_url) {
+      processedIssue.imageUrl = processedIssue.image_url;
+      return processedIssue;
+    }
+    
+    // 3. Si tiene issue_images (relación con la tabla de imágenes), usamos la primera
+    if (processedIssue.issue_images && Array.isArray(processedIssue.issue_images) && processedIssue.issue_images.length > 0) {
+      processedIssue.imageUrl = processedIssue.issue_images[0].image_url;
+      return processedIssue;
+    }
+    
+    // Si llegamos aquí, la incidencia no tiene imagen asociada
+    return processedIssue;
+  });
 
-  // Construir la tabla HTML
+  // Construir la tabla HTML con las incidencias procesadas
   const tableHTML = `
     <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 800px; margin: 0 auto;">
       <h2 style="color: #003366; margin-top: 30px;">Listado de Incidencias</h2>
@@ -162,7 +156,7 @@ function generateSimpleTable(issues: any[] = []) {
           </tr>
         </thead>
         <tbody>
-          ${issues.map(issue => `
+          ${processedIssues.map(issue => `
             <tr style="border-bottom: 1px solid #eee;">
               <td style="padding: 12px;">${issue.id}</td>
               <td style="padding: 12px; max-width: 200px; word-wrap: break-word;">${issue.message}</td>
