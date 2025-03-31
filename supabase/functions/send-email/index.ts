@@ -8,7 +8,7 @@ import { Resend } from "npm:resend@2.0.0";
 const FROM_EMAIL = 'Sistema de Gestión <info@prlconecta.es>';
 
 // Usa la API key desde las variables de entorno
-const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || 're_2TqHgv5B_62eNDe38YRyhnXfzSjmp2ShP';
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const resend = new Resend(RESEND_API_KEY);
 
