@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { callApi } from '@/services/api/apiClient';
 import { useIssues } from '@/hooks/useIssues';
+import { sendReport } from '@/services/reportSender';
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -10,17 +11,19 @@ export const useReportSender = () => {
   const [lastResponse, setLastResponse] = useState<any>(null);
   const [useResend, setUseResend] = useState(true); 
   const { toast } = useToast();
-  const { issues } = useIssues(); // Obtener las incidencias directamente
+  const { issues } = useIssues();
 
+  // Función para cambiar entre métodos de envío
   const toggleSendMethod = () => {
     setUseResend(prev => !prev);
     toast({
-      title: "Send method changed",
-      description: `Now using: ${!useResend ? 'Resend Dashboard' : 'EmailJS'}`,
+      title: "Método de envío cambiado",
+      description: `Ahora usando: ${!useResend ? 'Resend Dashboard' : 'EmailJS'}`,
     });
   };
 
-  const sendReport = async (filtered: boolean = false) => {
+  // Función principal para enviar reportes
+  const sendEmailReport = async (filtered: boolean = false) => {
     if (isLoading) return;
     
     setIsLoading(true);
@@ -28,76 +31,78 @@ export const useReportSender = () => {
     
     try {
       toast({
-        title: "Preparing report",
-        description: `Creating ${useResend ? 'dashboard report' : 'email report'} with ${useResend ? 'Resend' : 'EmailJS'}...`,
+        title: "Preparando reporte",
+        description: `Creando reporte ${useResend ? 'dashboard' : 'email'} con ${useResend ? 'Resend' : 'EmailJS'}...`,
       });
       
-      console.log(`Starting sending process using ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtered' : 'complete'})`);
-      console.log(`Total issues available for report: ${issues?.length || 0}`);
+      console.log(`Iniciando proceso de envío usando ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtrado' : 'completo'})`);
+      
+      if (!issues || issues.length === 0) {
+        throw new Error("No hay incidencias disponibles para incluir en el reporte");
+      }
+      
+      console.log(`Total de incidencias disponibles para el reporte: ${issues.length}`);
       
       if (useResend) {
-        // Generate a unique request ID for tracking
+        // Generar un ID único de solicitud para seguimiento
         const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-        console.log(`[${requestId}] Starting request to Edge Function for dashboard report`);
+        console.log(`[${requestId}] Iniciando solicitud a función Edge para el reporte dashboard`);
         
-        // Import and use the sendReport function
-        const { sendReport } = await import('@/services/reportSender');
+        // Obtener una lista de destinatarios (normalmente vendría del estado de la aplicación o una consulta a la base de datos)
+        const recipients = ["avedillo81@gmail.com", "ejemplo@email.com"]; // Ejemplo de destinatarios
         
-        // Get a list of recipients (this would normally come from your app's state or a database query)
-        const recipients = ["avedillo81@gmail.com"]; // Example recipient
-        
-        // Call the sendReport function with generateDashboard flag and pass issues
+        // Llamar a la función sendReport con los datos necesarios
         const response = await sendReport(recipients, { 
           generateDashboard: true,
           timestamp: new Date().toISOString(),
           filtered: filtered,
-          issuesData: issues || [] // Pasar las incidencias reales
+          issuesData: issues || []
         });
         
-        console.log(`[${requestId}] Response from Edge Function:`, response);
+        console.log(`[${requestId}] Respuesta de la función Edge:`, response);
         setLastResponse(response);
         
         if (response.success) {
           toast({
-            title: "Report sent successfully",
-            description: "The dashboard report has been sent to the recipients.",
+            title: "Reporte enviado correctamente",
+            description: "El reporte del dashboard ha sido enviado a los destinatarios.",
           });
           
           return response;
         } else {
-          throw new Error(response.error || 'Could not send dashboard report');
+          throw new Error(response.error || 'No se pudo enviar el reporte del dashboard');
         }
       } else {
-        // Use existing EmailJS service
+        // Usar el servicio EmailJS existente
         const { sendManualEmail } = await import('@/services/emailService');
         const result = await sendManualEmail(filtered, false);
         setLastResponse(result);
         
         if (result.success) {
           toast({
-            title: "Report sent",
-            description: `Report successfully sent with EmailJS`,
+            title: "Reporte enviado",
+            description: `Reporte enviado correctamente con EmailJS`,
           });
           
           return result;
         } else {
-          throw new Error(result.error?.message || 'Could not send report');
+          throw new Error(result.error?.message || 'No se pudo enviar el reporte');
         }
       }
     } catch (err: any) {
-      console.error("Error sending report:", err);
+      console.error("Error al enviar reporte:", err);
       
-      // Helpful error message based on the error type
+      // Mensaje de error amigable basado en el tipo de error
       let friendlyError;
       
       if (err.message?.includes("NetworkError") || err.message?.includes("Failed to fetch")) {
-        friendlyError = "Connection error. Check your internet connection and that the Edge Function is correctly deployed.";
+        friendlyError = "Error de conexión. Verifique su conexión a internet y que la función Edge esté correctamente desplegada.";
       } else if (err.message?.includes("404")) {
-        friendlyError = "Edge Function not found. Make sure it's correctly deployed in Supabase.";
+        friendlyError = "Función Edge no encontrada. Asegúrese de que está correctamente desplegada en Supabase.";
       } else if (err.message?.includes("CORS")) {
-        friendlyError = "CORS error. The server is not allowing requests from this origin.";
+        friendlyError = "Error CORS. El servidor no está permitiendo solicitudes desde este origen.";
       } else {
-        friendlyError = err.message || 'Unknown error sending report';
+        friendlyError = err.message || 'Error desconocido al enviar el reporte';
       }
       
       setError(friendlyError);
@@ -115,7 +120,7 @@ export const useReportSender = () => {
   };
 
   return {
-    sendReport,
+    sendReport: sendEmailReport,
     isLoading,
     error,
     lastResponse,

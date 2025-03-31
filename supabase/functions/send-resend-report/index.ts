@@ -3,221 +3,146 @@ import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
 import { corsHeaders, handleCors } from "./cors.ts";
 import { Resend } from "npm:resend@4.1.2";
 
-// Use explicitly info@prlconecta.es as sender, with the proper domain validation
-const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
-
-// Initialize Resend with API key from environment
+// Obtener la clave API de Resend desde variables de entorno
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
 
 if (!resendApiKey) {
-  console.error("RESEND_API_KEY environment variable is not set");
-  throw new Error("RESEND_API_KEY environment variable is not set");
+  console.error("RESEND_API_KEY no está configurada en las variables de entorno");
+  throw new Error("RESEND_API_KEY no está configurada");
 }
 
+// Inicializar el cliente de Resend
 const resend = new Resend(resendApiKey);
 
-// Function to log information about request and configuration
+// Función para registrar información
 const logInfo = (message: string, data?: any, requestId?: string) => {
   const timestamp = new Date().toISOString();
   const logPrefix = requestId ? `[${timestamp}] [${requestId}]` : `[${timestamp}]`;
   console.log(`${logPrefix} ${message}`, data || "");
 };
 
-console.log(`[${new Date().toISOString()}] Loading send-resend-report function`);
-
-// Validate configuration
-if (resendApiKey?.length >= 20) {
-  console.log(`[${new Date().toISOString()}] Configuration validated successfully`);
-  console.log(`[${new Date().toISOString()}] Using FROM address: ${FROM_EMAIL}`);
-  console.log(`[${new Date().toISOString()}] API Key length: ${resendApiKey.length}`);
-} else {
-  console.error(`[${new Date().toISOString()}] Invalid RESEND_API_KEY configuration`);
-}
+console.log(`[${new Date().toISOString()}] Cargando función send-resend-report`);
 
 serve(async (req) => {
   const startTime = Date.now();
   const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
   
-  logInfo(`Received ${req.method} request from ${req.headers.get("origin") || "unknown origin"}`, null, requestId);
+  logInfo(`Recibida solicitud ${req.method} desde ${req.headers.get("origin") || "origen desconocido"}`, null, requestId);
   
-  // Handle CORS preflight requests first
+  // Manejar solicitudes de CORS primero
   const corsResponse = handleCors(req);
   if (corsResponse) {
     return corsResponse;
   }
 
   try {
-    // Parse the request body
+    // Parsear el cuerpo de la solicitud
     const requestData = await req.json();
-    logInfo("Request data:", JSON.stringify(requestData), requestId);
+    logInfo("Datos de la solicitud:", JSON.stringify(requestData), requestId);
     
-    // Extract email data
+    // Extraer datos del email
     const { to, subject, html, clientRequestId } = requestData;
     
-    // Use client-provided request ID if available for easier tracking
+    // Usar el ID de solicitud proporcionado por el cliente si está disponible
     const logId = clientRequestId || requestId;
     
-    // Validate required fields
+    // Validar campos requeridos
     if (!to || !Array.isArray(to) || to.length === 0) {
-      throw new Error("Recipients (to) are required and must be an array");
+      throw new Error("Los destinatarios (to) son requeridos y deben ser un array");
     }
     
-    // Log detailed information about the recipients
-    logInfo(`Detailed recipient information:`, null, logId);
+    // Registrar información detallada sobre los destinatarios
+    logInfo(`Destinatarios (${to.length}):`, to, logId);
     to.forEach((recipient, index) => {
-      logInfo(`Recipient ${index + 1}: ${recipient}`, null, logId);
+      logInfo(`Destinatario ${index + 1}: ${recipient}`, null, logId);
     });
     
     if (!subject) {
-      throw new Error("Subject is required");
+      throw new Error("El asunto es requerido");
     }
     
-    // Ensure we always have an initial HTML for the email
     if (!html || html.trim() === '') {
-      throw new Error("HTML content is required");
+      throw new Error("El contenido HTML es requerido");
     }
     
-    // Prepare email data for Resend with explicit options to force the from address
+    // El remitente debe ser una dirección validada en Resend
+    // Por defecto usamos la dirección verificada en Resend
+    // IMPORTANTE: Esto se debe cambiar por una dirección verificada en tu cuenta
+    const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
+    logInfo(`Usando remitente: ${FROM_EMAIL}`, null, logId);
+    
+    // Preparar datos del email para Resend
     const emailData = {
       from: FROM_EMAIL,
       to: to,
       subject: subject,
       html: html,
-      // Use required settings according to Resend docs to ensure proper sender
+      // Agregar encabezados para rastreo
       headers: {
         "X-Entity-Ref-ID": logId
       },
-      // Add tags to ensure we don't use the Resend default account
+      // Agregar etiquetas para mejor seguimiento
       tags: [
         { name: "source", value: "prlconecta" },
-        { name: "category", value: "transactional" },
-        { name: "force_from", value: "true" }
+        { name: "category", value: "transactional" }
       ]
     };
     
-    logInfo("Attempting to send email to:", to, requestId);
-    console.log("Email configuration:", JSON.stringify(emailData, null, 2));
-    console.log("FROM address being used:", FROM_EMAIL);
+    logInfo("Intentando enviar email a:", to, requestId);
+    logInfo("Configuración completa del email:", emailData, requestId);
     
-    // Send individual emails to each recipient to ensure delivery
-    // This is a workaround if the array approach isn't working
-    const results = [];
-    const successfulRecipients = [];
-    const failedRecipients = [];
+    // Enviar email con Resend
+    const result = await resend.emails.send(emailData);
     
-    // First try the standard approach with all recipients in one email
-    try {
-      const result = await resend.emails.send(emailData);
-      
-      const elapsedTime = Date.now() - startTime;
-      logInfo(`Email sent successfully via Resend in ${elapsedTime}ms:`, result, logId);
-      
-      // Log more details about the response
-      console.log("Full Resend response:", JSON.stringify(result));
-      
-      // Check if Resend used a different sender
-      if (result && result.from && result.from !== FROM_EMAIL) {
-        console.error(`WARNING: Resend used a different sender (${result.from}) than requested (${FROM_EMAIL})`);
-      }
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: { 
-            message: "Email enviado correctamente con Resend",
-            id: result.id,
-            recipients: to,
-            emailSent: true,
-            mode: "all recipients",
-            requestId: logId,
-            elapsedTime: `${elapsedTime}ms`,
-            resendResponse: result,
-            fromEmail: FROM_EMAIL, // Para debugging
-            actualFromEmail: result.from, // Para verificar el remitente real
-            stats: {
-              successCount: 1,
-              failureCount: 0
-            }
-          }
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
-      );
-    } catch (error) {
-      // If the combined approach fails, try sending to each recipient individually
-      logInfo(`Error with combined recipients, trying individual emails:`, error, requestId);
-      
-      // Try to send to each recipient individually
-      for (const recipient of to) {
-        try {
-          const individualEmailData = {
-            ...emailData,
-            to: [recipient] // Make sure this is still an array with a single item
-          };
-          
-          logInfo(`Attempting to send individual email to: ${recipient}`, null, requestId);
-          
-          const result = await resend.emails.send(individualEmailData);
-          results.push(result);
-          successfulRecipients.push(recipient);
-          logInfo(`Individual email sent successfully to ${recipient}:`, result, requestId);
-        } catch (individualError) {
-          failedRecipients.push(recipient);
-          logInfo(`Failed to send individual email to ${recipient}:`, individualError, requestId);
-        }
-      }
-      
-      if (successfulRecipients.length === 0) {
-        throw new Error(`Failed to send email to any recipient. Check logs for details.`);
-      }
-      
-      const elapsedTime = Date.now() - startTime;
-      
-      return new Response(
-        JSON.stringify({
-          success: true,
-          data: { 
-            message: "Email enviado correctamente con Resend (modo individual)",
-            recipients: {
-              successful: successfulRecipients,
-              failed: failedRecipients
-            },
-            emailSent: successfulRecipients.length > 0,
-            mode: "individual recipients",
-            requestId: logId,
-            elapsedTime: `${elapsedTime}ms`,
-            resendResponses: results,
-            fromEmail: FROM_EMAIL,
-            stats: {
-              successCount: successfulRecipients.length,
-              failureCount: failedRecipients.length
-            }
-          }
-        }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
-      );
+    const elapsedTime = Date.now() - startTime;
+    logInfo(`Email enviado exitosamente en ${elapsedTime}ms:`, result, logId);
+    
+    // Verificar la dirección "from" en la respuesta
+    if (result && result.from && result.from !== FROM_EMAIL) {
+      console.warn(`ADVERTENCIA: Resend usó un remitente diferente (${result.from}) al solicitado (${FROM_EMAIL})`);
     }
+    
+    // Verificar los destinatarios en la respuesta si están disponibles
+    if (result && result.to) {
+      logInfo(`Destinatarios confirmados por Resend:`, result.to, logId);
+    }
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: { 
+          message: "Email enviado correctamente con Resend",
+          id: result.id,
+          recipients: to,
+          emailSent: true,
+          requestId: logId,
+          elapsedTime: `${elapsedTime}ms`,
+          fromEmail: FROM_EMAIL,
+          actualFromEmail: result.from,
+          stats: {
+            successCount: 1,
+            failureCount: 0
+          }
+        }
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          ...corsHeaders
+        }
+      }
+    );
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
-    logInfo(`Error DURING Resend API call:`, error, requestId);
-    console.error(`[${requestId}] Error in send-resend-report (${elapsedTime}ms):`, error.message);
+    logInfo(`Error durante la llamada a la API de Resend:`, error, requestId);
+    console.error(`[${requestId}] Error en send-resend-report (${elapsedTime}ms):`, error.message);
     
     return new Response(
       JSON.stringify({
         success: false,
         error: {
-          message: error.message || "Internal Server Error",
+          message: error.message || "Error interno del servidor",
           requestId: requestId,
           elapsedTime: `${elapsedTime}ms`
         }
