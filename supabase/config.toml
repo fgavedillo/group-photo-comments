@@ -47,7 +47,7 @@ secret = ""
 redirect_uri = ""
 
 [functions]
-serve_port = 54321
+port = 54321
 
 [[functions.function]]
 name = "send-email"
