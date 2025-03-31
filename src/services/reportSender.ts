@@ -53,8 +53,24 @@ export async function sendReport(recipients: string[], reportData: any) {
       issuesData = reportData.issuesData;
     }
     
+    // Obtener las incidencias desde el hook useIssues si está disponible
+    // en lugar de cargar datos mock
+    try {
+      // Importar useIssues de forma dinámica
+      const { useIssues } = await import('@/hooks/useIssues');
+      const { issues } = useIssues();
+      
+      // Si hay incidencias reales, usarlas
+      if (issues && issues.length > 0) {
+        console.log(`Usando ${issues.length} incidencias reales para el reporte`);
+        issuesData = issues;
+      }
+    } catch (err) {
+      console.log('No se pudo cargar useIssues, usando datos proporcionados:', err);
+    }
+    
     // Generar tabla simple de incidencias
-    const simpleTableHTML = generateSimpleTable(reportData?.issuesData || []);
+    const simpleTableHTML = generateSimpleTable(issuesData || []);
 
     // Realizar la petición a la función Edge usando el cliente API mejorado
     const response = await callApi({
@@ -73,7 +89,7 @@ export async function sendReport(recipients: string[], reportData: any) {
         generateDashboard: false, // Desactivamos la generación compleja del dashboard
         requestId: `report-${Date.now()}`,
         // Asegurarnos de que se incluyan los datos de las incidencias si están disponibles
-        issuesData: reportData && typeof reportData === 'object' ? reportData : null
+        issuesData: issuesData.length > 0 ? issuesData : reportData
       },
       config: {
         timeout: 30000 // Aumentar a 30 segundos para dar tiempo a generar el dashboard
@@ -163,7 +179,7 @@ function generateSimpleTable(issues: any[] = []) {
               <td style="padding: 12px;">${issue.area || '-'}</td>
               <td style="padding: 12px;">${getStatusLabel(issue.status)}</td>
               <td style="padding: 12px;">${issue.responsable || 'Sin asignar'}</td>
-              <td style="padding: 12px;">${new Date(issue.timestamp).toLocaleDateString('es-ES')}</td>
+              <td style="padding: 12px;">${issue.timestamp instanceof Date ? issue.timestamp.toLocaleDateString('es-ES') : new Date(issue.timestamp).toLocaleDateString('es-ES')}</td>
               <td style="padding: 12px; text-align: center;">
                 ${issue.imageUrl ? 
                   `<img src="${issue.imageUrl}" alt="Imagen de la incidencia" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">` : 

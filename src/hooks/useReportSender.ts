@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { callApi } from '@/services/api/apiClient';
+import { useIssues } from '@/hooks/useIssues';
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -9,6 +10,7 @@ export const useReportSender = () => {
   const [lastResponse, setLastResponse] = useState<any>(null);
   const [useResend, setUseResend] = useState(true); 
   const { toast } = useToast();
+  const { issues } = useIssues(); // Obtener las incidencias directamente
 
   const toggleSendMethod = () => {
     setUseResend(prev => !prev);
@@ -31,6 +33,7 @@ export const useReportSender = () => {
       });
       
       console.log(`Starting sending process using ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtered' : 'complete'})`);
+      console.log(`Total issues available for report: ${issues?.length || 0}`);
       
       if (useResend) {
         // Generate a unique request ID for tracking
@@ -43,11 +46,12 @@ export const useReportSender = () => {
         // Get a list of recipients (this would normally come from your app's state or a database query)
         const recipients = ["avedillo81@gmail.com"]; // Example recipient
         
-        // Call the sendReport function with generateDashboard flag
+        // Call the sendReport function with generateDashboard flag and pass issues
         const response = await sendReport(recipients, { 
           generateDashboard: true,
           timestamp: new Date().toISOString(),
-          filtered: filtered
+          filtered: filtered,
+          issuesData: issues || [] // Pasar las incidencias reales
         });
         
         console.log(`[${requestId}] Response from Edge Function:`, response);
