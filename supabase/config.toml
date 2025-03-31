@@ -1,10 +1,9 @@
 
-# This is the project ID referenced in the error message
 project_id = "jzmzmjvtxcrxljnhhrjo"
 
 [api]
 port = 54321
-schemas = ["public", "storage", "graphql_public"]
+schemas = ["public", "storage"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
@@ -12,9 +11,6 @@ max_rows = 1000
 port = 54322
 shadow_port = 54320
 major_version = 15
-
-[realtime]
-enabled = true
 
 [studio]
 port = 54323
@@ -28,34 +24,67 @@ pop3_port = 54326
 file_size_limit = "50MiB"
 
 [auth]
-site_url = "http://localhost:8080"
-additional_redirect_urls = ["http://localhost:8080"]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
 enable_signup = true
 
-[functions]
-serve_port = 9999
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
 
-# Define functions as separate sections with the pattern [[functions.function]]
+[auth.sms]
+enable_signup = true
+enable_confirmations = true
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+redirect_uri = ""
+
+[functions]
+serve_port = 54321
+
 [[functions.function]]
 name = "send-email"
 verify_jwt = false
-
-[[functions.function]]
-name = "send-daily-report"
-verify_jwt = false
-
-[[functions.function]]
-name = "send-resend-report"
-verify_jwt = false
-
-[[functions.function]]
-name = "send-company-email"
-verify_jwt = false
+import_map = "./import_map.json"
 
 [[functions.function]]
 name = "send-test-report"
 verify_jwt = false
+import_map = "./import_map.json"
+
+[[functions.function]]
+name = "send-daily-report"
+verify_jwt = false
+import_map = "./import_map.json"
 
 [[functions.function]]
 name = "notify-admin"
 verify_jwt = false
+import_map = "./import_map.json"
+
+[[functions.function]]
+name = "send-company-email"
+verify_jwt = false
+import_map = "./import_map.json"
+
+[[functions.function]]
+name = "process-email-queue"
+verify_jwt = false
+import_map = "./import_map.json"
+
+[[functions.function]]
+name = "send-simple-email"
+verify_jwt = false
+import_map = "./import_map.json"
+
+[[functions.function]]
+name = "send-resend-report"
+verify_jwt = false
+import_map = "./import_map.json"

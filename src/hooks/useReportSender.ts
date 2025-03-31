@@ -1,17 +1,33 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { callApi } from '@/services/api/apiClient';
 import { useIssues } from '@/hooks/useIssues';
 import { sendReport } from '@/services/reportSender';
+import { getResponsibleEmails } from '@/utils/emailUtils';
 
 export const useReportSender = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastResponse, setLastResponse] = useState<any>(null);
   const [useResend, setUseResend] = useState(true); 
+  const [recipientCount, setRecipientCount] = useState(0);
   const { toast } = useToast();
   const { issues } = useIssues();
+
+  // Cargar la cantidad de destinatarios disponibles al iniciar
+  useEffect(() => {
+    const loadRecipientCount = async () => {
+      try {
+        const emails = await getResponsibleEmails();
+        setRecipientCount(emails.length);
+      } catch (err) {
+        console.error("Error al obtener el conteo de destinatarios:", err);
+      }
+    };
+    
+    loadRecipientCount();
+  }, []);
 
   // Función para cambiar entre métodos de envío
   const toggleSendMethod = () => {
@@ -30,9 +46,19 @@ export const useReportSender = () => {
     setError(null);
     
     try {
+      // Obtener los emails de los responsables para verificar si hay destinatarios
+      const responsibleEmails = await getResponsibleEmails();
+      console.log("Emails de responsables disponibles:", responsibleEmails);
+      
+      if (!responsibleEmails || responsibleEmails.length === 0) {
+        throw new Error("No se encontraron responsables con correos electrónicos válidos para enviar el reporte");
+      }
+      
+      setRecipientCount(responsibleEmails.length);
+      
       toast({
         title: "Preparando reporte",
-        description: `Creando reporte ${useResend ? 'dashboard' : 'email'} con ${useResend ? 'Resend' : 'EmailJS'}...`,
+        description: `Creando reporte ${filtered ? 'personalizado' : 'completo'} con ${useResend ? 'Resend' : 'EmailJS'} para ${responsibleEmails.length} destinatarios...`,
       });
       
       console.log(`Iniciando proceso de envío usando ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtrado' : 'completo'})`);
@@ -48,8 +74,9 @@ export const useReportSender = () => {
         const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
         console.log(`[${requestId}] Iniciando solicitud a función Edge para el reporte dashboard`);
         
-        // Obtener una lista de destinatarios (normalmente vendría del estado de la aplicación o una consulta a la base de datos)
-        const recipients = ["avedillo81@gmail.com", "ejemplo@email.com"]; // Ejemplo de destinatarios
+        // Obtener una lista de destinatarios
+        const recipients = responsibleEmails;
+        console.log(`[${requestId}] Enviando a ${recipients.length} destinatarios:`, recipients);
         
         // Llamar a la función sendReport con los datos necesarios
         const response = await sendReport(recipients, { 
@@ -65,7 +92,7 @@ export const useReportSender = () => {
         if (response.success) {
           toast({
             title: "Reporte enviado correctamente",
-            description: "El reporte del dashboard ha sido enviado a los destinatarios.",
+            description: `El reporte ha sido enviado a ${response.data?.recipients?.length || 0} destinatarios.`,
           });
           
           return response;
@@ -81,7 +108,7 @@ export const useReportSender = () => {
         if (result.success) {
           toast({
             title: "Reporte enviado",
-            description: `Reporte enviado correctamente con EmailJS`,
+            description: `Reporte enviado correctamente con EmailJS a ${result.data?.recipients?.length || 0} destinatarios`,
           });
           
           return result;
@@ -125,6 +152,7 @@ export const useReportSender = () => {
     error,
     lastResponse,
     useResend,
-    toggleSendMethod
+    toggleSendMethod,
+    recipientCount
   };
 };

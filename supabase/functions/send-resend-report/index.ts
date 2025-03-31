@@ -21,7 +21,12 @@ const logInfo = (message: string, data?: any, requestId?: string) => {
   console.log(`${logPrefix} ${message}`, data || "");
 };
 
+// Configuración del remitente
+const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
+
 console.log(`[${new Date().toISOString()}] Cargando función send-resend-report`);
+console.log(`[${new Date().toISOString()}] Usando FROM address: ${FROM_EMAIL}`);
+console.log(`[${new Date().toISOString()}] Configuration validated successfully`);
 
 serve(async (req) => {
   const startTime = Date.now();
@@ -64,12 +69,6 @@ serve(async (req) => {
     if (!html || html.trim() === '') {
       throw new Error("El contenido HTML es requerido");
     }
-    
-    // El remitente debe ser una dirección validada en Resend
-    // Por defecto usamos la dirección verificada en Resend
-    // IMPORTANTE: Esto se debe cambiar por una dirección verificada en tu cuenta
-    const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
-    logInfo(`Usando remitente: ${FROM_EMAIL}`, null, logId);
     
     // Preparar datos del email para Resend
     const emailData = {
@@ -119,6 +118,10 @@ serve(async (req) => {
           elapsedTime: `${elapsedTime}ms`,
           fromEmail: FROM_EMAIL,
           actualFromEmail: result.from,
+          senderDetails: {
+            email: FROM_EMAIL.split("<")[1].replace(">", "").trim(),
+            name: FROM_EMAIL.split("<")[0].trim()
+          },
           stats: {
             successCount: 1,
             failureCount: 0
@@ -144,7 +147,8 @@ serve(async (req) => {
         error: {
           message: error.message || "Error interno del servidor",
           requestId: requestId,
-          elapsedTime: `${elapsedTime}ms`
+          elapsedTime: `${elapsedTime}ms`,
+          fromEmail: FROM_EMAIL
         }
       }),
       {
