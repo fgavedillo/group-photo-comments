@@ -69,6 +69,9 @@ export async function sendReport(recipients: string[], reportData: any) {
       console.log('No se pudo cargar useIssues, usando datos proporcionados:', err);
     }
     
+    // Generar resumen del dashboard
+    const dashboardSummaryHTML = generateDashboardSummary(issuesData || []);
+    
     // Generar tabla simple de incidencias
     const simpleTableHTML = generateSimpleTable(issuesData || []);
 
@@ -80,9 +83,10 @@ export async function sendReport(recipients: string[], reportData: any) {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
         html: generateSimpleDashboard 
-          ? `${introText}${simpleTableHTML}` 
+          ? `${introText}${dashboardSummaryHTML}${simpleTableHTML}` 
           : `
             ${introText}
+            ${dashboardSummaryHTML}
             <h2 style="color: #003366; margin-top: 30px;">Detalles del Reporte</h2>
             ${emailContent}
           `,
@@ -115,6 +119,106 @@ export async function sendReport(recipients: string[], reportData: any) {
       error: error.message || "Error desconocido"
     };
   }
+}
+
+// Función para generar un resumen del dashboard
+function generateDashboardSummary(issues: any[] = []) {
+  if (!issues || issues.length === 0) {
+    return `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 800px; margin: 0 auto;">
+        <h2 style="color: #003366; margin-top: 30px;">Resumen del Dashboard</h2>
+        <p>No hay incidencias disponibles para generar un resumen en este momento.</p>
+      </div>
+    `;
+  }
+  
+  // Contar incidencias por estado
+  const statusCount = issues.reduce((acc: any, issue: any) => {
+    const status = issue.status || 'sin-estado';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  
+  // Contar incidencias por área
+  const areaCount = issues.reduce((acc: any, issue: any) => {
+    const area = issue.area || 'Sin asignar';
+    acc[area] = (acc[area] || 0) + 1;
+    return acc;
+  }, {});
+  
+  // Cantidad de incidencias con y sin responsable
+  const withResponsible = issues.filter(issue => issue.responsable && issue.responsable.trim() !== '').length;
+  const withoutResponsible = issues.length - withResponsible;
+  
+  // Generar HTML para el resumen
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 800px; margin: 0 auto;">
+      <h2 style="color: #003366; margin-top: 10px;">Resumen del Dashboard</h2>
+      
+      <div style="display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px;">
+        <div style="flex: 1; min-width: 200px; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef;">
+          <h3 style="color: #003366; margin-top: 0;">Estado de Incidencias</h3>
+          <div style="margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <span>Total:</span>
+              <strong>${issues.length}</strong>
+            </div>
+            ${Object.entries(statusCount).map(([status, count]) => `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>${getStatusLabel(status)}:</span>
+                <strong>${count}</strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div style="flex: 1; min-width: 200px; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef;">
+          <h3 style="color: #003366; margin-top: 0;">Responsabilidad</h3>
+          <div style="margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <span>Con responsable:</span>
+              <strong>${withResponsible}</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              <span>Sin responsable:</span>
+              <strong>${withoutResponsible}</strong>
+            </div>
+          </div>
+        </div>
+        
+        <div style="flex: 1; min-width: 200px; background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef;">
+          <h3 style="color: #003366; margin-top: 0;">Distribución por Área</h3>
+          <div style="margin-top: 10px;">
+            ${Object.entries(areaCount).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 5).map(([area, count]) => `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                <span>${area}:</span>
+                <strong>${count}</strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      
+      <div style="background-color: #e9f7fe; padding: 15px; border-radius: 5px; border-left: 4px solid #3498db; margin-bottom: 20px;">
+        <h3 style="color: #0066cc; margin-top: 0; margin-bottom: 10px;">Estadísticas Importantes</h3>
+        <ul style="margin: 0; padding-left: 20px;">
+          <li>Promedio de incidencias por área: ${(issues.length / Object.keys(areaCount).length).toFixed(1)}</li>
+          <li>Porcentaje de incidencias con responsable: ${(withResponsible / issues.length * 100).toFixed(1)}%</li>
+          <li>Estado más común: ${getMaxStatus(statusCount)}</li>
+        </ul>
+      </div>
+    </div>
+  `;
+}
+
+// Función para obtener el estado más común
+function getMaxStatus(statusCount: Record<string, number>): string {
+  if (Object.keys(statusCount).length === 0) return "Sin datos";
+  
+  const maxEntry = Object.entries(statusCount).reduce((max, current) => 
+    current[1] > max[1] ? current : max, ["", 0]);
+  
+  return `${getStatusLabel(maxEntry[0])} (${maxEntry[1]})`;
 }
 
 // Función para generar una tabla simple HTML
