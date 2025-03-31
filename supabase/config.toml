@@ -2,8 +2,38 @@
 # This is the project ID referenced in the error message
 project_id = "jzmzmjvtxcrxljnhhrjo"
 
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[realtime]
+webhook_callback = true
+
+[studio]
+port = 54323
+
+[inbucket]
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+file_size_limit = "50MiB"
+
+[auth]
+site_url = "http://localhost:8080"
+uri_allow_list = ["http://localhost:8080"]
+enable_signup = true
+
 [functions]
-port = 9999
+serve_port = 9999
 
 [[functions.function]]
 name = "send-email"
