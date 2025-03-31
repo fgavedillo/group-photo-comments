@@ -14,7 +14,7 @@ shadow_port = 54320
 major_version = 15
 
 [realtime]
-webhook_callback = true
+enabled = true
 
 [studio]
 port = 54323
@@ -29,7 +29,7 @@ file_size_limit = "50MiB"
 
 [auth]
 site_url = "http://localhost:8080"
-uri_allow_list = ["http://localhost:8080"]
+additional_redirect_urls = ["http://localhost:8080"]
 enable_signup = true
 
 [functions]
