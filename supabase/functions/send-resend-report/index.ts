@@ -84,6 +84,7 @@ serve(async (req) => {
       // Add tags to ensure we don't use the Resend default account
       tags: [
         { name: "source", value: "prlconecta" },
+        { name: "category", value: "transactional" },
         { name: "force_from", value: "true" }
       ]
     };
