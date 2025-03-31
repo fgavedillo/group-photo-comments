@@ -62,6 +62,12 @@ serve(async (req) => {
       throw new Error("Recipients (to) are required and must be an array");
     }
     
+    // Log detailed information about the recipients
+    logInfo(`Detailed recipient information:`, null, logId);
+    to.forEach((recipient, index) => {
+      logInfo(`Recipient ${index + 1}: ${recipient}`, null, logId);
+    });
+    
     if (!subject) {
       throw new Error("Subject is required");
     }
@@ -93,7 +99,13 @@ serve(async (req) => {
     console.log("Email configuration:", JSON.stringify(emailData, null, 2));
     console.log("FROM address being used:", FROM_EMAIL);
     
-    // Send email via Resend
+    // Send individual emails to each recipient to ensure delivery
+    // This is a workaround if the array approach isn't working
+    const results = [];
+    const successfulRecipients = [];
+    const failedRecipients = [];
+    
+    // First try the standard approach with all recipients in one email
     try {
       const result = await resend.emails.send(emailData);
       
@@ -136,10 +148,65 @@ serve(async (req) => {
           }
         }
       );
-    } catch (resendError) {
-      logInfo(`Error received FROM Resend API:`, resendError, requestId);
-      console.error("Detailed Resend error:", JSON.stringify(resendError));
-      throw new Error(`Error al enviar email con Resend: ${JSON.stringify(resendError)}`);
+    } catch (error) {
+      // If the combined approach fails, try sending to each recipient individually
+      logInfo(`Error with combined recipients, trying individual emails:`, error, requestId);
+      
+      // Try to send to each recipient individually
+      for (const recipient of to) {
+        try {
+          const individualEmailData = {
+            ...emailData,
+            to: [recipient] // Make sure this is still an array with a single item
+          };
+          
+          logInfo(`Attempting to send individual email to: ${recipient}`, null, requestId);
+          
+          const result = await resend.emails.send(individualEmailData);
+          results.push(result);
+          successfulRecipients.push(recipient);
+          logInfo(`Individual email sent successfully to ${recipient}:`, result, requestId);
+        } catch (individualError) {
+          failedRecipients.push(recipient);
+          logInfo(`Failed to send individual email to ${recipient}:`, individualError, requestId);
+        }
+      }
+      
+      if (successfulRecipients.length === 0) {
+        throw new Error(`Failed to send email to any recipient. Check logs for details.`);
+      }
+      
+      const elapsedTime = Date.now() - startTime;
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: { 
+            message: "Email enviado correctamente con Resend (modo individual)",
+            recipients: {
+              successful: successfulRecipients,
+              failed: failedRecipients
+            },
+            emailSent: successfulRecipients.length > 0,
+            mode: "individual recipients",
+            requestId: logId,
+            elapsedTime: `${elapsedTime}ms`,
+            resendResponses: results,
+            fromEmail: FROM_EMAIL,
+            stats: {
+              successCount: successfulRecipients.length,
+              failureCount: failedRecipients.length
+            }
+          }
+        }),
+        {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            ...corsHeaders
+          }
+        }
+      );
     }
   } catch (error) {
     const elapsedTime = Date.now() - startTime;
