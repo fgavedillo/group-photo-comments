@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
 import { corsHeaders, handleCors } from "./cors.ts";
-import { Resend } from "https://esm.sh/@resend/node@0.5.0";
+import { Resend } from "npm:resend@4.1.2";
 
 // Use explicitly info@prlconecta.es as sender, with the proper domain validation
 const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
