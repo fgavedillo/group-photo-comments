@@ -26,11 +26,13 @@ export async function sendReport(recipients: string[], reportData: any) {
       data: {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
-        html: generateDashboard ? '' : `
-          <h1>Reporte de Incidencias</h1>
-          <p>Se adjunta el reporte de incidencias pendientes.</p>
-          ${emailContent}
-        `,
+        html: generateDashboard 
+          ? '<div>Generando dashboard de incidencias...</div>' // Placeholder HTML para evitar el error
+          : `
+            <h1>Reporte de Incidencias</h1>
+            <p>Se adjunta el reporte de incidencias pendientes.</p>
+            ${emailContent}
+          `,
         generateDashboard: generateDashboard,
         requestId: `report-${Date.now()}`
       },
