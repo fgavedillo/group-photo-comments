@@ -280,13 +280,14 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           data: { 
-            message: "Email sent successfully",
+            message: "Email enviado correctamente con Resend",
             id: result.id,
             recipients: to,
             emailSent: true,
             mode: filtered ? "filtered" : "all recipients",
             requestId: logId,
             elapsedTime: `${elapsedTime}ms`,
+            resendResponse: result,
             stats: {
               successCount: to.length,
               failureCount: 0,

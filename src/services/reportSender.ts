@@ -27,7 +27,7 @@ export async function sendReport(recipients: string[], reportData: any) {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
         html: generateDashboard 
-          ? '<div>Generando dashboard de incidencias...</div>' // Placeholder HTML para evitar el error
+          ? '<div>Generando dashboard de incidencias...</div>' // This is just a placeholder, the actual HTML will be generated in the Edge Function
           : `
             <h1>Reporte de Incidencias</h1>
             <p>Se adjunta el reporte de incidencias pendientes.</p>
@@ -49,7 +49,7 @@ export async function sendReport(recipients: string[], reportData: any) {
       success: true, 
       data: response.data,
       recipients: recipients,
-      error: null // Add this explicit error property
+      error: null
     };
   } catch (error) {
     console.error('Error al enviar reporte con Resend:', error);
