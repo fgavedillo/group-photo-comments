@@ -172,6 +172,7 @@ function generateEmailHTML(issues: any[], isPersonalized: boolean) {
         <div class="header">
           <h1>Reporte de Incidencias${isPersonalized ? ' Asignadas' : ''}</h1>
           <p>Fecha: ${date}</p>
+          <p><small>Enviado desde: Sistema de Gestión &lt;info@prlconecta.es&gt;</small></p>
         </div>
         
         ${issues.length === 0 

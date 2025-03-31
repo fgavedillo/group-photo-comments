@@ -26,7 +26,7 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, h
       throw new Error('VITE_RESEND_API_KEY no está configurada en las variables de entorno');
     }
     
-    // Remitente verificado en Resend
+    // Remitente verificado en Resend con dominio validado
     const FROM_EMAIL = 'Sistema de Gestión <info@prlconecta.es>';
     console.log('Usando dirección de remitente:', FROM_EMAIL);
     
