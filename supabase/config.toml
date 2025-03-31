@@ -48,12 +48,12 @@ jwt_expiry = 3600
 # Allow/disallow new user signups to your project.
 enable_signup = true
 
-# Define Functions section with proper structure
+# Define Functions section as a table
 [functions]
 # Port to use for the Functions endpoint.
 port = 9000
 
-# Define individual functions with their configurations
+# Define individual functions - use TOML array of tables syntax with double brackets
 [[functions.function]]
 name = "notify-admin"
 verify_jwt = false
