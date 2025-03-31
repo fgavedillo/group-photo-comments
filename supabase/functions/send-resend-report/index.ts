@@ -40,6 +40,49 @@ function generateDashboardEmailHTML(issues: any[], filtered: boolean = false) {
     year: 'numeric'
   });
 
+  // Si no hay incidencias, mostrar un mensaje informativo
+  if (!issues || issues.length === 0) {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Reporte de Incidencias${filtered ? ' Personalizado' : ''}</title>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f7f9fc; }
+            .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+            .header { background: #003366; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; }
+            .info-box { background: #f5f5f5; border-left: 4px solid #003366; padding: 15px; margin-bottom: 20px; }
+            .footer { background: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Reporte de Incidencias${filtered ? ' Personalizado' : ''}</h1>
+              <p>Fecha: ${date}</p>
+            </div>
+            
+            <div class="content">
+              <h2>No hay incidencias para mostrar</h2>
+              <div class="info-box">
+                <p>Actualmente no hay incidencias registradas en el sistema que coincidan con los criterios seleccionados.</p>
+                <p>Este informe ha sido generado automáticamente por el sistema PRL Conecta.</p>
+              </div>
+            </div>
+            
+            <div class="footer">
+              <p>Este es un correo automático generado por el sistema PRL Conecta.</p>
+              <p>© ${new Date().getFullYear()} PRL Conecta - Todos los derechos reservados</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  }
+
   // Group issues by status for statistics
   const statusGroups: Record<string, any[]> = {};
   issues.forEach(issue => {
@@ -246,17 +289,35 @@ serve(async (req) => {
       throw new Error("Subject is required");
     }
     
+    // Asegurar que siempre tenemos un HTML inicial para el correo, incluso si no se proporciona
+    if (!html || html.trim() === '') {
+      throw new Error("HTML content is required");
+    }
+    
     // Fetch issues for the report if we need to generate a dashboard
     let issues = [];
     let finalHtml = html;
     
     if (requestData.generateDashboard) {
       logInfo("Fetching issues for dashboard report", null, logId);
-      issues = await fetchIssues(logId);
-      
-      // Generate dashboard HTML
-      finalHtml = generateDashboardEmailHTML(issues, filtered);
-      logInfo("Dashboard HTML generated successfully", null, logId);
+      try {
+        issues = await fetchIssues(logId);
+        
+        // Generate dashboard HTML
+        finalHtml = generateDashboardEmailHTML(issues, filtered);
+        logInfo("Dashboard HTML generated successfully", null, logId);
+      } catch (fetchError) {
+        logInfo(`Error fetching issues: ${fetchError.message}`, null, logId);
+        // No lanzamos error, seguimos con el HTML original y un mensaje de error
+        finalHtml = `
+          ${html}
+          <div style="margin-top: 20px; padding: 15px; background-color: #fff2f2; border-left: 4px solid #e03131; border-radius: 4px;">
+            <h3 style="color: #e03131; margin-top: 0;">Error al generar el dashboard</h3>
+            <p>No se pudieron cargar los datos de incidencias: ${fetchError.message}</p>
+            <p>Por favor, contacte al administrador del sistema si este problema persiste.</p>
+          </div>
+        `;
+      }
     }
     
     // Prepare email data for Resend
