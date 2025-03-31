@@ -5,7 +5,8 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
   console.log('EXECUTING: sendEmailDirectly', { recipients });
   
   try {
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || import.meta.env.VITE_RESEND_API_KEY;
+    // Fix: Remove Deno.env since it's not available in browser context
+    const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
     const FROM_EMAIL = 'Sistema de Gestión <info@prlconecta.es>';
     
     console.log('Using FROM email address:', FROM_EMAIL);
