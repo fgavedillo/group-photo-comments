@@ -61,7 +61,7 @@ export const useReportSender = () => {
           
           return response;
         } else {
-          throw new Error(response.error?.message || 'Could not send dashboard report');
+          throw new Error(response.error || 'Could not send dashboard report');
         }
       } else {
         // Use existing EmailJS service

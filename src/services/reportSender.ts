@@ -48,10 +48,16 @@ export async function sendReport(recipients: string[], reportData: any) {
     return { 
       success: true, 
       data: response.data,
-      recipients: recipients
+      recipients: recipients,
+      error: null // Add this explicit error property
     };
   } catch (error) {
     console.error('Error al enviar reporte con Resend:', error);
-    throw new Error('Error al enviar el reporte: ' + (error.message || "Error desconocido"));
+    return {
+      success: false,
+      data: null,
+      recipients: recipients,
+      error: error.message || "Error desconocido"
+    };
   }
 }
