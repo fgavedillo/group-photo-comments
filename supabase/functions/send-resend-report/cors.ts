@@ -1,21 +1,20 @@
 
-// CORS headers to allow requests from any origin
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-  'Access-Control-Max-Age': '86400',
 };
 
-// Helper function to handle CORS preflight
 export function handleCors(req: Request): Response | null {
-  // Handle OPTIONS requests (CORS preflight)
-  if (req.method === 'OPTIONS') {
-    console.log('Handling OPTIONS request for CORS preflight');
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    console.log(`[${new Date().toISOString()}] Handling OPTIONS request for CORS preflight`);
     return new Response(null, {
-      status: 204, // No content
+      status: 204,
       headers: corsHeaders,
     });
   }
+  
+  // For actual requests, return null and let the main handler continue
   return null;
 }
