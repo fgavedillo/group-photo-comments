@@ -1,5 +1,5 @@
 
-import { toast } from "@/hooks/use-toast";
+import { callApi } from '@/services/api/apiClient';
 
 export async function sendReport(recipients: string[], reportData: any) {
   try {
@@ -15,13 +15,11 @@ export async function sendReport(recipients: string[], reportData: any) {
 
     console.log(`Enviando correo a ${recipients.length} destinatarios con Resend`);
     
-    // Realizar la petición a la función Edge de Supabase
-    const response = await fetch('https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report', {
+    // Realizar la petición a la función Edge usando el cliente API mejorado
+    const response = await callApi({
+      url: 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report',
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+      data: {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
         html: `
@@ -29,32 +27,16 @@ export async function sendReport(recipients: string[], reportData: any) {
           <p>Se adjunta el reporte de incidencias pendientes.</p>
           ${emailContent}
         `,
-      }),
+      },
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error en respuesta de Resend:', errorText);
-      let errorMessage = `Error ${response.status}: ${response.statusText}`;
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-      } catch (e) {
-        // Si no es JSON, usar el texto completo
-        errorMessage = errorText;
-      }
-      
-      throw new Error(errorMessage);
+    if (!response.success) {
+      throw new Error(response.error?.message || 'Error al enviar el correo');
     }
-
-    const data = await response.json();
 
     return { 
       success: true, 
-      data: data,
+      data: response.data,
       recipients: recipients
     };
   } catch (error) {

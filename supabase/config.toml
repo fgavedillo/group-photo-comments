@@ -58,3 +58,6 @@ verify_jwt = false
 
 [[functions.send-resend-report]]
 verify_jwt = false
+
+[[functions.send-daily-report]]
+verify_jwt = false

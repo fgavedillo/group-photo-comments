@@ -1,7 +1,6 @@
 
 import { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
-import { sendManualEmail } from '@/services/emailService';
 import { callApi } from '@/services/api/apiClient';
 
 export const useReportSender = () => {
@@ -61,7 +60,8 @@ export const useReportSender = () => {
           throw new Error(response.error?.message || 'No se pudo enviar el reporte');
         }
       } else {
-        // Usar la función existente para EmailJS
+        // Usar el servicio existente para EmailJS
+        const { sendManualEmail } = await import('@/services/emailService');
         const result = await sendManualEmail(filtered, false);
         setLastResponse(result);
         
