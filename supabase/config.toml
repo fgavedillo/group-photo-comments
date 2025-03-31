@@ -35,6 +35,7 @@ enable_signup = true
 [functions]
 serve_port = 9999
 
+# Define functions as separate sections with the pattern [[functions.function]]
 [[functions.function]]
 name = "send-email"
 verify_jwt = false
