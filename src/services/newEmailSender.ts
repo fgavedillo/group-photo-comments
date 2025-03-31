@@ -19,6 +19,7 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
         to: recipients,
         subject: subject,
         html: reportHtml,
+        tags: [{ name: "source", value: "prlconecta" }]
       }),
     });
 
@@ -26,6 +27,7 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
     console.log('Respuesta Resend:', data);
     
     if (!response.ok) {
+      console.error('Error detallado de Resend:', JSON.stringify(data));
       throw new Error(`Error Resend: ${JSON.stringify(data)}`);
     }
 

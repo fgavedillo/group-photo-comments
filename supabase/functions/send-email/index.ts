@@ -95,23 +95,34 @@ Deno.serve(async (req) => {
 
     const recipientsStr = to.join(', ');
     logger.info(`Enviando correo a: ${recipientsStr}`);
+    logger.info(`Usando correo FROM: Sistema de Gestión <info@prlconecta.es>`);
 
-    // Enviar correo usando Resend
+    // Log request headers for debugging
+    const headersObj = {};
+    req.headers.forEach((value, key) => {
+      headersObj[key] = value;
+    });
+    logger.info("Headers de solicitud:", headersObj);
+
+    // Enviar correo usando Resend con configuración explícita
     const emailResponse = await resend.emails.send({
       from: 'Sistema de Gestión <info@prlconecta.es>',
       to: to,
       subject: subject,
       html: html,
+      tags: [{ name: "source", value: "prlconecta" }]
     });
 
     logger.info("Respuesta de Resend:", emailResponse);
+    logger.info("Respuesta completa:", JSON.stringify(emailResponse));
 
     if (emailResponse.error) {
       logger.error("Error en Resend:", emailResponse.error);
       return new Response(
         JSON.stringify({
           success: false,
-          error: emailResponse.error.message || 'Error al enviar el correo'
+          error: emailResponse.error.message || 'Error al enviar el correo',
+          details: emailResponse.error
         }),
         {
           headers: {
@@ -126,7 +137,8 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        data: emailResponse
+        data: emailResponse,
+        fromEmail: 'Sistema de Gestión <info@prlconecta.es>' // Para debugging
       }),
       {
         headers: {
@@ -138,10 +150,12 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     logger.error("Error en send-email:", error);
+    logger.error("Error detallado:", JSON.stringify(error, null, 2));
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'Error desconocido'
+        error: error.message || 'Error desconocido',
+        details: JSON.stringify(error)
       }),
       {
         headers: {

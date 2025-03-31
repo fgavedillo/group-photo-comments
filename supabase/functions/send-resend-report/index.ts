@@ -80,16 +80,19 @@ serve(async (req) => {
       throw new Error("HTML content is required");
     }
     
-    // Prepare email data for Resend
+    // Prepare email data for Resend with explicit options
     const emailData = {
       from: fromEmail,
       to: to,
       subject: subject,
-      html: html
+      html: html,
+      // Asegurarse de que no se usa la cuenta por defecto de Resend
+      tags: [{ name: "source", value: "prlconecta" }]
     };
     
     logInfo("Attempting to send email to:", to, requestId);
     console.log("Attempting to send email to (from console.log):", to);
+    console.log("Email configuration:", emailData);
     
     // Send email via Resend
     try {
@@ -97,6 +100,9 @@ serve(async (req) => {
       
       const elapsedTime = Date.now() - startTime;
       logInfo(`Email sent successfully via Resend in ${elapsedTime}ms:`, result, logId);
+      
+      // Log more details about the response
+      console.log("Full Resend response:", JSON.stringify(result));
       
       return new Response(
         JSON.stringify({
@@ -108,7 +114,8 @@ serve(async (req) => {
             emailSent: true,
             requestId: logId,
             elapsedTime: `${elapsedTime}ms`,
-            resendResponse: result
+            resendResponse: result,
+            fromEmail: fromEmail // Para debugging
           }
         }),
         {
@@ -121,6 +128,7 @@ serve(async (req) => {
       );
     } catch (resendError) {
       logInfo(`Error received FROM Resend API:`, resendError, requestId);
+      console.error("Detailed Resend error:", JSON.stringify(resendError));
       throw new Error(`Error al enviar email con Resend: ${JSON.stringify(resendError)}`);
     }
   } catch (error) {
