@@ -6,8 +6,11 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
   
   try {
     const RESEND_API_KEY = 're_aTq2dBeF_FXKGPGc3ViQGpRm7stAY3iJ9';
+    const FROM_EMAIL = 'Sistema de Gestión <info@prlconecta.es>';
     
-    // Llamada directa a Resend API
+    console.log('Using FROM email address:', FROM_EMAIL);
+    
+    // Llamada directa a Resend API con configuración explícita del remitente
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -15,11 +18,14 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'Sistema de Gestión <info@prlconecta.es>',
+        from: FROM_EMAIL,
         to: recipients,
         subject: subject,
         html: reportHtml,
-        tags: [{ name: "source", value: "prlconecta" }]
+        tags: [
+          { name: "source", value: "prlconecta" },
+          { name: "force_from", value: "true" }
+        ]
       }),
     });
 

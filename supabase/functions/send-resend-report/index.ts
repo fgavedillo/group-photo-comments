@@ -3,9 +3,11 @@ import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
 import { corsHeaders, handleCors } from "./cors.ts";
 import { Resend } from "https://esm.sh/@resend/node@0.5.0";
 
+// Use explicitly info@prlconecta.es as sender, never use the default Resend address
+const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
+
 // Initialize Resend with API key from environment
 const resendApiKey = Deno.env.get("RESEND_API_KEY");
-const fromEmail = "Sistema de Gestión <info@prlconecta.es>"; // Using verified domain
 
 if (!resendApiKey) {
   console.error("RESEND_API_KEY environment variable is not set");
@@ -26,21 +28,10 @@ console.log(`[${new Date().toISOString()}] Loading send-resend-report function`)
 // Validate configuration
 if (resendApiKey?.length >= 20) {
   console.log(`[${new Date().toISOString()}] Configuration validated successfully`);
-  console.log(`[${new Date().toISOString()}] Using FROM address: ${fromEmail}`);
+  console.log(`[${new Date().toISOString()}] Using FROM address: ${FROM_EMAIL}`);
   console.log(`[${new Date().toISOString()}] API Key length: ${resendApiKey.length}`);
 } else {
   console.error(`[${new Date().toISOString()}] Invalid RESEND_API_KEY configuration`);
-}
-
-// Helper functions for email content
-function getStatusLabel(status: string): string {
-  switch (status) {
-    case "en-estudio": return "En Estudio";
-    case "en-curso": return "En Curso";
-    case "cerrada": return "Cerrada";
-    case "denegado": return "Denegada";
-    default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Sin Estado";
-  }
 }
 
 serve(async (req) => {
@@ -75,24 +66,27 @@ serve(async (req) => {
       throw new Error("Subject is required");
     }
     
-    // Asegurar que siempre tenemos un HTML inicial para el correo
+    // Ensure we always have an initial HTML for the email
     if (!html || html.trim() === '') {
       throw new Error("HTML content is required");
     }
     
-    // Prepare email data for Resend with explicit options
+    // Prepare email data for Resend with explicit options to force the from address
     const emailData = {
-      from: fromEmail,
+      from: FROM_EMAIL,
       to: to,
       subject: subject,
       html: html,
-      // Asegurarse de que no se usa la cuenta por defecto de Resend
-      tags: [{ name: "source", value: "prlconecta" }]
+      // Add tags to ensure we don't use the Resend default account
+      tags: [
+        { name: "source", value: "prlconecta" },
+        { name: "force_from", value: "true" }
+      ]
     };
     
     logInfo("Attempting to send email to:", to, requestId);
     console.log("Attempting to send email to (from console.log):", to);
-    console.log("Email configuration:", emailData);
+    console.log("Email configuration:", JSON.stringify(emailData, null, 2));
     
     // Send email via Resend
     try {
@@ -112,10 +106,15 @@ serve(async (req) => {
             id: result.id,
             recipients: to,
             emailSent: true,
+            mode: "all recipients",
             requestId: logId,
             elapsedTime: `${elapsedTime}ms`,
             resendResponse: result,
-            fromEmail: fromEmail // Para debugging
+            fromEmail: FROM_EMAIL, // Para debugging
+            stats: {
+              successCount: 1,
+              failureCount: 0
+            }
           }
         }),
         {

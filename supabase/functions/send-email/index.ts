@@ -4,6 +4,9 @@ import { corsHeaders } from './cors.ts';
 import { logger } from './logger.ts';
 import { Resend } from "npm:resend@2.0.0";
 
+// Define una constante para el remitente de correo
+const FROM_EMAIL = 'Sistema de Gestión <info@prlconecta.es>';
+
 // Usa la API key desde las variables de entorno
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") || 're_2TqHgv5B_62eNDe38YRyhnXfzSjmp2ShP';
 
@@ -18,6 +21,7 @@ Deno.serve(async (req) => {
 
   try {
     logger.info("Recibida solicitud para enviar correo con Resend");
+    logger.info(`Usando remitente: ${FROM_EMAIL}`);
     
     // Parsear cuerpo de la solicitud
     let body;
@@ -95,7 +99,7 @@ Deno.serve(async (req) => {
 
     const recipientsStr = to.join(', ');
     logger.info(`Enviando correo a: ${recipientsStr}`);
-    logger.info(`Usando correo FROM: Sistema de Gestión <info@prlconecta.es>`);
+    logger.info(`Usando correo FROM: ${FROM_EMAIL}`);
 
     // Log request headers for debugging
     const headersObj = {};
@@ -106,11 +110,14 @@ Deno.serve(async (req) => {
 
     // Enviar correo usando Resend con configuración explícita
     const emailResponse = await resend.emails.send({
-      from: 'Sistema de Gestión <info@prlconecta.es>',
+      from: FROM_EMAIL,
       to: to,
       subject: subject,
       html: html,
-      tags: [{ name: "source", value: "prlconecta" }]
+      tags: [
+        { name: "source", value: "prlconecta" },
+        { name: "force_from", value: "true" }
+      ]
     });
 
     logger.info("Respuesta de Resend:", emailResponse);
@@ -138,7 +145,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         data: emailResponse,
-        fromEmail: 'Sistema de Gestión <info@prlconecta.es>' // Para debugging
+        fromEmail: FROM_EMAIL // Para debugging
       }),
       {
         headers: {

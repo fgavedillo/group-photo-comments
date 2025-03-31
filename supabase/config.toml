@@ -1,6 +1,9 @@
 
 project_id = "jzmzmjvtxcrxljnhhrjo"
 
+[functions]
+port = 9999
+
 [[functions.function]]
 name = "send-email"
 verify_jwt = false
@@ -24,6 +27,3 @@ verify_jwt = false
 [[functions.function]]
 name = "notify-admin"
 verify_jwt = false
-
-[functions]
-port = 9999

@@ -8,8 +8,8 @@ export const RECIPIENT_EMAILS = [
   // Añade aquí más destinatarios por defecto
 ];
 
-// Cambio del remitente para mostrar el nombre del sistema y usar el dominio verificado
-export const EMAIL_SENDER = "Sistema de Gestión de Incidencias <info@prlconecta.es>";
+// Usar explícitamente el dominio verificado para el remitente
+export const EMAIL_SENDER = "Sistema de Gestión <info@prlconecta.es>";
 
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
