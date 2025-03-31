@@ -117,6 +117,32 @@ function generateSimpleTable(issues: any[] = []) {
         imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&auto=format&fit=crop"
       }
     ];
+  } else {
+    // Asegurar que cada incidencia tiene su imagen correcta
+    issues = issues.map(issue => {
+      // Si el issue ya tiene una propiedad imageUrl, la usamos directamente
+      if (issue.imageUrl) {
+        return issue;
+      }
+      
+      // Si no tiene imageUrl pero sí una propiedad image_url (del campo de la base de datos), usarla
+      if (issue.image_url) {
+        return {
+          ...issue,
+          imageUrl: issue.image_url
+        };
+      }
+      
+      // En este punto, intentamos buscar la imagen en la propiedad correcta según la estructura de datos
+      if (issue.issue_images && issue.issue_images.length > 0) {
+        return {
+          ...issue,
+          imageUrl: issue.issue_images[0].image_url
+        };
+      }
+      
+      return issue;
+    });
   }
 
   // Construir la tabla HTML
