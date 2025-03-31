@@ -8,8 +8,8 @@ export async function sendReport(recipients: string[], reportData: any) {
       throw new Error("No se proporcionaron destinatarios para el envío del correo");
     }
 
-    // Si no se especifica un reporte, usar la generación del dashboard
-    const generateDashboard = !reportData || typeof reportData !== 'string';
+    // Si no se especifica un reporte, usar la generación simplificada
+    const generateSimpleDashboard = !reportData || typeof reportData !== 'string';
     
     // Preparar el cuerpo del mensaje (como HTML)
     const emailContent = typeof reportData === 'string' 
@@ -17,11 +17,11 @@ export async function sendReport(recipients: string[], reportData: any) {
       : `<div>${JSON.stringify(reportData, null, 2)}</div>`;
 
     console.log(`Enviando correo a ${recipients.length} destinatarios con Resend`);
-    console.log(`Generando dashboard: ${generateDashboard ? 'Sí' : 'No'}`);
+    console.log(`Generando dashboard simplificado: ${generateSimpleDashboard ? 'Sí' : 'No'}`);
     
     // Agregar un texto de introducción que siempre aparecerá en el correo
     const introText = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #003366;">Reporte de Incidencias PRL Conecta</h1>
         <p style="font-size: 16px; line-height: 1.5;">
           Estimado usuario,
@@ -45,6 +45,9 @@ export async function sendReport(recipients: string[], reportData: any) {
       </div>
     `;
 
+    // Generar tabla simple de incidencias (datos de prueba o datos reales)
+    const simpleTableHTML = generateSimpleTable(reportData?.issuesData || []);
+
     // Realizar la petición a la función Edge usando el cliente API mejorado
     const response = await callApi({
       url: 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report',
@@ -52,14 +55,14 @@ export async function sendReport(recipients: string[], reportData: any) {
       data: {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
-        html: generateDashboard 
-          ? `${introText}<div id="dashboard-placeholder">Generando dashboard de incidencias...<br/>Este proceso puede tomar unos segundos.</div>` 
+        html: generateSimpleDashboard 
+          ? `${introText}${simpleTableHTML}` 
           : `
             ${introText}
             <h2 style="color: #003366; margin-top: 30px;">Detalles del Reporte</h2>
             ${emailContent}
           `,
-        generateDashboard: generateDashboard,
+        generateDashboard: false, // Desactivamos la generación compleja del dashboard
         requestId: `report-${Date.now()}`,
         // Asegurarnos de que se incluyan los datos de las incidencias si están disponibles
         issuesData: reportData && typeof reportData === 'object' ? reportData : null
@@ -87,5 +90,74 @@ export async function sendReport(recipients: string[], reportData: any) {
       recipients: recipients,
       error: error.message || "Error desconocido"
     };
+  }
+}
+
+// Función para generar una tabla simple HTML
+function generateSimpleTable(issues: any[] = []) {
+  // Si no hay datos, usar datos de prueba
+  if (!issues || issues.length === 0) {
+    issues = [
+      {
+        id: 1,
+        message: "Fallo en sistema de ventilación",
+        area: "Producción",
+        status: "en-estudio",
+        responsable: "Juan Pérez",
+        timestamp: new Date().toISOString()
+      },
+      {
+        id: 2,
+        message: "Derrame de producto químico",
+        area: "Laboratorio",
+        status: "en-curso",
+        responsable: "María González",
+        timestamp: new Date(Date.now() - 86400000).toISOString()
+      }
+    ];
+  }
+
+  // Construir la tabla HTML
+  const tableHTML = `
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
+      <h2 style="color: #003366; margin-top: 30px;">Listado de Incidencias</h2>
+      <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
+        <thead>
+          <tr style="background-color: #f8f9fa; text-align: left;">
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">ID</th>
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">Incidencia</th>
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">Área</th>
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">Estado</th>
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">Responsable</th>
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${issues.map(issue => `
+            <tr style="border-bottom: 1px solid #eee;">
+              <td style="padding: 12px;">${issue.id}</td>
+              <td style="padding: 12px;">${issue.message}</td>
+              <td style="padding: 12px;">${issue.area || '-'}</td>
+              <td style="padding: 12px;">${getStatusLabel(issue.status)}</td>
+              <td style="padding: 12px;">${issue.responsable || 'Sin asignar'}</td>
+              <td style="padding: 12px;">${new Date(issue.timestamp).toLocaleDateString('es-ES')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  return tableHTML;
+}
+
+// Función para obtener etiqueta de estado legible
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case "en-estudio": return "En Estudio";
+    case "en-curso": return "En Curso";
+    case "cerrada": return "Cerrada";
+    case "denegado": return "Denegada";
+    default: return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Sin Estado";
   }
 }

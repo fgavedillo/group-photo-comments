@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileImage, RefreshCw, Filter, AlertCircle, CheckCircle, Mail, BarChart2 } from "lucide-react";
+import { FileText, RefreshCw, Filter, AlertCircle, CheckCircle, Mail } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReportMethodSelector } from "./ReportMethodSelector";
 
@@ -46,18 +46,14 @@ export const ReportSenderButton = () => {
           {isLoading ? (
             <>
               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-              Sending...
+              Enviando...
             </>
           ) : (
             <>
-              {useResend ? (
-                <BarChart2 className="mr-2 h-4 w-4" />
-              ) : (
-                <FileImage className="mr-2 h-4 w-4" />
-              )}
+              <FileText className="mr-2 h-4 w-4" />
               {filtered 
-                ? "Send Dashboard Report to Individual Recipients" 
-                : "Send Dashboard Report to All Recipients"}
+                ? "Enviar Reporte Individual" 
+                : "Enviar Reporte Completo"}
             </>
           )}
         </Button>
@@ -70,7 +66,7 @@ export const ReportSenderButton = () => {
           title={filtered ? "Change to global sending mode" : "Change to personalized sending mode"}
         >
           <Filter className={`h-4 w-4 mr-2 ${filtered ? 'text-green-600' : ''}`} />
-          {filtered ? "Global Mode" : "Individual Mode"}
+          {filtered ? "Modo Global" : "Modo Individual"}
         </Button>
         
         <ReportMethodSelector
@@ -80,28 +76,25 @@ export const ReportSenderButton = () => {
         
         <div className="ml-auto text-xs text-gray-500 flex items-center gap-1">
           <Mail className="h-3 w-3" />
-          <span>Using: {useResend ? 'Resend' : 'EmailJS'}</span>
+          <span>Usando: {useResend ? 'Resend' : 'EmailJS'}</span>
         </div>
       </div>
       
       {error ? (
         <Alert variant="destructive" className="bg-red-50 border-red-200">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Send error</AlertTitle>
+          <AlertTitle>Error al enviar</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : lastResponse?.success ? (
         <Alert variant="default" className="bg-green-50 border-green-200">
           <CheckCircle className="h-4 w-4 text-green-500" />
-          <AlertTitle>Successful send</AlertTitle>
+          <AlertTitle>Envío exitoso</AlertTitle>
           <AlertDescription>
-            Dashboard report successfully sent with {useResend ? 'Resend' : 'EmailJS'}.
+            El reporte se ha enviado correctamente con {useResend ? 'Resend' : 'EmailJS'}.
             {lastResponse.data?.stats && (
               <div className="text-xs mt-1 text-gray-500">
-                {lastResponse.data.stats.successCount || 0} successful sends, {lastResponse.data.stats.failureCount || 0} failed.
-                {lastResponse.data.stats.issueCount !== undefined && (
-                  <span> Included {lastResponse.data.stats.issueCount} issues.</span>
-                )}
+                {lastResponse.data.stats.successCount || 0} envíos exitosos, {lastResponse.data.stats.failureCount || 0} fallidos.
               </div>
             )}
           </AlertDescription>
