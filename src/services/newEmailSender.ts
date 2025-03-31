@@ -22,8 +22,13 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
         to: recipients,
         subject: subject,
         html: reportHtml,
+        // Establecer un ID de referencia único para esta solicitud
+        headers: {
+          "X-Entity-Ref-ID": `direct-${Date.now()}`
+        },
         tags: [
           { name: "source", value: "prlconecta" },
+          { name: "category", value: "transactional" },
           { name: "force_from", value: "true" }
         ]
       }),

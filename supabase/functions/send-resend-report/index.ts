@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
 import { corsHeaders, handleCors } from "./cors.ts";
 import { Resend } from "https://esm.sh/@resend/node@0.5.0";
 
-// Use explicitly info@prlconecta.es as sender, never use the default Resend address
+// Use explicitly info@prlconecta.es as sender, with the proper domain validation
 const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
 
 // Initialize Resend with API key from environment
@@ -77,6 +77,10 @@ serve(async (req) => {
       to: to,
       subject: subject,
       html: html,
+      // Use required settings according to Resend docs to ensure proper sender
+      headers: {
+        "X-Entity-Ref-ID": logId
+      },
       // Add tags to ensure we don't use the Resend default account
       tags: [
         { name: "source", value: "prlconecta" },
@@ -85,8 +89,8 @@ serve(async (req) => {
     };
     
     logInfo("Attempting to send email to:", to, requestId);
-    console.log("Attempting to send email to (from console.log):", to);
     console.log("Email configuration:", JSON.stringify(emailData, null, 2));
+    console.log("FROM address being used:", FROM_EMAIL);
     
     // Send email via Resend
     try {
@@ -97,6 +101,11 @@ serve(async (req) => {
       
       // Log more details about the response
       console.log("Full Resend response:", JSON.stringify(result));
+      
+      // Check if Resend used a different sender
+      if (result && result.from && result.from !== FROM_EMAIL) {
+        console.error(`WARNING: Resend used a different sender (${result.from}) than requested (${FROM_EMAIL})`);
+      }
       
       return new Response(
         JSON.stringify({
@@ -111,6 +120,7 @@ serve(async (req) => {
             elapsedTime: `${elapsedTime}ms`,
             resendResponse: result,
             fromEmail: FROM_EMAIL, // Para debugging
+            actualFromEmail: result.from, // Para verificar el remitente real
             stats: {
               successCount: 1,
               failureCount: 0
