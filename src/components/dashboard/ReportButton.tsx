@@ -1,14 +1,10 @@
 
-// Componente simplificado que ya no utiliza funcionalidad de envío de email
+// Componente simplificado sin funcionalidad de email
 const ReportButton = ({ dashboardRef, issuesTableRef }: { 
   dashboardRef: React.RefObject<HTMLDivElement>;
   issuesTableRef?: React.RefObject<HTMLDivElement>;
 }) => {
-  return (
-    <div>
-      {/* La funcionalidad de envío de correos ha sido eliminada */}
-    </div>
-  );
+  return null; // El componente no renderiza nada
 };
 
 export { ReportButton };
