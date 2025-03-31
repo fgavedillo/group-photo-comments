@@ -49,6 +49,7 @@ redirect_uri = ""
 [functions]
 port = 54321
 
+# Edge Functions are now defined as an array
 [[functions.function]]
 name = "send-email"
 verify_jwt = false
