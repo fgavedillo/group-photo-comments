@@ -104,7 +104,8 @@ function generateSimpleTable(issues: any[] = []) {
         area: "Producción",
         status: "en-estudio",
         responsable: "Juan Pérez",
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        imageUrl: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=800&auto=format&fit=crop"
       },
       {
         id: 2,
@@ -112,14 +113,15 @@ function generateSimpleTable(issues: any[] = []) {
         area: "Laboratorio",
         status: "en-curso",
         responsable: "María González",
-        timestamp: new Date(Date.now() - 86400000).toISOString()
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        imageUrl: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800&auto=format&fit=crop"
       }
     ];
   }
 
   // Construir la tabla HTML
   const tableHTML = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto;">
+    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 800px; margin: 0 auto;">
       <h2 style="color: #003366; margin-top: 30px;">Listado de Incidencias</h2>
       <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px;">
         <thead>
@@ -130,17 +132,23 @@ function generateSimpleTable(issues: any[] = []) {
             <th style="padding: 12px; border-bottom: 1px solid #ddd;">Estado</th>
             <th style="padding: 12px; border-bottom: 1px solid #ddd;">Responsable</th>
             <th style="padding: 12px; border-bottom: 1px solid #ddd;">Fecha</th>
+            <th style="padding: 12px; border-bottom: 1px solid #ddd;">Imagen</th>
           </tr>
         </thead>
         <tbody>
           ${issues.map(issue => `
             <tr style="border-bottom: 1px solid #eee;">
               <td style="padding: 12px;">${issue.id}</td>
-              <td style="padding: 12px;">${issue.message}</td>
+              <td style="padding: 12px; max-width: 200px; word-wrap: break-word;">${issue.message}</td>
               <td style="padding: 12px;">${issue.area || '-'}</td>
               <td style="padding: 12px;">${getStatusLabel(issue.status)}</td>
               <td style="padding: 12px;">${issue.responsable || 'Sin asignar'}</td>
               <td style="padding: 12px;">${new Date(issue.timestamp).toLocaleDateString('es-ES')}</td>
+              <td style="padding: 12px; text-align: center;">
+                ${issue.imageUrl ? 
+                  `<img src="${issue.imageUrl}" alt="Imagen de la incidencia" style="width: 80px; height: 80px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd;">` : 
+                  '-'}
+              </td>
             </tr>
           `).join('')}
         </tbody>
