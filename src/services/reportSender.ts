@@ -8,12 +8,16 @@ export async function sendReport(recipients: string[], reportData: any) {
       throw new Error("No se proporcionaron destinatarios para el envío del correo");
     }
 
+    // Si no se especifica un reporte, usar la generación del dashboard
+    const generateDashboard = !reportData || typeof reportData !== 'string';
+    
     // Preparar el cuerpo del mensaje (como HTML)
     const emailContent = typeof reportData === 'string' 
       ? reportData 
       : `<div>${JSON.stringify(reportData, null, 2)}</div>`;
 
     console.log(`Enviando correo a ${recipients.length} destinatarios con Resend`);
+    console.log(`Generando dashboard: ${generateDashboard ? 'Sí' : 'No'}`);
     
     // Realizar la petición a la función Edge usando el cliente API mejorado
     const response = await callApi({
@@ -22,12 +26,17 @@ export async function sendReport(recipients: string[], reportData: any) {
       data: {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
-        html: `
+        html: generateDashboard ? '' : `
           <h1>Reporte de Incidencias</h1>
           <p>Se adjunta el reporte de incidencias pendientes.</p>
           ${emailContent}
         `,
+        generateDashboard: generateDashboard,
+        requestId: `report-${Date.now()}`
       },
+      config: {
+        timeout: 15000 // Aumentar a 15 segundos para dar tiempo a generar el dashboard
+      }
     });
 
     if (!response.success) {

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileImage, RefreshCw, Filter, AlertCircle, CheckCircle, Mail } from "lucide-react";
+import { FileImage, RefreshCw, Filter, AlertCircle, CheckCircle, Mail, BarChart2 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReportMethodSelector } from "./ReportMethodSelector";
 
@@ -50,10 +50,14 @@ export const ReportSenderButton = () => {
             </>
           ) : (
             <>
-              <FileImage className="mr-2 h-4 w-4" />
+              {useResend ? (
+                <BarChart2 className="mr-2 h-4 w-4" />
+              ) : (
+                <FileImage className="mr-2 h-4 w-4" />
+              )}
               {filtered 
-                ? "Send Report to Individual Recipients" 
-                : "Send Report to All Recipients"}
+                ? "Send Dashboard Report to Individual Recipients" 
+                : "Send Dashboard Report to All Recipients"}
             </>
           )}
         </Button>
@@ -91,10 +95,13 @@ export const ReportSenderButton = () => {
           <CheckCircle className="h-4 w-4 text-green-500" />
           <AlertTitle>Successful send</AlertTitle>
           <AlertDescription>
-            Report successfully sent with {useResend ? 'Resend' : 'EmailJS'}.
+            Dashboard report successfully sent with {useResend ? 'Resend' : 'EmailJS'}.
             {lastResponse.data?.stats && (
               <div className="text-xs mt-1 text-gray-500">
                 {lastResponse.data.stats.successCount || 0} successful sends, {lastResponse.data.stats.failureCount || 0} failed.
+                {lastResponse.data.stats.issueCount !== undefined && (
+                  <span> Included {lastResponse.data.stats.issueCount} issues.</span>
+                )}
               </div>
             )}
           </AlertDescription>

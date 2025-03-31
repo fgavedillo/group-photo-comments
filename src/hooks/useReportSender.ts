@@ -14,7 +14,7 @@ export const useReportSender = () => {
     setUseResend(prev => !prev);
     toast({
       title: "Send method changed",
-      description: `Now using: ${!useResend ? 'Resend' : 'EmailJS'}`,
+      description: `Now using: ${!useResend ? 'Resend Dashboard' : 'EmailJS'}`,
     });
   };
 
@@ -26,8 +26,8 @@ export const useReportSender = () => {
     
     try {
       toast({
-        title: "Sending report",
-        description: `Processing request with ${useResend ? 'Resend' : 'EmailJS'}...`,
+        title: "Preparing report",
+        description: `Creating ${useResend ? 'dashboard report' : 'email report'} with ${useResend ? 'Resend' : 'EmailJS'}...`,
       });
       
       console.log(`Starting sending process using ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtered' : 'complete'})`);
@@ -35,36 +35,33 @@ export const useReportSender = () => {
       if (useResend) {
         // Generate a unique request ID for tracking
         const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-        console.log(`[${requestId}] Starting test request to Edge Function`);
+        console.log(`[${requestId}] Starting request to Edge Function for dashboard report`);
         
-        // Simple test sending to confirm the Edge Function is working
-        const testResponse = await callApi({
-          url: 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report',
-          method: 'POST',
-          data: { 
-            to: ['test@example.com'],
-            subject: 'Test Report',
-            html: '<p>This is a test report</p>',
-            filtered: filtered,
-            requestId: requestId
-          },
-          config: {
-            timeout: 10000 // 10 second timeout
-          }
+        // Import and use the sendReport function
+        const { sendReport } = await import('@/services/reportSender');
+        
+        // Get a list of recipients (this would normally come from your app's state or a database query)
+        const recipients = ["avedillo81@gmail.com"]; // Example recipient
+        
+        // Call the sendReport function with generateDashboard flag
+        const response = await sendReport(recipients, { 
+          generateDashboard: true,
+          timestamp: new Date().toISOString(),
+          filtered: filtered
         });
         
-        console.log(`[${requestId}] Response from Edge Function:`, testResponse);
-        setLastResponse(testResponse);
+        console.log(`[${requestId}] Response from Edge Function:`, response);
+        setLastResponse(response);
         
-        if (testResponse.success) {
+        if (response.success) {
           toast({
-            title: "Test successful",
-            description: "The connection to the email service is working. Implement full email sending next.",
+            title: "Report sent successfully",
+            description: "The dashboard report has been sent to the recipients.",
           });
           
-          return testResponse;
+          return response;
         } else {
-          throw new Error(testResponse.error?.message || 'Could not send test report');
+          throw new Error(response.error?.message || 'Could not send dashboard report');
         }
       } else {
         // Use existing EmailJS service
