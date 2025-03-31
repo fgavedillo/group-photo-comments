@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
       tags: [
         { name: "source", value: "prlconecta" },
         { name: "category", value: "transactional" },
-        { name: "force_from", value: "true" }
+        { name: "mode", value: "production" }
       ]
     };
 

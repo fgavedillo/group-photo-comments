@@ -22,8 +22,7 @@ const logInfo = (message: string, data?: any, requestId?: string) => {
 };
 
 // Configuración del remitente con el dominio verificado
-const FROM_NAME = "Sistema de Gestión";
-const FROM_EMAIL = `${FROM_NAME} <info@prlconecta.es>`;
+const FROM_EMAIL = `Sistema de Gestión <info@prlconecta.es>`;
 
 // El dominio está verificado, así que no estamos en modo de prueba
 const IN_TEST_MODE = false;
@@ -68,6 +67,8 @@ serve(async (req) => {
     const recipients = to;
     
     logInfo(`Destinatarios efectivos (${recipients.length}):`, recipients, logId);
+    console.log(`Attempting to send email to (from console.log):`, recipients);
+    
     recipients.forEach((recipient, index) => {
       logInfo(`Destinatario ${index + 1}: ${recipient}`, null, logId);
     });
@@ -132,7 +133,7 @@ serve(async (req) => {
           testMode: IN_TEST_MODE,
           senderDetails: {
             email: FROM_EMAIL.split("<")[1].split(">")[0].trim(),
-            name: FROM_NAME
+            name: "Sistema de Gestión"
           },
           stats: {
             successCount: recipients.length,

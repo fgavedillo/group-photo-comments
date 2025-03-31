@@ -51,7 +51,8 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, h
         },
         tags: [
           { name: "source", value: "prlconecta" },
-          { name: "category", value: "transactional" }
+          { name: "category", value: "transactional" },
+          { name: "mode", value: "production" }
         ]
       }),
     });
