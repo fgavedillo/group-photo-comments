@@ -53,17 +53,19 @@ export async function sendReport(recipients: string[], reportData: any) {
         to: recipients,
         subject: 'Reporte de Incidencias PRL Conecta',
         html: generateDashboard 
-          ? `${introText}<div>Generando dashboard de incidencias...</div>` // Incluir texto introductorio
+          ? `${introText}<div id="dashboard-placeholder">Generando dashboard de incidencias...<br/>Este proceso puede tomar unos segundos.</div>` 
           : `
             ${introText}
             <h2 style="color: #003366; margin-top: 30px;">Detalles del Reporte</h2>
             ${emailContent}
           `,
         generateDashboard: generateDashboard,
-        requestId: `report-${Date.now()}`
+        requestId: `report-${Date.now()}`,
+        // Asegurarnos de que se incluyan los datos de las incidencias si están disponibles
+        issuesData: reportData && typeof reportData === 'object' ? reportData : null
       },
       config: {
-        timeout: 15000 // Aumentar a 15 segundos para dar tiempo a generar el dashboard
+        timeout: 30000 // Aumentar a 30 segundos para dar tiempo a generar el dashboard
       }
     });
 

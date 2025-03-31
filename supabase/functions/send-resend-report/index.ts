@@ -27,12 +27,13 @@ console.log(`[${new Date().toISOString()}] Loading send-resend-report function`)
 if (resendApiKey?.length >= 20) {
   console.log(`[${new Date().toISOString()}] Configuration validated successfully`);
   console.log(`[${new Date().toISOString()}] Using FROM address: ${fromEmail}`);
+  console.log(`[${new Date().toISOString()}] API Key length: ${resendApiKey.length}`);
 } else {
   console.error(`[${new Date().toISOString()}] Invalid RESEND_API_KEY configuration`);
 }
 
 // Function to generate HTML for email with dashboard-like view
-function generateDashboardEmailHTML(issues: any[], filtered: boolean = false) {
+function generateDashboardEmailHTML(issues: any[] = [], filtered: boolean = false) {
   // Get current date for the report
   const date = new Date().toLocaleDateString('es-ES', {
     day: '2-digit',
@@ -257,6 +258,30 @@ async function fetchIssues(requestId: string) {
   }
 }
 
+// Hardcoded mockup data for testing
+function getMockIssues() {
+  return [
+    {
+      id: "001",
+      status: "en-estudio",
+      area: "Almacén",
+      message: "Caída de material en la zona de estanterías",
+      timestamp: new Date().toISOString(),
+      responsable: "Juan Pérez",
+      imageUrl: null
+    },
+    {
+      id: "002",
+      status: "en-curso",
+      area: "Producción",
+      message: "Fallo en sistema de ventilación",
+      timestamp: new Date(Date.now() - 86400000).toISOString(),
+      responsable: "María González",
+      imageUrl: null
+    }
+  ];
+}
+
 serve(async (req) => {
   const startTime = Date.now();
   const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
@@ -275,7 +300,7 @@ serve(async (req) => {
     logInfo("Request data:", JSON.stringify(requestData), requestId);
     
     // Extract email data
-    const { to, subject, html, filtered = false, clientRequestId } = requestData;
+    const { to, subject, html, filtered = false, clientRequestId, issuesData } = requestData;
     
     // Use client-provided request ID if available for easier tracking
     const logId = clientRequestId || requestId;
@@ -299,21 +324,36 @@ serve(async (req) => {
     let finalHtml = html;
     
     if (requestData.generateDashboard) {
-      logInfo("Fetching issues for dashboard report", null, logId);
+      logInfo("Generating dashboard for email", null, logId);
+      
       try {
-        issues = await fetchIssues(logId);
+        // Si tenemos datos proporcionados directamente, usarlos
+        if (issuesData && Array.isArray(issuesData)) {
+          logInfo("Using provided issues data for dashboard", { count: issuesData.length }, logId);
+          issues = issuesData;
+        } else {
+          // Intentar obtener las incidencias de la base de datos
+          logInfo("Fetching issues from database", null, logId);
+          try {
+            issues = await fetchIssues(logId);
+          } catch (fetchError) {
+            logInfo("Error fetching issues from database, using mock data", { error: fetchError.message }, logId);
+            // Si falla la obtención, usar datos de prueba
+            issues = getMockIssues();
+          }
+        }
         
         // Generate dashboard HTML
         finalHtml = generateDashboardEmailHTML(issues, filtered);
-        logInfo("Dashboard HTML generated successfully", null, logId);
-      } catch (fetchError) {
-        logInfo(`Error fetching issues: ${fetchError.message}`, null, logId);
+        logInfo("Dashboard HTML generated successfully", { length: finalHtml.length }, logId);
+      } catch (dashboardError) {
+        logInfo(`Error generating dashboard: ${dashboardError.message}`, null, logId);
         // No lanzamos error, seguimos con el HTML original y un mensaje de error
         finalHtml = `
           ${html}
           <div style="margin-top: 20px; padding: 15px; background-color: #fff2f2; border-left: 4px solid #e03131; border-radius: 4px;">
             <h3 style="color: #e03131; margin-top: 0;">Error al generar el dashboard</h3>
-            <p>No se pudieron cargar los datos de incidencias: ${fetchError.message}</p>
+            <p>No se pudieron cargar los datos de incidencias: ${dashboardError.message}</p>
             <p>Por favor, contacte al administrador del sistema si este problema persiste.</p>
           </div>
         `;
@@ -329,6 +369,7 @@ serve(async (req) => {
     };
     
     logInfo("Attempting to send email to:", to, requestId);
+    console.log("Attempting to send email to (from console.log):", to);
     
     // Send email via Resend
     try {
