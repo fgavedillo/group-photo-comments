@@ -52,7 +52,7 @@ enable_signup = true
 # Port to use for the Functions endpoint.
 port = 9000
 
-# Define individual function configurations correctly using key-value format
+# Define function configurations as maps, not arrays
 [functions.notify-admin]
 verify_jwt = false
 

@@ -33,6 +33,10 @@ export const useReportSender = () => {
       console.log(`Starting sending process using ${useResend ? 'Resend' : 'EmailJS'} (${filtered ? 'filtered' : 'complete'})`);
       
       if (useResend) {
+        // Generate a unique request ID for tracking
+        const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+        console.log(`[${requestId}] Starting test request to Edge Function`);
+        
         // Simple test sending to confirm the Edge Function is working
         const testResponse = await callApi({
           url: 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-resend-report',
@@ -41,10 +45,15 @@ export const useReportSender = () => {
             to: ['test@example.com'],
             subject: 'Test Report',
             html: '<p>This is a test report</p>',
-            filtered: filtered
+            filtered: filtered,
+            requestId: requestId
+          },
+          config: {
+            timeout: 10000 // 10 second timeout
           }
         });
         
+        console.log(`[${requestId}] Response from Edge Function:`, testResponse);
         setLastResponse(testResponse);
         
         if (testResponse.success) {
@@ -77,9 +86,18 @@ export const useReportSender = () => {
     } catch (err: any) {
       console.error("Error sending report:", err);
       
-      const friendlyError = err.message?.includes("NetworkError") ?
-        "Connection error. Check your internet connection and that the Edge Function is correctly published." :
-        err.message || 'Unknown error sending report';
+      // Helpful error message based on the error type
+      let friendlyError;
+      
+      if (err.message?.includes("NetworkError") || err.message?.includes("Failed to fetch")) {
+        friendlyError = "Connection error. Check your internet connection and that the Edge Function is correctly deployed.";
+      } else if (err.message?.includes("404")) {
+        friendlyError = "Edge Function not found. Make sure it's correctly deployed in Supabase.";
+      } else if (err.message?.includes("CORS")) {
+        friendlyError = "CORS error. The server is not allowing requests from this origin.";
+      } else {
+        friendlyError = err.message || 'Unknown error sending report';
+      }
       
       setError(friendlyError);
       

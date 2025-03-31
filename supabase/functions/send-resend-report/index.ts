@@ -1,26 +1,23 @@
 
 import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
-import { corsHeaders } from "./cors.ts";
+import { corsHeaders, handleCors } from "./cors.ts";
 
 console.log("Loading send-resend-report function");
 
 serve(async (req) => {
-  // First check if it's a CORS preflight request and handle it
-  if (req.method === "OPTIONS") {
-    console.log("Handling OPTIONS request for CORS preflight");
-    return new Response(null, {
-      status: 204,
-      headers: corsHeaders,
-    });
+  // Handle CORS preflight requests first
+  const corsResponse = handleCors(req);
+  if (corsResponse) {
+    return corsResponse;
   }
 
   // Get the request body
   try {
-    console.log("Processing request", req.method);
+    console.log(`[${new Date().toISOString()}] Processing request ${req.method} from ${req.headers.get("origin") || "unknown origin"}`);
     
     // Parse the request body
     const requestData = await req.json();
-    console.log("Request data:", JSON.stringify(requestData));
+    console.log(`[${new Date().toISOString()}] Request data:`, JSON.stringify(requestData));
     
     // Extract email data
     const { to, subject, html, filtered = false } = requestData;
@@ -40,9 +37,9 @@ serve(async (req) => {
     
     // In a real implementation, this would send emails via Resend or another provider
     // For testing, just log the data and return success
-    console.log("Would send email to:", to);
-    console.log("Subject:", subject);
-    console.log("Filtered mode:", filtered ? "yes" : "no");
+    console.log(`[${new Date().toISOString()}] Would send email to:`, to);
+    console.log(`[${new Date().toISOString()}] Subject:`, subject);
+    console.log(`[${new Date().toISOString()}] Filtered mode:`, filtered ? "yes" : "no");
     
     return new Response(
       JSON.stringify({
@@ -67,7 +64,7 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Error in send-resend-report function:", error.message);
+    console.error(`[${new Date().toISOString()}] Error in send-resend-report function:`, error.message);
     
     return new Response(
       JSON.stringify({
