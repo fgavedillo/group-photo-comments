@@ -92,7 +92,6 @@ enable_confirmations = false
 
 [realtime]
 enabled = true
-log_level = "warn"
 
 [analytics]
 enabled = false
