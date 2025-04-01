@@ -5,6 +5,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+// Email registrado en Resend (usamos el email detectado en los logs)
+const RESEND_REGISTERED_EMAIL = "avedillo81@gmail.com";
 
 interface Issue {
   id: number;
@@ -55,30 +57,22 @@ serve(async (req) => {
 
     console.log(`Procesando ${issues.length} incidencias`);
 
-    // Obtener emails únicos de las incidencias
-    const uniqueEmails = [...new Set(issues
-      .map((issue: Issue) => issue.assignedEmail)
-      .filter((email: string | undefined) => email && email.includes('@')))];
-
-    if (uniqueEmails.length === 0) {
-      console.error('No hay destinatarios válidos en las incidencias');
-      throw new Error('No hay destinatarios válidos para enviar el resumen');
-    }
-
-    console.log('Destinatarios del email:', uniqueEmails);
-    
-    // Generar el HTML para el email
-    const html = generateIssuesSummaryHtml(issues);
-
     // Verificar que tenemos la API key de Resend
     if (!RESEND_API_KEY) {
       console.error('RESEND_API_KEY no está configurada');
       throw new Error('La API key de Resend no está configurada en las variables de entorno');
     }
     
-    console.log('Enviando email usando Resend API...');
+    // En modo prueba de Resend, solo podemos enviar al email registrado
+    // En lugar de intentar enviar a múltiples destinatarios, generamos el informe
+    // y lo enviamos solo al email registrado
     
-    // Enviar email usando la API de Resend directamente
+    // Generar el HTML para el email
+    const html = generateIssuesSummaryHtml(issues);
+    
+    console.log('Enviando email de resumen a:', RESEND_REGISTERED_EMAIL);
+    
+    // Enviar email usando la API de Resend directamente, pero solo al email registrado
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -86,8 +80,8 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'PRLconecta <onboarding@resend.dev>',
-        to: uniqueEmails,
+        from: 'Acme <onboarding@resend.dev>',
+        to: [RESEND_REGISTERED_EMAIL],
         subject: 'Resumen de Incidencias Asignadas - PRLconecta',
         html: html,
       }),
@@ -104,13 +98,23 @@ serve(async (req) => {
       throw new Error(`Error al enviar el email: ${data.message || JSON.stringify(data)}`);
     }
 
-    console.log('Email enviado correctamente:', data);
+    // Crear lista de emails que deberían haber recibido el informe
+    // (aunque en modo prueba solo lo recibe el email registrado)
+    const assignedEmails = issues
+      .map((issue: Issue) => issue.assignedEmail)
+      .filter((email: string | undefined) => email && email.includes('@'));
+    
+    const uniqueEmails = [...new Set(assignedEmails)];
+
+    console.log('Email enviado correctamente al email de prueba:', RESEND_REGISTERED_EMAIL);
+    console.log('Destinatarios originales (no recibieron email en modo prueba):', uniqueEmails);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Email enviado correctamente a ${uniqueEmails.length} destinatarios`,
-        recipients: uniqueEmails,
+        message: `Email enviado al email de prueba (${RESEND_REGISTERED_EMAIL})`,
+        note: "En modo prueba, Resend solo permite enviar al email registrado",
+        originalRecipients: uniqueEmails,
         resendResponse: data
       }),
       { 

@@ -90,9 +90,15 @@ export function ReportSenderButton() {
         throw new Error(data?.error || 'Error desconocido al enviar el email');
       }
 
+      // Mostrar mensaje con nota sobre modo de prueba si existe
+      let description = data.message || "Email de resumen enviado correctamente";
+      if (data.note) {
+        description += ` (${data.note})`;
+      }
+
       toast({
         title: "Resumen enviado",
-        description: data.message || `Email enviado correctamente a ${assignedEmails.length} destinatarios`,
+        description: description,
       });
     } catch (error) {
       console.error('Error detallado:', error);
