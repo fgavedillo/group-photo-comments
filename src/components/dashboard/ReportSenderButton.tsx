@@ -65,7 +65,7 @@ export function ReportSenderButton() {
         console.error('Error al obtener imágenes de incidencias:', imagesError);
       }
       
-      // Asociar imágenes con las incidencias - mejoramos el registro con más información
+      // Asociar imágenes con las incidencias
       const imageMap = {};
       if (issueImages && issueImages.length > 0) {
         console.log('Imágenes obtenidas:', issueImages.length);

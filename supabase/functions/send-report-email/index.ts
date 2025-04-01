@@ -382,9 +382,9 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
   const statusChartSvg = generateStatusChartSVG(issues);
   const areaChartSvg = generateAreaChartSVG(issues);
   
-  // Generar filas para la tabla de incidencias con imágenes
+  // Generar filas para la tabla de incidencias con imágenes uniformes
   const issueRows = issues.map(issue => {
-    // Verificar si existe una URL de imagen válida y darle tratamiento especial
+    // Verificar si existe una URL de imagen válida
     const hasImage = issue.imageUrl && typeof issue.imageUrl === 'string' && 
                     (issue.imageUrl.startsWith('http://') || issue.imageUrl.startsWith('https://'));
                     
@@ -393,17 +393,44 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
       console.log(`  URL imagen: ${issue.imageUrl}`);
     }
     
+    // Crear una celda con imagen ajustada a tamaño consistente
     const imageCell = hasImage ? 
-      `<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
-        <img src="${issue.imageUrl}" alt="Imagen de incidencia" style="max-width: 100px; max-height: 100px; border-radius: 4px;" />
+      `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; width: 120px; height: 120px;">
+        <img src="${issue.imageUrl}" alt="Imagen de incidencia" 
+          style="max-width: 100px; max-height: 100px; width: auto; height: auto; object-fit: contain; border-radius: 4px;" />
       </td>` : 
-      `<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">Sin imagen</td>`;
+      `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; width: 120px; height: 120px;">
+        <div style="color: #888; font-style: italic;">Sin imagen</div>
+      </td>`;
     
+    // Formatear la fecha si existe
+    const formattedDate = issue.timestamp 
+      ? new Date(issue.timestamp).toLocaleDateString('es-ES', { 
+          day: '2-digit', 
+          month: 'long', 
+          year: 'numeric' 
+        })
+      : '-';
+    
+    // Generar la fila completa con más detalles de la incidencia
     return `
       <tr>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.id}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.message}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${formatStatus(issue.status)}</td>
+        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${issue.id}</td>
+        <td style="padding: 10px; border: 1px solid #ddd;">
+          <div style="font-weight: bold; margin-bottom: 4px;">${issue.message}</div>
+          <div style="font-size: 12px; color: #666;">Creada: ${formattedDate}</div>
+          ${issue.securityImprovement ? `<div style="font-size: 12px; margin-top: 8px;"><strong>Mejora propuesta:</strong> ${issue.securityImprovement}</div>` : ''}
+          ${issue.actionPlan ? `<div style="font-size: 12px; margin-top: 4px;"><strong>Plan de acción:</strong> ${issue.actionPlan}</div>` : ''}
+        </td>
+        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+          <span style="display: inline-block; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: bold; 
+            ${issue.status === 'en-estudio' ? 'background-color: #EEF2FF; color: #4F46E5;' : 
+             issue.status === 'en-curso' ? 'background-color: #FEF3C7; color: #D97706;' :
+             issue.status === 'cerrada' ? 'background-color: #D1FAE5; color: #059669;' :
+             'background-color: #FEE2E2; color: #DC2626;'}">
+            ${formatStatus(issue.status)}
+          </span>
+        </td>
         <td style="padding: 10px; border: 1px solid #ddd;">${issue.area || '-'}</td>
         <td style="padding: 10px; border: 1px solid #ddd;">${issue.responsable || '-'}</td>
         ${imageCell}
@@ -482,12 +509,12 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
               <tr style="background-color: #f8fafc;">
-                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">ID</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; width: 50px;">ID</th>
                 <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Descripción</th>
-                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Estado</th>
-                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Área</th>
-                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Responsable</th>
-                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">Imagen</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; width: 100px;">Estado</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left; width: 120px;">Área</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left; width: 120px;">Responsable</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center; width: 120px;">Imagen</th>
               </tr>
             </thead>
             <tbody>

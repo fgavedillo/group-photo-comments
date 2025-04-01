@@ -18,16 +18,31 @@ const resend = new Resend(RESEND_API_KEY);
 const generateIssuesSummaryHtml = (issues: Issue[]): string => {
   const issuesList = issues
     .map(
-      (issue) => `
-      <tr>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.id}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.message}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.status}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.area || '-'}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.responsable || '-'}</td>
-        <td style="padding: 10px; border: 1px solid #ddd;">${issue.assignedEmail || '-'}</td>
-      </tr>
-    `
+      (issue) => {
+        // Verificar si existe una URL de imagen válida
+        const hasImage = issue.imageUrl && typeof issue.imageUrl === 'string' && 
+                      (issue.imageUrl.startsWith('http://') || issue.imageUrl.startsWith('https://'));
+        
+        // Celda de imagen con tamaño consistente
+        const imageCell = hasImage ? 
+          `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; width: 100px;">
+            <img src="${issue.imageUrl}" alt="Imagen de incidencia" 
+              style="max-width: 80px; max-height: 80px; width: auto; height: auto; object-fit: contain; border-radius: 4px;" />
+          </td>` : 
+          `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; width: 100px;">-</td>`;
+        
+        return `
+        <tr>
+          <td style="padding: 10px; border: 1px solid #ddd;">${issue.id}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${issue.message}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${issue.status}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${issue.area || '-'}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${issue.responsable || '-'}</td>
+          <td style="padding: 10px; border: 1px solid #ddd;">${issue.assignedEmail || '-'}</td>
+          ${imageCell}
+        </tr>
+      `;
+      }
     )
     .join('');
 
@@ -46,6 +61,7 @@ const generateIssuesSummaryHtml = (issues: Issue[]): string => {
               <th style="padding: 10px; border: 1px solid #ddd;">Área</th>
               <th style="padding: 10px; border: 1px solid #ddd;">Responsable</th>
               <th style="padding: 10px; border: 1px solid #ddd;">Email Asignado</th>
+              <th style="padding: 10px; border: 1px solid #ddd;">Imagen</th>
             </tr>
           </thead>
           <tbody>

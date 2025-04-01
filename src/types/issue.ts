@@ -1,3 +1,4 @@
+
 /**
  * Tipo que define la estructura de una incidencia en la aplicación
  * Representa un problema o situación reportada por un usuario
