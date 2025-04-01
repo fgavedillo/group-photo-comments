@@ -1,3 +1,4 @@
+
 /**
  * Hook personalizado para gestionar la carga y actualización de mensajes/incidencias
  * Proporciona acceso a los mensajes desde la base de datos y suscripción a actualizaciones en tiempo real
@@ -7,6 +8,7 @@ import { Message } from "@/types/message";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { decodeQuotedPrintable } from "@/utils/stringUtils";
+import { realtimeManager } from "@/lib/realtimeManager";
 
 /**
  * Hook para gestionar la carga de mensajes desde la base de datos
@@ -109,55 +111,30 @@ export const useMessages = () => {
     // Cargar mensajes inicialmente
     loadMessages();
 
-    // Configurar suscripción a cambios en tiempo real para todas las tablas relevantes
-    const channel = supabase
-      .channel('table-changes')
-      // Escuchar cambios en la tabla issues
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Todos los eventos (insert, update, delete)
-          schema: 'public',
-          table: 'issues'
-        },
-        (payload) => {
-          console.log('Cambio detectado en issues:', payload);
-          loadMessages(); // Recargar mensajes cuando haya cambios
-        }
-      )
-      // Escuchar cambios en la tabla issue_images
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'issue_images'
-        },
-        (payload) => {
-          console.log('Cambio detectado en issue_images:', payload);
-          loadMessages();
-        }
-      )
-      // Escuchar cambios en la tabla profiles
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'profiles'
-        },
-        (payload) => {
-          console.log('Cambio detectado en profiles:', payload);
-          loadMessages();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Estado de la suscripción:', status);
-      });
+    // Suscribirse a cambios en tiempo real usando el gestor centralizado
+    const cleanupIssues = realtimeManager.subscribe(
+      'messages-changes',
+      { event: '*', table: 'issues' },
+      () => loadMessages()
+    );
+    
+    const cleanupImages = realtimeManager.subscribe(
+      'messages-changes',
+      { event: '*', table: 'issue_images' },
+      () => loadMessages()
+    );
+    
+    const cleanupProfiles = realtimeManager.subscribe(
+      'messages-changes',
+      { event: '*', table: 'profiles' },
+      () => loadMessages()
+    );
 
-    // Limpiar la suscripción cuando el componente se desmonte
+    // Limpiar suscripciones cuando el componente se desmonte
     return () => {
-      supabase.removeChannel(channel);
+      cleanupIssues();
+      cleanupImages();
+      cleanupProfiles();
     };
   }, [loadMessages]);
 

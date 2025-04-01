@@ -106,25 +106,24 @@ port = 54326
 
 # Define timeout for functions
 [functions.timeout]
-default = 90
+default_seconds = 90
 
 # Import maps for functions
-[[functions.import_map]]
+[[functions.import_maps]]
 name = "deno.land"
 prefix = "https://deno.land/"
 
-[[functions.import_map]]
+[[functions.import_maps]]
 name = "npm"
 prefix = "npm:"
 
 # Configure functions
 [[functions.function]]
 name = "send-report-email"
-path = "/send-report-email"
-method = "POST"
+verify_jwt = false
+http_method = "POST"
 
 [[functions.function]]
 name = "notify-admin"
-path = "/notify-admin"
-method = "POST"
-
+verify_jwt = false
+http_method = "POST"

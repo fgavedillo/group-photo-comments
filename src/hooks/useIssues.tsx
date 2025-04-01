@@ -1,11 +1,13 @@
+
 /**
  * Hook personalizado para gestionar la carga y actualización de incidencias
  * Proporciona acceso a las incidencias desde la base de datos y suscripción a actualizaciones en tiempo real
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabase";
 import { Issue } from "@/types/issue";
+import { realtimeManager } from "@/lib/realtimeManager";
 
 /**
  * Hook que proporciona acceso a las incidencias y funcionalidad para gestionarlas
@@ -30,7 +32,7 @@ export const useIssues = () => {
   /**
    * Carga las incidencias desde la base de datos y las formatea para su uso en la aplicación
    */
-  const loadIssues = async () => {
+  const loadIssues = useCallback(async () => {
     try {
       // Verificar que el usuario esté autenticado
       const { data: { session } } = await supabase.auth.getSession();
@@ -57,7 +59,7 @@ export const useIssues = () => {
         return;
       }
 
-      console.log('Fetched issues:', issuesData);
+      console.log('Fetched issues:', issuesData.length);
 
       // Transformar los datos de la base de datos al formato de Issue
       const formattedIssues: Issue[] = issuesData.map(issue => ({
@@ -85,38 +87,37 @@ export const useIssues = () => {
         variant: "destructive"
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     // Cargar incidencias inicialmente
     loadIssues();
 
-    // Configurar suscripción a cambios en tiempo real para la tabla de incidencias
-    const channel = supabase
-      .channel('issues-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*', // Todos los eventos (insert, update, delete)
-          schema: 'public',
-          table: 'issues'
-        },
-        (payload) => {
-          console.log('Received realtime update:', payload);
-          // Recargar inmediatamente cuando hay cambios
-          loadIssues();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime subscription status:', status);
-      });
+    // Suscribirse a cambios en tiempo real usando el gestor centralizado
+    const cleanupIssues = realtimeManager.subscribe(
+      'issues-changes',
+      { event: '*', table: 'issues' },
+      (payload) => {
+        console.log('Received realtime update for issues:', payload);
+        loadIssues();
+      }
+    );
+    
+    const cleanupImages = realtimeManager.subscribe(
+      'issues-changes',
+      { event: '*', table: 'issue_images' },
+      (payload) => {
+        console.log('Received realtime update for issue_images:', payload);
+        loadIssues();
+      }
+    );
 
-    // Limpiar la suscripción cuando el componente se desmonte
+    // Limpiar suscripciones cuando el componente se desmonte
     return () => {
-      console.log('Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
+      cleanupIssues();
+      cleanupImages();
     };
-  }, []);
+  }, [loadIssues]);
 
   return { issues, loadIssues };
 };
