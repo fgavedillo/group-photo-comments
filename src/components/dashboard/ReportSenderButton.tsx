@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { sendIssuesSummary } from '@/services/emailService';
 import { Issue } from '@/types/issue';
 
 export function ReportSenderButton() {
@@ -53,30 +52,43 @@ export function ReportSenderButton() {
 
       console.log('Emails asignados encontrados:', assignedEmails);
 
-      // Transformar los datos para que coincidan con el tipo Issue
-      // Asegurarnos de que las propiedades coincidan con el tipo Issue
-      const formattedIssues: Issue[] = issues.map(issue => ({
+      // Transformar los datos para que coincidan con el formato esperado por la edge function
+      const formattedIssues = issues.map(issue => ({
         id: issue.id,
         message: issue.message,
-        timestamp: new Date(issue.timestamp || ''), // Convertir string a Date
+        timestamp: issue.timestamp,
         username: issue.username,
-        status: issue.status as Issue['status'],
-        securityImprovement: issue.security_improvement || undefined,
-        actionPlan: issue.action_plan || undefined,
-        assignedEmail: issue.assigned_email || undefined, // Mapear assigned_email a assignedEmail
-        area: issue.area || undefined,
-        responsable: issue.responsable || undefined,
+        status: issue.status,
+        securityImprovement: issue.security_improvement,
+        actionPlan: issue.action_plan,
+        assignedEmail: issue.assigned_email,
+        area: issue.area,
+        responsable: issue.responsable,
         user_id: issue.user_id,
-        imageUrl: undefined,
         url_key: issue.url_key
       }));
 
-      // Enviar el resumen por email
-      await sendIssuesSummary(formattedIssues);
+      console.log('Llamando a la edge function para enviar el email...');
+      
+      // Llamar a la edge function
+      const { data, error } = await supabase.functions.invoke('send-report-email', {
+        body: { issues: formattedIssues }
+      });
+
+      if (error) {
+        console.error('Error al llamar a la edge function:', error);
+        throw new Error(`Error al enviar el email: ${error.message}`);
+      }
+
+      console.log('Respuesta de la edge function:', data);
+
+      if (!data.success) {
+        throw new Error(data.error || 'Error desconocido al enviar el email');
+      }
 
       toast({
         title: "Resumen enviado",
-        description: `Email enviado correctamente a ${assignedEmails.length} destinatarios`,
+        description: data.message || `Email enviado correctamente a ${assignedEmails.length} destinatarios`,
       });
     } catch (error) {
       console.error('Error detallado:', error);
