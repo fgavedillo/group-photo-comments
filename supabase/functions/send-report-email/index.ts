@@ -25,7 +25,7 @@ interface Issue {
   responsable?: string;
   user_id?: string;
   url_key?: string;
-  imageUrl?: string; // Añadido para incluir las imágenes
+  imageUrl?: string; // URL de la imagen de la incidencia
 }
 
 // Función de ayuda para loggear información de depuración
@@ -234,11 +234,12 @@ function generateStatusChartSVG(issues: Issue[]): string {
   const total = issues.length;
   let currentX = 0;
   const barHeight = 30;
-  const width = 800;
+  const width = 600;
   const segments = Object.entries(statusCount).map(([status, count]) => {
     const segmentWidth = Math.round((count / total) * width);
     const segment = {
       status,
+      count,
       width: segmentWidth,
       x: currentX,
       color: colors[status] || '#6B7280'
@@ -247,17 +248,21 @@ function generateStatusChartSVG(issues: Issue[]): string {
     return segment;
   });
   
-  // Generar el SVG inline
+  // Generar el SVG inline con números y porcentajes
   return `
     <svg width="${width}" height="${barHeight + 60}" xmlns="http://www.w3.org/2000/svg">
       <style>
         .chart-label { font: 12px Arial; fill: #333; }
         .chart-pct { font: bold 12px Arial; fill: #333; text-anchor: middle; }
+        .chart-count { font: 11px Arial; fill: white; text-anchor: middle; dominant-baseline: middle; }
       </style>
       ${segments.map(segment => `
         <g>
           <rect x="${segment.x}" y="0" width="${segment.width}" height="${barHeight}" fill="${segment.color}" />
           ${segment.width > 40 ? `
+            <text x="${segment.x + segment.width/2}" y="${barHeight/2}" class="chart-count">
+              ${segment.count}
+            </text>
             <text x="${segment.x + segment.width/2}" y="${barHeight + 20}" class="chart-label">
               ${formatStatus(segment.status)}
             </text>
@@ -272,11 +277,103 @@ function generateStatusChartSVG(issues: Issue[]): string {
 }
 
 /**
+ * Genera gráfico de distribución por área
+ */
+function generateAreaChartSVG(issues: Issue[]): string {
+  const areaCount: Record<string, number> = {};
+  
+  // Contar incidencias por área
+  issues.forEach(issue => {
+    const area = issue.area || 'Sin asignar';
+    areaCount[area] = (areaCount[area] || 0) + 1;
+  });
+  
+  // Si hay demasiadas áreas, limitar a las 5 principales
+  let entries = Object.entries(areaCount).sort((a, b) => b[1] - a[1]);
+  const totalAreas = entries.length;
+  
+  if (entries.length > 5) {
+    const otrosCount = entries.slice(4).reduce((sum, [, count]) => sum + count, 0);
+    entries = entries.slice(0, 4);
+    entries.push(['Otros', otrosCount]);
+  }
+  
+  // Colores para el gráfico de áreas
+  const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#6B7280'];
+  
+  // Crear gráfico de donut
+  const radius = 80;
+  const centerX = 100;
+  const centerY = 100;
+  let startAngle = 0;
+  const total = issues.length;
+  
+  const segments = entries.map(([area, count], index) => {
+    const percentage = count / total;
+    const endAngle = startAngle + percentage * 2 * Math.PI;
+    
+    // Coordenadas para el arco SVG
+    const x1 = centerX + radius * Math.cos(startAngle);
+    const y1 = centerY + radius * Math.sin(startAngle);
+    const x2 = centerX + radius * Math.cos(endAngle);
+    const y2 = centerY + radius * Math.sin(endAngle);
+    
+    // Determinar si es un arco largo (más de 180 grados)
+    const largeArcFlag = percentage > 0.5 ? 1 : 0;
+    
+    // Coordenadas para las etiquetas
+    const labelAngle = startAngle + (percentage * Math.PI);
+    const labelRadius = radius * 1.35;
+    const labelX = centerX + labelRadius * Math.cos(labelAngle);
+    const labelY = centerY + labelRadius * Math.sin(labelAngle);
+    
+    const result = {
+      area,
+      count,
+      percentage,
+      path: `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`,
+      color: colors[index % colors.length],
+      labelX,
+      labelY
+    };
+    
+    startAngle = endAngle;
+    return result;
+  });
+  
+  // Generar el SVG
+  return `
+    <svg width="200" height="300" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .chart-label { font: 10px Arial; fill: #333; }
+        .chart-value { font: bold 10px Arial; fill: #333; }
+      </style>
+      ${segments.map(segment => `
+        <path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="1" />
+      `).join('')}
+      
+      <circle cx="${centerX}" cy="${centerY}" r="${radius*0.6}" fill="white" />
+      
+      <text x="${centerX}" y="${centerY-8}" text-anchor="middle" class="chart-label">Total</text>
+      <text x="${centerX}" y="${centerY+12}" text-anchor="middle" class="chart-value">${total}</text>
+      
+      <g transform="translate(0, 220)">
+        ${segments.map((segment, i) => `
+          <rect x="10" y="${i*18}" width="12" height="12" fill="${segment.color}" />
+          <text x="30" y="${i*18+10}" class="chart-label">${segment.area} (${segment.count})</text>
+        `).join('')}
+      </g>
+    </svg>
+  `;
+}
+
+/**
  * Genera un HTML mejorado para el email, incluyendo dashboard y fotos
  */
 function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string {
-  // Generar SVG del gráfico de estados
+  // Generar SVG de los gráficos
   const statusChartSvg = generateStatusChartSVG(issues);
+  const areaChartSvg = generateAreaChartSVG(issues);
   
   // Generar filas para la tabla de incidencias con imágenes
   const issueRows = issues.map(issue => {
@@ -310,7 +407,7 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
     </head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
       <!-- Cabecera -->
-      <div style="background-color: #4F46E5; color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
+      <div style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; margin-bottom: 20px;">
         <h1 style="margin: 0; font-size: 24px;">Resumen de Incidencias Asignadas</h1>
         <p style="margin: 10px 0 0;">Generado el ${new Date().toLocaleDateString('es-ES', { 
           weekday: 'long', 
@@ -323,48 +420,59 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
       </div>
       
       <!-- Resumen del Dashboard -->
-      <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-        <h2 style="margin-top: 0; color: #4F46E5; font-size: 20px;">Resumen del Dashboard</h2>
+      <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <h2 style="margin-top: 0; color: #4F46E5; font-size: 20px; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px;">Resumen del Dashboard</h2>
         
         <div style="display: flex; margin-bottom: 20px; justify-content: space-between;">
-          <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; margin-right: 10px; text-align: center;">
+          <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; margin-right: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-size: 14px; margin: 0; color: #6B7280;">Total Incidencias</p>
-            <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">${issues.length}</p>
+            <p style="font-size: 24px; font-weight: bold; margin: 5px 0; color: #4F46E5;">${issues.length}</p>
           </div>
           
-          <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; margin-right: 10px; text-align: center;">
+          <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; margin-right: 10px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-size: 14px; margin: 0; color: #6B7280;">En Estudio</p>
-            <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">${issues.filter(i => i.status === 'en-estudio').length}</p>
+            <p style="font-size: 24px; font-weight: bold; margin: 5px 0; color: #4F46E5;">${issues.filter(i => i.status === 'en-estudio').length}</p>
           </div>
           
-          <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; text-align: center;">
+          <div style="flex: 1; background: white; padding: 15px; border-radius: 8px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <p style="font-size: 14px; margin: 0; color: #6B7280;">En Curso</p>
-            <p style="font-size: 24px; font-weight: bold; margin: 5px 0;">${issues.filter(i => i.status === 'en-curso').length}</p>
+            <p style="font-size: 24px; font-weight: bold; margin: 5px 0; color: #F59E0B;">${issues.filter(i => i.status === 'en-curso').length}</p>
           </div>
         </div>
         
-        <h3 style="margin-top: 0; color: #4F46E5; font-size: 16px;">Distribución por Estado</h3>
-        <div style="background: white; padding: 15px; border-radius: 8px; text-align: center;">
-          ${statusChartSvg}
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 280px; background: white; padding: 15px; border-radius: 8px; margin-right: 10px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #4F46E5; font-size: 16px; text-align: center;">Distribución por Estado</h3>
+            <div style="text-align: center;">
+              ${statusChartSvg}
+            </div>
+          </div>
+          
+          <div style="flex: 1; min-width: 280px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0; color: #4F46E5; font-size: 16px; text-align: center;">Distribución por Área</h3>
+            <div style="text-align: center;">
+              ${areaChartSvg}
+            </div>
+          </div>
         </div>
       </div>
       
       <!-- Tabla de Incidencias -->
-      <div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); margin-bottom: 20px;">
-        <h2 style="background-color: #f3f4f6; margin: 0; padding: 15px 20px; border-radius: 8px 8px 0 0; font-size: 18px; color: #4F46E5;">
+      <div style="background-color: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); margin-bottom: 20px; border: 1px solid #e2e8f0;">
+        <h2 style="background-color: #f8fafc; margin: 0; padding: 15px 20px; border-radius: 8px 8px 0 0; font-size: 18px; color: #4F46E5; border-bottom: 1px solid #e2e8f0;">
           Detalle de Incidencias
         </h2>
         
         <div style="padding: 0 20px 20px; overflow-x: auto;">
           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
             <thead>
-              <tr style="background-color: #f3f4f6;">
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">ID</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Descripción</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Estado</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Área</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: left;">Responsable</th>
-                <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Imagen</th>
+              <tr style="background-color: #f8fafc;">
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">ID</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Descripción</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Estado</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Área</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: left;">Responsable</th>
+                <th style="padding: 10px; border: 1px solid #e2e8f0; text-align: center;">Imagen</th>
               </tr>
             </thead>
             <tbody>
@@ -375,7 +483,7 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
       </div>
       
       <!-- Pie -->
-      <div style="background-color: #f3f4f6; color: #6B7280; padding: 15px; border-radius: 8px; font-size: 14px; text-align: center;">
+      <div style="background-color: #f8fafc; color: #6B7280; padding: 15px; border-radius: 8px; font-size: 14px; text-align: center; border: 1px solid #e2e8f0;">
         <p style="margin: 0;">Este es un email automático del sistema de gestión de incidencias de PRLconecta.</p>
         <p style="margin: 10px 0 0;">Por favor, no responda a este email.</p>
       </div>
