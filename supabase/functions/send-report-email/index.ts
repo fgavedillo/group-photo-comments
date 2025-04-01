@@ -29,9 +29,27 @@ serve(async (req) => {
 
   try {
     console.log('Iniciando función send-report-email');
-    const { issues } = await req.json();
     
-    if (!Array.isArray(issues) || issues.length === 0) {
+    // Obtener y validar el cuerpo de la solicitud
+    let reqBody;
+    try {
+      reqBody = await req.json();
+      console.log('Cuerpo de la solicitud recibido:', JSON.stringify(reqBody));
+    } catch (jsonError) {
+      console.error('Error al parsear JSON:', jsonError);
+      throw new Error('El cuerpo de la solicitud no es un JSON válido');
+    }
+    
+    const { issues } = reqBody;
+    
+    // Validar que issues sea un array
+    if (!Array.isArray(issues)) {
+      console.error('El campo issues no es un array:', issues);
+      throw new Error('El campo issues debe ser un array');
+    }
+    
+    if (issues.length === 0) {
+      console.error('El array de incidencias está vacío');
       throw new Error('No se proporcionaron incidencias para enviar');
     }
 
@@ -43,6 +61,7 @@ serve(async (req) => {
       .filter((email: string | undefined) => email && email.includes('@')))];
 
     if (uniqueEmails.length === 0) {
+      console.error('No hay destinatarios válidos en las incidencias');
       throw new Error('No hay destinatarios válidos para enviar el resumen');
     }
 
@@ -53,8 +72,11 @@ serve(async (req) => {
 
     // Verificar que tenemos la API key de Resend
     if (!RESEND_API_KEY) {
+      console.error('RESEND_API_KEY no está configurada');
       throw new Error('La API key de Resend no está configurada en las variables de entorno');
     }
+    
+    console.log('Enviando email usando Resend API...');
     
     // Enviar email usando la API de Resend directamente
     const res = await fetch('https://api.resend.com/emails', {
@@ -71,7 +93,11 @@ serve(async (req) => {
       }),
     });
 
+    const responseStatus = res.status;
+    console.log('Estado de respuesta de Resend:', responseStatus);
+    
     const data = await res.json();
+    console.log('Respuesta de Resend:', JSON.stringify(data));
     
     if (!res.ok) {
       console.error('Error de Resend:', data);

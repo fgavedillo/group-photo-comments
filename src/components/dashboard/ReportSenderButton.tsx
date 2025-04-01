@@ -69,21 +69,25 @@ export function ReportSenderButton() {
       }));
 
       console.log('Llamando a la edge function para enviar el email...');
+      console.log('URL de la edge function:', 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-report-email');
       
-      // Llamar a la edge function
+      // Llamar a la edge function con más detalles de logging
       const { data, error } = await supabase.functions.invoke('send-report-email', {
         body: { issues: formattedIssues }
       });
 
       if (error) {
-        console.error('Error al llamar a la edge function:', error);
+        console.error('Error detallado al llamar a la edge function:', error);
+        console.error('Mensaje de error:', error.message);
+        console.error('Código de error:', error.code);
+        console.error('Detalles:', error.details);
         throw new Error(`Error al enviar el email: ${error.message}`);
       }
 
-      console.log('Respuesta de la edge function:', data);
+      console.log('Respuesta completa de la edge function:', data);
 
-      if (!data.success) {
-        throw new Error(data.error || 'Error desconocido al enviar el email');
+      if (!data || !data.success) {
+        throw new Error(data?.error || 'Error desconocido al enviar el email');
       }
 
       toast({
