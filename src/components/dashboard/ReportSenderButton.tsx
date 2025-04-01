@@ -141,12 +141,16 @@ export function ReportSenderButton() {
       
       // Opción 2: Usando fetch directo (fallback)
       console.log('Intentando enviar con fetch directo...');
+      
+      // Obtener el token de sesión actual
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token || '';
+      
       const response = await fetch(functionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`,
-          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({ 
           issues: formattedIssues,

@@ -104,11 +104,11 @@ backend = "postgres"
 enabled = true
 port = 54326
 
-# Timeout for functions (in seconds)
+# Define default timeout for functions in seconds
 [functions.timeout]
 default = 90
 
-# Allow importing specific modules
+# Import maps for functions
 [[functions.import_map]]
 name = "deno.land"
 prefix = "https://deno.land/"
@@ -117,7 +117,7 @@ prefix = "https://deno.land/"
 name = "npm"
 prefix = "npm:"
 
-# Configure routes for specific functions
+# Configure functions
 [[functions.function]]
 name = "send-report-email"
 path = "/send-report-email"
