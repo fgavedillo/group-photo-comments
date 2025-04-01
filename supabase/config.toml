@@ -38,7 +38,6 @@ max_client_conn = 100
 
 [realtime]
 enabled = true
-# Realtime log level.
 log_level = "warn"
 
 [studio]
@@ -103,7 +102,7 @@ vector_port = 54328
 backend = "postgres"
 
 # Configure rate limiting for the API. Protects the DB against spikes in traffic.
-[analytics.rate_limits]
+[[analytics.rate_limits]]
 # Configure the rate limit. Format: `<limit>:<duration>`.
 # Example: 10:1s - 10 requests per 1 second.
 # For pending queries limits the rate at which queries can be enqueued.
@@ -134,4 +133,3 @@ callback = "send-report-email"
 path = "/notify-admin"
 method = "POST"
 callback = "notify-admin"
-
