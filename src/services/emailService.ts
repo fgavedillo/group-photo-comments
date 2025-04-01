@@ -2,12 +2,14 @@
 import { Resend } from 'resend';
 import { Issue } from '@/types/issue';
 
+// Usar una variable de entorno para la API key de Resend
 const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
 
 if (!RESEND_API_KEY) {
   throw new Error('La API key de Resend no está configurada en las variables de entorno');
 }
 
+// Inicializar Resend con mejor manejo de errores
 const resend = new Resend(RESEND_API_KEY);
 
 /**
@@ -87,6 +89,10 @@ export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
     const html = generateIssuesSummaryHtml(issues);
 
     try {
+      console.log('Intentando enviar email con Resend a:', uniqueEmails);
+      console.log('API Key presente:', !!RESEND_API_KEY);
+      
+      // Intentar el envío con mejor diagnóstico
       const { data, error } = await resend.emails.send({
         from: 'PRLconecta <team@prlconecta.es>',
         to: uniqueEmails,
@@ -95,13 +101,15 @@ export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
       });
 
       if (error) {
+        console.error('Error detallado de Resend:', error);
         throw error;
       }
 
+      console.log('Respuesta de Resend:', data);
       console.log('Email de resumen enviado correctamente a:', uniqueEmails);
     } catch (resendError) {
-      console.error('Error de Resend:', resendError);
-      throw new Error('Error al enviar el email a través de Resend');
+      console.error('Error detallado de Resend:', resendError);
+      throw new Error('Error al enviar el email a través de Resend: ' + (resendError.message || 'Error desconocido'));
     }
   } catch (error) {
     console.error('Error detallado al enviar el email:', error);

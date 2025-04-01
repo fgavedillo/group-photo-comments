@@ -14,6 +14,7 @@ export function ReportSenderButton() {
   const handleSendReport = async () => {
     try {
       setIsSending(true);
+      console.log('Iniciando envío de resumen...');
 
       // Obtener incidencias abiertas
       const { data: issues, error: supabaseError } = await supabase
@@ -34,6 +35,8 @@ export function ReportSenderButton() {
         return;
       }
 
+      console.log('Incidencias obtenidas:', issues.length);
+
       // Verificar que hay emails asignados
       const assignedEmails = issues
         .map(issue => issue.assigned_email)
@@ -47,6 +50,8 @@ export function ReportSenderButton() {
         });
         return;
       }
+
+      console.log('Emails asignados encontrados:', assignedEmails);
 
       // Transformar los datos para que coincidan con el tipo Issue
       const formattedIssues: Issue[] = issues.map(issue => ({
