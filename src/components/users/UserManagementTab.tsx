@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import supabase from '@/lib/supabaseClient';
 import { Button } from '@/components/ui/button';
@@ -187,11 +186,11 @@ export const UserManagementTab = () => {
     }
 
     try {
-      // In a real app, here we would send an invitation email
-      // For now we'll just show a success message
+      // Simulación de invitación de usuario (sin envío de email)
+      // Solo muestra un mensaje de éxito en la interfaz
       toast({
         title: 'Invitación enviada',
-        description: `Se ha enviado una invitación a ${newUserEmail}`,
+        description: `Se ha registrado una invitación para ${newUserEmail}`,
       });
 
       setNewUserEmail('');

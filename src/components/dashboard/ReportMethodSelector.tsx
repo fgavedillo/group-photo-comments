@@ -1,24 +1,17 @@
 
 import { Button } from "@/components/ui/button";
 
-interface ReportMethodSelectorProps {
-  useResend: boolean;
-  toggleSendMethod: () => void;
-}
-
-export const ReportMethodSelector = ({ 
-  useResend, 
-  toggleSendMethod 
-}: ReportMethodSelectorProps) => {
+// Este componente mantiene la interfaz pero sin funcionalidad
+export const ReportMethodSelector = () => {
   return (
     <Button
       variant="ghost" 
       size="sm"
-      onClick={toggleSendMethod}
       className="text-xs"
-      title={`Actualmente usando: ${useResend ? 'Resend' : 'EmailJS'}`}
+      title="Funcionalidad deshabilitada"
+      disabled
     >
-      Usar {useResend ? 'EmailJS' : 'Resend'}
+      Envío deshabilitado
     </Button>
   );
 };

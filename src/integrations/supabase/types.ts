@@ -316,6 +316,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      send_email: {
+        Args: {
+          to_emails: string[]
+          subject: string
+          html_content: string
+        }
+        Returns: undefined
+      }
+      send_issues_report_email: {
+        Args: {
+          issues_data: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "pending"
