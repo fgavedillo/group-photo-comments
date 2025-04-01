@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useRef, useState, useEffect } from "react";
 import { ReportButton } from "@/components/dashboard/ReportButton";
+import { ReportSenderButton } from "@/components/dashboard/ReportSenderButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { UserManagementTab } from "@/components/users/UserManagementTab";
 
@@ -83,7 +84,10 @@ const Dashboard = () => {
         </h1>
         <div className="flex items-center gap-3">
           {currentTab === "kpis" && (
-            <ReportButton dashboardRef={dashboardRef} issuesTableRef={tableRef} />
+            <>
+              <ReportButton dashboardRef={dashboardRef} issuesTableRef={tableRef} />
+              <ReportSenderButton />
+            </>
           )}
           <Button variant="outline" size="sm" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />

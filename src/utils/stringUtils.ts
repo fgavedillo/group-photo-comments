@@ -1,12 +1,18 @@
+/**
+ * Utilidades para el procesamiento de texto y URLs
+ */
 
 /**
- * Decodes text in quoted-printable format, removing characters like =20
- * that commonly appear in emails
+ * Decodifica texto en formato quoted-printable, eliminando caracteres especiales
+ * que comúnmente aparecen en textos codificados para transmisión
+ * 
+ * @param text - El texto codificado a decodificar
+ * @returns El texto decodificado y limpio
  */
 export const decodeQuotedPrintable = (text: string): string => {
   if (!text) return '';
   
-  // Replace encoded characters like =20 (space)
+  // Reemplaza caracteres codificados como =20 (espacio)
   let decoded = text.replace(/=([0-9A-F]{2})/gi, (match, hex) => {
     try {
       return String.fromCharCode(parseInt(hex, 16));
@@ -15,41 +21,44 @@ export const decodeQuotedPrintable = (text: string): string => {
     }
   });
   
-  // Replace encoded line breaks
+  // Reemplaza saltos de línea codificados
   decoded = decoded.replace(/=\r\n/g, '');
   decoded = decoded.replace(/=\n/g, '');
   
-  // Completely remove all instances of =20 characters and any = followed by whitespace
+  // Elimina completamente todas las instancias de caracteres =20 y cualquier = seguido de espacios
   decoded = decoded.replace(/=20+/g, ' ');
   decoded = decoded.replace(/=\s*/g, '');
   
-  // Replace other problematic characters common in emails
+  // Reemplaza otros caracteres problemáticos comunes en textos codificados
   decoded = decoded.replace(/&nbsp;/g, ' ');
   decoded = decoded.replace(/null/g, '');
   decoded = decoded.replace(/undefined/g, '');
   
-  // Clean up excessive whitespace
+  // Limpia el exceso de espacios en blanco
   decoded = decoded.replace(/\s+/g, ' ').trim();
   
   return decoded;
 };
 
 /**
- * Detects and converts URLs in plain text to clickable HTML links
- * using absolute URLs with the correct domain
+ * Detecta y convierte URLs en texto plano a enlaces HTML clicables
+ * usando URLs absolutas con el dominio correcto
+ * 
+ * @param text - El texto que puede contener URLs
+ * @returns Texto HTML con enlaces clicables
  */
 export const linkifyText = (text: string): string => {
   if (!text) return '';
   
-  // Get the base domain from the browser window
+  // Obtiene el dominio base del navegador
   const baseDomain = typeof window !== 'undefined' ? window.location.origin : '';
   
-  // Regular expression to detect URLs
+  // Expresión regular para detectar URLs
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   
-  // Replace URLs with HTML links
+  // Reemplaza URLs con enlaces HTML
   const linkedText = text.replace(urlRegex, (url) => {
-    // If the URL contains incidencias.lingotes.com, replace it with the correct URL
+    // Si la URL contiene un dominio específico, lo reemplaza con el correcto
     let correctedUrl = url;
     if (url.includes('incidencias.lingotes.com')) {
       correctedUrl = url.replace('incidencias.lingotes.com', baseDomain.replace(/^https?:\/\//, ''));
@@ -62,11 +71,14 @@ export const linkifyText = (text: string): string => {
 };
 
 /**
- * Creates an absolute URL based on the current path
+ * Crea una URL absoluta basada en la ruta actual
+ * 
+ * @param path - La ruta relativa
+ * @returns URL absoluta incluyendo el dominio
  */
 export const getAbsoluteUrl = (path: string): string => {
   const baseDomain = typeof window !== 'undefined' ? window.location.origin : '';
-  // Make sure the path starts with /
+  // Asegura que la ruta comience con /
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${baseDomain}${normalizedPath}`;
 };
