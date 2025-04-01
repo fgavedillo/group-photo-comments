@@ -36,7 +36,7 @@ export function ReportSenderButton() {
 
       // Verificar que hay emails asignados
       const assignedEmails = issues
-        .map(issue => issue.assignedEmail)
+        .map(issue => issue.assigned_email)
         .filter(email => email && email.includes('@'));
 
       if (assignedEmails.length === 0) {
@@ -48,8 +48,25 @@ export function ReportSenderButton() {
         return;
       }
 
+      // Transformar los datos para que coincidan con el tipo Issue
+      const formattedIssues: Issue[] = issues.map(issue => ({
+        id: issue.id,
+        message: issue.message,
+        timestamp: new Date(issue.timestamp || ''),
+        username: issue.username,
+        status: issue.status as Issue['status'],
+        securityImprovement: issue.security_improvement || undefined,
+        actionPlan: issue.action_plan || undefined,
+        assignedEmail: issue.assigned_email || undefined,
+        area: issue.area || undefined,
+        responsable: issue.responsable || undefined,
+        user_id: issue.user_id,
+        imageUrl: undefined,
+        url_key: issue.url_key
+      }));
+
       // Enviar el resumen por email
-      await sendIssuesSummary(issues as Issue[]);
+      await sendIssuesSummary(formattedIssues);
 
       toast({
         title: "Resumen enviado",
