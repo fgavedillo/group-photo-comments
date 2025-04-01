@@ -5,10 +5,8 @@ import { Resend } from "npm:resend@1.1.0";
 const resendApiKey = Deno.env.get('RESEND_API_KEY');
 const resend = new Resend(resendApiKey);
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+// Importación del archivo compartido de CORS
+import { corsHeaders } from "../_shared/cors.ts";
 
 interface Issue {
   id: number;
@@ -33,11 +31,14 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Iniciando función send-report-email');
     const { issues } = await req.json();
     
     if (!Array.isArray(issues) || issues.length === 0) {
       throw new Error('No se proporcionaron incidencias para enviar');
     }
+
+    console.log(`Procesando ${issues.length} incidencias`);
 
     // Obtener emails únicos de las incidencias
     const uniqueEmails = [...new Set(issues
@@ -48,10 +49,15 @@ serve(async (req) => {
       throw new Error('No hay destinatarios válidos para enviar el resumen');
     }
 
+    console.log('Destinatarios del email:', uniqueEmails);
+    
     // Generar el HTML para el email
     const html = generateIssuesSummaryHtml(issues);
 
-    console.log('Enviando email a:', uniqueEmails);
+    // Verificar que tenemos la API key de Resend
+    if (!resendApiKey) {
+      throw new Error('La API key de Resend no está configurada en las variables de entorno');
+    }
     
     // Enviar el email usando Resend
     const { data, error } = await resend.emails.send({
