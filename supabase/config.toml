@@ -100,37 +100,30 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`
 backend = "postgres"
 
-# Configure rate limiting for the API. Protects the DB against spikes in traffic.
-[analytics.rate_limits]
-# Configure the rate limit. Format: `<limit>:<duration>`.
-# Example: 10:1s - 10 requests per 1 second.
-# For pending queries limits the rate at which queries can be enqueued.
-# For running queries limits the rate at which queries can be issued per user.
-# Rate limiting can be disabled by using 'off' as the value.
-queries_pending = "1000:1h"
-queries_running = "100:1m"
-
 [functions]
 enabled = true
 port = 54326
-# Call function URL.
-function_port = 54325
 
-[[functions.allowed_import_prefixes]]
-value = "https://deno.land/"
-
-[[functions.allowed_import_prefixes]]
-value = "npm:"
-
+# Timeout for functions (in seconds)
 [functions.timeout]
-value = 90
+default = 90
 
-[[functions.routes]]
+# Allow importing specific modules
+[[functions.import_map]]
+name = "deno.land"
+prefix = "https://deno.land/"
+
+[[functions.import_map]]
+name = "npm"
+prefix = "npm:"
+
+# Configure routes for specific functions
+[[functions.function]]
+name = "send-report-email"
 path = "/send-report-email"
 method = "POST"
-callback = "send-report-email"
 
-[[functions.routes]]
+[[functions.function]]
+name = "notify-admin"
 path = "/notify-admin"
 method = "POST"
-callback = "notify-admin"
