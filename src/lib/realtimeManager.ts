@@ -6,7 +6,8 @@
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
-type SubscriptionCallback = (payload: RealtimePostgresChangesPayload<any>) => void;
+// Make the payload type more flexible to handle different payload types
+type SubscriptionCallback = (payload: any) => void;
 type TableEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
 interface SubscriptionOptions {
