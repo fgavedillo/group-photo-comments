@@ -22,10 +22,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   global: {
     // Add better fetch options for improved reliability
     fetch: (url, options = {}) => {
+      // Create a new options object with the existing options
       const fetchOptions = {
         ...options,
         headers: {
-          ...options.headers,
+          ...((options as Record<string, any>).headers || {})
         },
       };
       return fetch(url, fetchOptions);

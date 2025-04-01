@@ -3,10 +3,10 @@
  * Centralized manager for Supabase Realtime subscriptions
  * This helps prevent duplicate subscriptions and memory leaks
  */
-import { RealtimeChannel } from '@supabase/supabase-js';
+import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 
-type SubscriptionCallback = (payload: any) => void;
+type SubscriptionCallback = (payload: RealtimePostgresChangesPayload<any>) => void;
 type TableEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 
 interface SubscriptionOptions {
@@ -50,8 +50,9 @@ class RealtimeManager {
       console.log(`Creating new realtime channel: ${channelName}`);
       const channel = supabase.channel(channelName);
       
+      // Use the correct type for the 'postgres_changes' event
       channel.on(
-        'postgres_changes',
+        'postgres_changes' as any, // Type assertion to fix TypeScript error
         {
           event,
           schema,
