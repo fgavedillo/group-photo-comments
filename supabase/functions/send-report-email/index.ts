@@ -4,9 +4,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Importación del archivo compartido de CORS
 import { corsHeaders } from "../_shared/cors.ts";
 
+// Obtener la API key de Resend de las variables de entorno
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-// Email registrado en Resend (usamos el email detectado en los logs)
+// Email registrado en Resend
 const RESEND_REGISTERED_EMAIL = "avedillo81@gmail.com";
+
+// Configuración para modo debug
+const DEBUG_MODE = true;
 
 interface Issue {
   id: number;
@@ -23,57 +27,86 @@ interface Issue {
   url_key?: string;
 }
 
+// Función de ayuda para loggear información de depuración
+const debugLog = (message: string, data?: any) => {
+  if (DEBUG_MODE) {
+    if (data) {
+      console.log(`DEBUG: ${message}`, typeof data === 'object' ? JSON.stringify(data, null, 2) : data);
+    } else {
+      console.log(`DEBUG: ${message}`);
+    }
+  }
+};
+
 serve(async (req) => {
   // Manejar solicitudes CORS preflight
   if (req.method === 'OPTIONS') {
+    debugLog("Recibida solicitud CORS OPTIONS");
     return new Response(null, { headers: corsHeaders });
   }
 
+  debugLog("=== INICIO DE LA FUNCIÓN EDGE ===");
+  debugLog(`Método de la solicitud: ${req.method}`);
+  debugLog(`Headers:`, Object.fromEntries(req.headers.entries()));
+
   try {
-    console.log('Iniciando función send-report-email');
+    // Verificar que tenemos la API key
+    if (!RESEND_API_KEY) {
+      throw new Error('La API key de Resend no está configurada en las variables de entorno');
+    }
+
+    debugLog(`API Key de Resend presente: ${RESEND_API_KEY ? "Sí (oculta)" : "No"}`);
     
     // Obtener y validar el cuerpo de la solicitud
     let reqBody;
+    const contentType = req.headers.get("content-type") || '';
+    debugLog(`Content-Type: ${contentType}`);
+    
     try {
-      reqBody = await req.json();
-      console.log('Cuerpo de la solicitud recibido:', JSON.stringify(reqBody));
-    } catch (jsonError) {
-      console.error('Error al parsear JSON:', jsonError);
-      throw new Error('El cuerpo de la solicitud no es un JSON válido');
+      const text = await req.text();
+      debugLog(`Cuerpo de la solicitud (texto): ${text.substring(0, 500)}${text.length > 500 ? '...' : ''}`);
+      
+      try {
+        reqBody = JSON.parse(text);
+        debugLog("Cuerpo de la solicitud parseado como JSON");
+      } catch (parseError) {
+        debugLog(`Error al parsear JSON: ${parseError.message}`);
+        throw new Error(`El cuerpo de la solicitud no es un JSON válido: ${parseError.message}`);
+      }
+    } catch (textError) {
+      debugLog(`Error al obtener el texto del cuerpo: ${textError.message}`);
+      throw new Error(`No se pudo leer el cuerpo de la solicitud: ${textError.message}`);
     }
     
     const { issues } = reqBody;
+    debugLog(`Datos de issues recibidos:`, issues);
     
     // Validar que issues sea un array
     if (!Array.isArray(issues)) {
-      console.error('El campo issues no es un array:', issues);
+      debugLog('El campo issues no es un array:', issues);
       throw new Error('El campo issues debe ser un array');
     }
     
     if (issues.length === 0) {
-      console.error('El array de incidencias está vacío');
+      debugLog('El array de incidencias está vacío');
       throw new Error('No se proporcionaron incidencias para enviar');
     }
 
-    console.log(`Procesando ${issues.length} incidencias`);
+    debugLog(`Procesando ${issues.length} incidencias`);
 
-    // Verificar que tenemos la API key de Resend
-    if (!RESEND_API_KEY) {
-      console.error('RESEND_API_KEY no está configurada');
-      throw new Error('La API key de Resend no está configurada en las variables de entorno');
-    }
-    
     // En modo prueba de Resend, solo podemos enviar al email registrado
     // En lugar de intentar enviar a múltiples destinatarios, generamos el informe
     // y lo enviamos solo al email registrado
     
     // Generar el HTML para el email
     const html = generateIssuesSummaryHtml(issues);
+    debugLog(`HTML generado correctamente (${html.length} caracteres)`);
     
-    console.log('Enviando email de resumen a:', RESEND_REGISTERED_EMAIL);
+    debugLog(`Enviando email a: ${RESEND_REGISTERED_EMAIL}`);
     
-    // Enviar email usando la API de Resend directamente, pero solo al email registrado
-    const res = await fetch('https://api.resend.com/emails', {
+    // Enviar email usando la API de Resend directamente
+    debugLog("Enviando solicitud a la API de Resend...");
+    const resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -87,15 +120,28 @@ serve(async (req) => {
       }),
     });
 
-    const responseStatus = res.status;
-    console.log('Estado de respuesta de Resend:', responseStatus);
+    const responseStatus = resendResponse.status;
+    const responseHeaders = Object.fromEntries(resendResponse.headers.entries());
+    debugLog(`Estado de respuesta de Resend: ${responseStatus}`);
+    debugLog(`Headers de respuesta:`, responseHeaders);
     
-    const data = await res.json();
-    console.log('Respuesta de Resend:', JSON.stringify(data));
+    let responseData;
+    try {
+      responseData = await resendResponse.json();
+      debugLog(`Respuesta de Resend:`, responseData);
+    } catch (jsonError) {
+      const textResponse = await resendResponse.text();
+      debugLog(`Error al parsear la respuesta como JSON. Respuesta en texto:`, textResponse);
+      responseData = { error: "No se pudo parsear la respuesta como JSON", raw: textResponse };
+    }
     
-    if (!res.ok) {
-      console.error('Error de Resend:', data);
-      throw new Error(`Error al enviar el email: ${data.message || JSON.stringify(data)}`);
+    if (!resendResponse.ok) {
+      debugLog(`Error de Resend (${responseStatus}):`, responseData);
+      throw new Error(`Error al enviar el email: ${
+        responseData.message || 
+        responseData.error?.message || 
+        JSON.stringify(responseData)
+      }`);
     }
 
     // Crear lista de emails que deberían haber recibido el informe
@@ -105,17 +151,24 @@ serve(async (req) => {
       .filter((email: string | undefined) => email && email.includes('@'));
     
     const uniqueEmails = [...new Set(assignedEmails)];
+    debugLog(`Emails asignados originales: ${uniqueEmails.join(', ')}`);
 
-    console.log('Email enviado correctamente al email de prueba:', RESEND_REGISTERED_EMAIL);
-    console.log('Destinatarios originales (no recibieron email en modo prueba):', uniqueEmails);
-
+    debugLog("=== RESPUESTA EXITOSA ===");
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: `Email enviado al email de prueba (${RESEND_REGISTERED_EMAIL})`,
         note: "En modo prueba, Resend solo permite enviar al email registrado",
         originalRecipients: uniqueEmails,
-        resendResponse: data
+        resendResponse: responseData,
+        debug: {
+          mode: DEBUG_MODE,
+          timestamp: new Date().toISOString(),
+          requestInfo: {
+            method: req.method,
+            contentType: contentType,
+          }
+        }
       }),
       { 
         headers: { 
@@ -125,12 +178,23 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error('Error en la función send-report-email:', error);
+    debugLog("=== ERROR EN LA FUNCIÓN ===");
+    debugLog(`Error: ${error.message}`);
+    debugLog(`Stack: ${error.stack}`);
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Error desconocido al enviar el email' 
+        error: error instanceof Error ? error.message : 'Error desconocido al enviar el email',
+        debug: {
+          mode: DEBUG_MODE,
+          timestamp: new Date().toISOString(),
+          errorDetails: error instanceof Error ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+          } : String(error)
+        }
       }),
       { 
         status: 500, 

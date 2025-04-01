@@ -69,47 +69,120 @@ export function ReportSenderButton() {
       }));
 
       console.log('Llamando a la edge function para enviar el email...');
-      console.log('URL de la edge function:', 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-report-email');
+      const functionUrl = 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-report-email';
+      console.log('URL de la edge function:', functionUrl);
       
-      // Llamar a la edge function con más detalles de logging
-      const { data, error } = await supabase.functions.invoke('send-report-email', {
-        body: { issues: formattedIssues }
+      // Llamar a la edge function con manejo mejorado de errores
+      console.log('Payload de la solicitud:', JSON.stringify({ issues: formattedIssues }, null, 2));
+      
+      // Opción 1: Usando supabase.functions.invoke
+      try {
+        console.log('Intentando enviar con supabase.functions.invoke...');
+        const { data, error } = await supabase.functions.invoke('send-report-email', {
+          body: { issues: formattedIssues }
+        });
+
+        if (error) {
+          console.error('Error al llamar a la edge function con supabase.functions.invoke:', error);
+          // No lanzar error aquí, intentaremos con fetch directo
+          
+          // Extraer detalles adicionales del error
+          console.error('Mensaje de error:', error.message);
+          console.error('Código de error:', error.code);
+          console.error('Detalles:', error.details);
+          
+          // Intentar con fetch directo si invoke falla
+          throw new Error('Fallback a fetch directo');
+        }
+
+        console.log('Respuesta completa de la edge function (invoke):', data);
+        handleSuccessResponse(data);
+        return;
+      } catch (invokeError) {
+        console.warn('Error o fallback desde invoke, intentando con fetch directo:', invokeError);
+      }
+      
+      // Opción 2: Usando fetch directo (fallback)
+      console.log('Intentando enviar con fetch directo...');
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`,
+          'apikey': supabase.supabaseKey,
+        },
+        body: JSON.stringify({ issues: formattedIssues }),
       });
 
-      if (error) {
-        console.error('Error detallado al llamar a la edge function:', error);
-        console.error('Mensaje de error:', error.message);
-        console.error('Código de error:', error.code);
-        console.error('Detalles:', error.details);
-        throw new Error(`Error al enviar el email: ${error.message}`);
+      console.log('Respuesta HTTP del fetch directo:', response.status, response.statusText);
+      console.log('Headers de respuesta:', Object.fromEntries(response.headers.entries()));
+      
+      if (!response.ok) {
+        let errorText;
+        try {
+          const errorJson = await response.json();
+          errorText = JSON.stringify(errorJson);
+          console.error('Error detallado del fetch directo (JSON):', errorJson);
+        } catch (e) {
+          errorText = await response.text();
+          console.error('Error detallado del fetch directo (texto):', errorText);
+        }
+        throw new Error(`Error en la respuesta HTTP: ${response.status} ${response.statusText}. Detalles: ${errorText}`);
       }
 
-      console.log('Respuesta completa de la edge function:', data);
+      const data = await response.json();
+      console.log('Respuesta completa de la edge function (fetch):', data);
+      
+      handleSuccessResponse(data);
 
-      if (!data || !data.success) {
-        throw new Error(data?.error || 'Error desconocido al enviar el email');
-      }
-
-      // Mostrar mensaje con nota sobre modo de prueba si existe
-      let description = data.message || "Email de resumen enviado correctamente";
-      if (data.note) {
-        description += ` (${data.note})`;
-      }
-
-      toast({
-        title: "Resumen enviado",
-        description: description,
-      });
     } catch (error) {
       console.error('Error detallado:', error);
+      
+      // Mensaje de error más amigable basado en el tipo de error
+      let errorMessage = "No se pudo enviar el resumen de incidencias";
+      
+      if (error instanceof Error) {
+        if (error.message.includes('429')) {
+          errorMessage = "Demasiadas solicitudes. Espere un momento e intente de nuevo.";
+        } else if (error.message.includes('403')) {
+          errorMessage = "No tiene permisos para enviar emails. Verifique la configuración de Resend y los permisos.";
+        } else if (error.message.includes('net::ERR') || error.message.includes('Failed to fetch')) {
+          errorMessage = "Error de conexión. Verifique su conexión a Internet.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Error al enviar",
-        description: error instanceof Error ? error.message : "No se pudo enviar el resumen de incidencias",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsSending(false);
     }
+  };
+  
+  const handleSuccessResponse = (data: any) => {
+    if (!data || !data.success) {
+      throw new Error(data?.error || 'Error desconocido al enviar el email');
+    }
+
+    // Mostrar mensaje con nota sobre modo de prueba si existe
+    let description = data.message || "Email de resumen enviado correctamente";
+    if (data.note) {
+      description += ` (${data.note})`;
+    }
+    
+    // Añadir información sobre destinatarios originales si está disponible
+    if (data.originalRecipients && data.originalRecipients.length > 0) {
+      description += `. Destinatarios originales: ${data.originalRecipients.join(', ')}`;
+    }
+
+    toast({
+      title: "Resumen enviado",
+      description: description,
+    });
   };
 
   return (
