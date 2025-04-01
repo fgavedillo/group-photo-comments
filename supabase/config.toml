@@ -129,3 +129,9 @@ port = 54325
 path = "/send-report-email"
 method = "POST"
 callback = "send-report-email"
+
+[[edge_functions.routes]]
+path = "/notify-admin"
+method = "POST"
+callback = "notify-admin"
+
