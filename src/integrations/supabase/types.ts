@@ -316,6 +316,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      send_email: {
+        Args: {
+          to_emails: string[]
+          subject: string
+          html_content: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "pending"

@@ -1,3 +1,4 @@
+
 import { Resend } from 'resend';
 import { Issue } from '@/types/issue';
 
@@ -106,4 +107,4 @@ export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
     console.error('Error detallado al enviar el email:', error);
     throw error instanceof Error ? error : new Error('Error desconocido al enviar el email');
   }
-}; 
+};
