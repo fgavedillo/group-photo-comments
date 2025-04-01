@@ -5,10 +5,14 @@ import { Mail } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Issue } from '@/types/issue';
+import { useIssues } from '@/hooks/useIssues';
+import { useMessages } from '@/hooks/useMessages';
 
 export function ReportSenderButton() {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
+  const { issues } = useIssues();
+  const { messages } = useMessages();
 
   const handleSendReport = async () => {
     try {
@@ -16,7 +20,7 @@ export function ReportSenderButton() {
       console.log('Iniciando envío de resumen...');
 
       // Obtener incidencias abiertas
-      const { data: issues, error: supabaseError } = await supabase
+      const { data: openIssues, error: supabaseError } = await supabase
         .from('issues')
         .select('*')
         .in('status', ['en-estudio', 'en-curso']);
@@ -26,7 +30,7 @@ export function ReportSenderButton() {
         throw new Error('No se pudieron obtener las incidencias de la base de datos');
       }
 
-      if (!issues || issues.length === 0) {
+      if (!openIssues || openIssues.length === 0) {
         toast({
           title: "Sin incidencias",
           description: "No hay incidencias abiertas para enviar en el resumen",
@@ -34,10 +38,10 @@ export function ReportSenderButton() {
         return;
       }
 
-      console.log('Incidencias obtenidas:', issues.length);
+      console.log('Incidencias obtenidas:', openIssues.length);
 
       // Verificar que hay emails asignados
-      const assignedEmails = issues
+      const assignedEmails = openIssues
         .map(issue => issue.assigned_email)
         .filter(email => email && email.includes('@'));
 
@@ -52,8 +56,36 @@ export function ReportSenderButton() {
 
       console.log('Emails asignados encontrados:', assignedEmails);
 
+      // Obtener URLs de imágenes para las incidencias
+      const { data: issueImages, error: imagesError } = await supabase
+        .from('issue_images')
+        .select('*');
+
+      if (imagesError) {
+        console.error('Error al obtener imágenes de incidencias:', imagesError);
+      }
+      
+      // Asociar imágenes con las incidencias
+      const imageMap = {};
+      if (issueImages && issueImages.length > 0) {
+        issueImages.forEach(img => {
+          imageMap[img.issue_id] = img.image_url;
+        });
+      }
+
+      // Preparar estadísticas del dashboard para el email
+      const dashboardStats = {
+        total: issues?.length || 0,
+        inStudy: issues?.filter(issue => issue.status === 'en-estudio').length || 0,
+        inProgress: issues?.filter(issue => issue.status === 'en-curso').length || 0,
+        closed: issues?.filter(issue => issue.status === 'cerrada').length || 0,
+        denied: issues?.filter(issue => issue.status === 'denegado').length || 0,
+        byArea: getIssuesByArea(issues || []),
+        byStatus: getIssuesByStatus(issues || []),
+      };
+
       // Transformar los datos para que coincidan con el formato esperado por la edge function
-      const formattedIssues = issues.map(issue => ({
+      const formattedIssues = openIssues.map(issue => ({
         id: issue.id,
         message: issue.message,
         timestamp: issue.timestamp,
@@ -65,21 +97,26 @@ export function ReportSenderButton() {
         area: issue.area,
         responsable: issue.responsable,
         user_id: issue.user_id,
-        url_key: issue.url_key
+        url_key: issue.url_key,
+        imageUrl: imageMap[issue.id] // Añadir URL de la imagen si existe
       }));
 
       console.log('Llamando a la edge function para enviar el email...');
       const functionUrl = 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-report-email';
       console.log('URL de la edge function:', functionUrl);
-      
-      // Llamar a la edge function con manejo mejorado de errores
-      console.log('Payload de la solicitud:', JSON.stringify({ issues: formattedIssues }, null, 2));
+      console.log('Payload de la solicitud:', JSON.stringify({ 
+        issues: formattedIssues, 
+        dashboardStats 
+      }, null, 2));
       
       // Opción 1: Usando supabase.functions.invoke
       try {
         console.log('Intentando enviar con supabase.functions.invoke...');
         const { data, error } = await supabase.functions.invoke('send-report-email', {
-          body: { issues: formattedIssues }
+          body: { 
+            issues: formattedIssues,
+            dashboardStats
+          }
         });
 
         if (error) {
@@ -111,7 +148,10 @@ export function ReportSenderButton() {
           'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`,
           'apikey': supabase.supabaseKey,
         },
-        body: JSON.stringify({ issues: formattedIssues }),
+        body: JSON.stringify({ 
+          issues: formattedIssues,
+          dashboardStats
+        }),
       });
 
       console.log('Respuesta HTTP del fetch directo:', response.status, response.statusText);
@@ -183,6 +223,24 @@ export function ReportSenderButton() {
       title: "Resumen enviado",
       description: description,
     });
+  };
+
+  // Funciones auxiliares para obtener estadísticas
+  const getIssuesByArea = (issues: Issue[]) => {
+    const result: Record<string, number> = {};
+    issues.forEach(issue => {
+      const area = issue.area || 'Sin área';
+      result[area] = (result[area] || 0) + 1;
+    });
+    return result;
+  };
+
+  const getIssuesByStatus = (issues: Issue[]) => {
+    const result: Record<string, number> = {};
+    issues.forEach(issue => {
+      result[issue.status] = (result[issue.status] || 0) + 1;
+    });
+    return result;
   };
 
   return (
