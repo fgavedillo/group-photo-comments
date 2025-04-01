@@ -54,15 +54,16 @@ export function ReportSenderButton() {
       console.log('Emails asignados encontrados:', assignedEmails);
 
       // Transformar los datos para que coincidan con el tipo Issue
+      // Asegurarnos de que las propiedades coincidan con el tipo Issue
       const formattedIssues: Issue[] = issues.map(issue => ({
         id: issue.id,
         message: issue.message,
-        timestamp: new Date(issue.timestamp || ''),
+        timestamp: new Date(issue.timestamp || ''), // Convertir string a Date
         username: issue.username,
         status: issue.status as Issue['status'],
         securityImprovement: issue.security_improvement || undefined,
         actionPlan: issue.action_plan || undefined,
-        assignedEmail: issue.assigned_email || undefined,
+        assignedEmail: issue.assigned_email || undefined, // Mapear assigned_email a assignedEmail
         area: issue.area || undefined,
         responsable: issue.responsable || undefined,
         user_id: issue.user_id,

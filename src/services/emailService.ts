@@ -63,6 +63,27 @@ const generateIssuesSummaryHtml = (issues: Issue[]): string => {
 };
 
 /**
+ * Función auxiliar para comprobar la conexión a Internet
+ */
+const checkInternetConnection = async (): Promise<boolean> => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    
+    const response = await fetch('https://api.resend.com', { 
+      method: 'HEAD',
+      signal: controller.signal 
+    });
+    
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (error) {
+    console.warn('Error al comprobar la conexión a Internet:', error);
+    return false;
+  }
+};
+
+/**
  * Envía un resumen de las incidencias abiertas por email a los responsables asignados
  * @param issues - Lista de incidencias a incluir en el resumen
  */
@@ -75,6 +96,12 @@ export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
     // Validar que hay incidencias
     if (issues.length === 0) {
       throw new Error('No hay incidencias para enviar');
+    }
+
+    // Comprobar conexión a Internet
+    const isConnected = await checkInternetConnection();
+    if (!isConnected) {
+      throw new Error('No hay conexión a Internet o el servicio Resend no está disponible');
     }
 
     // Obtener emails únicos de las incidencias
@@ -91,10 +118,11 @@ export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
     try {
       console.log('Intentando enviar email con Resend a:', uniqueEmails);
       console.log('API Key presente:', !!RESEND_API_KEY);
+      console.log('API Key (primeros 5 caracteres):', RESEND_API_KEY?.substring(0, 5));
       
       // Intentar el envío con mejor diagnóstico
       const { data, error } = await resend.emails.send({
-        from: 'PRLconecta <team@prlconecta.es>',
+        from: 'PRLconecta <onboarding@resend.dev>', // Cambiamos el remitente a una dirección verificada
         to: uniqueEmails,
         subject: 'Resumen de Incidencias Asignadas - PRLconecta',
         html: html,
