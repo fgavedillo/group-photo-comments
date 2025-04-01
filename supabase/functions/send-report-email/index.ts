@@ -94,7 +94,14 @@ serve(async (req) => {
       throw new Error('No se proporcionaron incidencias para enviar');
     }
 
+    // Registra en el log los URLs de las imágenes recibidas
     debugLog(`Procesando ${issues.length} incidencias`);
+    issues.forEach((issue, index) => {
+      debugLog(`Incidencia ${index + 1} (ID: ${issue.id}): ${issue.imageUrl ? 'Tiene imagen' : 'Sin imagen'}`);
+      if (issue.imageUrl) {
+        debugLog(`  URL de imagen: ${issue.imageUrl}`);
+      }
+    });
 
     // En modo prueba de Resend, solo podemos enviar al email registrado
     // En lugar de intentar enviar a múltiples destinatarios, generamos el informe
@@ -377,8 +384,16 @@ function generateEnhancedEmailHtml(issues: Issue[], dashboardStats: any): string
   
   // Generar filas para la tabla de incidencias con imágenes
   const issueRows = issues.map(issue => {
-    // Verificar si existe una URL de imagen válida
-    const imageCell = issue.imageUrl ? 
+    // Verificar si existe una URL de imagen válida y darle tratamiento especial
+    const hasImage = issue.imageUrl && typeof issue.imageUrl === 'string' && 
+                    (issue.imageUrl.startsWith('http://') || issue.imageUrl.startsWith('https://'));
+                    
+    console.log(`Generando fila para incidencia ${issue.id}, tiene imagen: ${hasImage}`);
+    if (hasImage) {
+      console.log(`  URL imagen: ${issue.imageUrl}`);
+    }
+    
+    const imageCell = hasImage ? 
       `<td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
         <img src="${issue.imageUrl}" alt="Imagen de incidencia" style="max-width: 100px; max-height: 100px; border-radius: 4px;" />
       </td>` : 

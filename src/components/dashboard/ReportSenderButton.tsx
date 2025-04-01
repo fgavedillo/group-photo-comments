@@ -65,12 +65,16 @@ export function ReportSenderButton() {
         console.error('Error al obtener imágenes de incidencias:', imagesError);
       }
       
-      // Asociar imágenes con las incidencias
+      // Asociar imágenes con las incidencias - mejoramos el registro con más información
       const imageMap = {};
       if (issueImages && issueImages.length > 0) {
+        console.log('Imágenes obtenidas:', issueImages.length);
         issueImages.forEach(img => {
+          console.log(`Asociando imagen ${img.image_url} con incidencia ${img.issue_id}`);
           imageMap[img.issue_id] = img.image_url;
         });
+      } else {
+        console.log('No se encontraron imágenes para las incidencias');
       }
 
       // Preparar estadísticas del dashboard para el email
@@ -85,21 +89,26 @@ export function ReportSenderButton() {
       };
 
       // Transformar los datos para que coincidan con el formato esperado por la edge function
-      const formattedIssues = openIssues.map(issue => ({
-        id: issue.id,
-        message: issue.message,
-        timestamp: issue.timestamp,
-        username: issue.username,
-        status: issue.status,
-        securityImprovement: issue.security_improvement,
-        actionPlan: issue.action_plan,
-        assignedEmail: issue.assigned_email,
-        area: issue.area,
-        responsable: issue.responsable,
-        user_id: issue.user_id,
-        url_key: issue.url_key,
-        imageUrl: imageMap[issue.id] // Añadir URL de la imagen si existe
-      }));
+      const formattedIssues = openIssues.map(issue => {
+        const issueWithImage = {
+          id: issue.id,
+          message: issue.message,
+          timestamp: issue.timestamp,
+          username: issue.username,
+          status: issue.status,
+          securityImprovement: issue.security_improvement,
+          actionPlan: issue.action_plan,
+          assignedEmail: issue.assigned_email,
+          area: issue.area,
+          responsable: issue.responsable,
+          user_id: issue.user_id,
+          url_key: issue.url_key,
+          imageUrl: imageMap[issue.id] // Añadir URL de la imagen si existe
+        };
+        console.log(`Incidencia ${issue.id} tiene imagen: ${!!imageMap[issue.id]}`, 
+                    imageMap[issue.id] ? 'URL: ' + imageMap[issue.id] : 'Sin imagen');
+        return issueWithImage;
+      });
 
       console.log('Llamando a la edge function para enviar el email...');
       const functionUrl = 'https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1/send-report-email';
