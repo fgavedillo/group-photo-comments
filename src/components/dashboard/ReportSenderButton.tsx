@@ -143,8 +143,8 @@ export function ReportSenderButton() {
       console.log('Intentando enviar con fetch directo...');
       
       // Obtener el token de sesión actual
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token || '';
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token || '';
       
       const response = await fetch(functionUrl, {
         method: 'POST',

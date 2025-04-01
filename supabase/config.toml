@@ -104,7 +104,7 @@ backend = "postgres"
 enabled = true
 port = 54326
 
-# Define default timeout for functions in seconds
+# Define timeout for functions
 [functions.timeout]
 default = 90
 
