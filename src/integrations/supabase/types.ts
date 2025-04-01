@@ -324,6 +324,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      send_issues_report_email: {
+        Args: {
+          issues_data: Json
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "pending"
