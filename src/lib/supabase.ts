@@ -20,13 +20,14 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
   },
   global: {
-    // Add better fetch options for improved reliability
+    // Configure headers for all requests to include API key
     fetch: (url, options = {}) => {
-      // Create a new options object with the existing options
+      // Create a new options object with existing options and ensure headers exist
       const fetchOptions = {
         ...options,
         headers: {
-          ...((options as Record<string, any>).headers || {})
+          ...(options as any).headers || {},
+          apikey: supabaseAnonKey,
         },
       };
       return fetch(url, fetchOptions);
