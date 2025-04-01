@@ -1,6 +1,7 @@
 
 import { CardContent } from "@/components/ui/card";
 import { ImageModal } from "../ImageModal";
+import { EmailAssignmentForm } from "../EmailAssignmentForm";
 import { Issue } from "@/types/issue";
 import { useState } from "react";
 
@@ -64,7 +65,12 @@ export const IssueContent = ({ message, imageUrl, onAssignedEmailChange }: Issue
       </div>
       
       <div className="mt-4">
-        <p>Email asignado: {message.assignedEmail || "No asignado"}</p>
+        <EmailAssignmentForm
+          assignedEmail={message.assignedEmail || ""}
+          onEmailChange={(email) => onAssignedEmailChange(message.id, email)}
+          message={message.message}
+          issue={message} // Pasamos todo el objeto issue para tener acceso a todos sus campos
+        />
       </div>
     </CardContent>
   );

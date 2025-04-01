@@ -1,10 +1,11 @@
 
-// Componente simplificado sin funcionalidad de reportes
-const ReportButton = ({ dashboardRef, issuesTableRef }: { 
+import { ReportSenderButton } from "./ReportSenderButton";
+
+interface ReportButtonProps {
   dashboardRef: React.RefObject<HTMLDivElement>;
   issuesTableRef?: React.RefObject<HTMLDivElement>;
-}) => {
-  return null; // El componente no renderiza nada
-};
+}
 
-export { ReportButton };
+export const ReportButton = ({ dashboardRef, issuesTableRef }: ReportButtonProps) => {
+  return <ReportSenderButton />;
+};
