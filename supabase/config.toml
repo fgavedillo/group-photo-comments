@@ -102,7 +102,7 @@ vector_port = 54328
 backend = "postgres"
 
 # Configure rate limiting for the API. Protects the DB against spikes in traffic.
-[[analytics.rate_limits]]
+[analytics.rate_limits]
 # Configure the rate limit. Format: `<limit>:<duration>`.
 # Example: 10:1s - 10 requests per 1 second.
 # For pending queries limits the rate at which queries can be enqueued.
@@ -116,15 +116,22 @@ enabled = true
 port = 54326
 # Call function URL.
 function_port = 54325
-allowed_import_prefixes = ["https://deno.land/", "npm:"]
-timeout = 90
 
-[[edge_functions.routes]]
+[[functions.allowed_import_prefixes]]
+value = "https://deno.land/"
+
+[[functions.allowed_import_prefixes]]
+value = "npm:"
+
+[functions.timeout]
+value = 90
+
+[[functions.routes]]
 path = "/send-report-email"
 method = "POST"
 callback = "send-report-email"
 
-[[edge_functions.routes]]
+[[functions.routes]]
 path = "/notify-admin"
 method = "POST"
 callback = "notify-admin"
