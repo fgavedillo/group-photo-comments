@@ -36,10 +36,6 @@ default_pool_size = 20
 # Maximum number of client connections allowed.
 max_client_conn = 100
 
-[realtime]
-enabled = true
-log_level = "warn"
-
 [studio]
 enabled = true
 # Port to use for Supabase Studio.
@@ -94,6 +90,10 @@ enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 
+[realtime]
+enabled = true
+log_level = "warn"
+
 [analytics]
 enabled = false
 port = 54327
@@ -118,11 +118,6 @@ port = 54326
 function_port = 54325
 allowed_import_prefixes = ["https://deno.land/", "npm:"]
 timeout = 90
-
-[edge_functions]
-enabled = true
-# Edge function URL.
-port = 54325
 
 [[edge_functions.routes]]
 path = "/send-report-email"
