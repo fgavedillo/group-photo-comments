@@ -109,8 +109,8 @@ backend = "postgres"
 # For pending queries limits the rate at which queries can be enqueued.
 # For running queries limits the rate at which queries can be issued per user.
 # Rate limiting can be disabled by using 'off' as the value.
-queries_pending = 1000:1h
-queries_running = 100:1m
+queries_pending = "1000:1h"
+queries_running = "100:1m"
 
 [functions]
 enabled = true
