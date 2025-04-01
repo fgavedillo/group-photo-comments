@@ -1,18 +1,16 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Resend } from "npm:resend@1.1.0";
-
-const resendApiKey = Deno.env.get('RESEND_API_KEY');
-const resend = new Resend(resendApiKey);
 
 // Importación del archivo compartido de CORS
 import { corsHeaders } from "../_shared/cors.ts";
 
+const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+
 interface Issue {
   id: number;
   message: string;
-  timestamp: string;
-  username: string;
+  timestamp?: string;
+  username?: string;
   status: string;
   securityImprovement?: string;
   actionPlan?: string;
@@ -20,7 +18,6 @@ interface Issue {
   area?: string;
   responsable?: string;
   user_id?: string;
-  imageUrl?: string;
   url_key?: string;
 }
 
@@ -55,21 +52,30 @@ serve(async (req) => {
     const html = generateIssuesSummaryHtml(issues);
 
     // Verificar que tenemos la API key de Resend
-    if (!resendApiKey) {
+    if (!RESEND_API_KEY) {
       throw new Error('La API key de Resend no está configurada en las variables de entorno');
     }
     
-    // Enviar el email usando Resend
-    const { data, error } = await resend.emails.send({
-      from: 'PRLconecta <onboarding@resend.dev>',
-      to: uniqueEmails,
-      subject: 'Resumen de Incidencias Asignadas - PRLconecta',
-      html: html,
+    // Enviar email usando la API de Resend directamente
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'PRLconecta <onboarding@resend.dev>',
+        to: uniqueEmails,
+        subject: 'Resumen de Incidencias Asignadas - PRLconecta',
+        html: html,
+      }),
     });
 
-    if (error) {
-      console.error('Error de Resend:', error);
-      throw new Error(`Error al enviar el email: ${error.message}`);
+    const data = await res.json();
+    
+    if (!res.ok) {
+      console.error('Error de Resend:', data);
+      throw new Error(`Error al enviar el email: ${data.message || JSON.stringify(data)}`);
     }
 
     console.log('Email enviado correctamente:', data);
@@ -78,7 +84,8 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         message: `Email enviado correctamente a ${uniqueEmails.length} destinatarios`,
-        recipients: uniqueEmails
+        recipients: uniqueEmails,
+        resendResponse: data
       }),
       { 
         headers: { 
