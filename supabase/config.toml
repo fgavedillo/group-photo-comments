@@ -47,4 +47,5 @@ secret = ""
 redirect_uri = ""
 
 [functions]
+[functions.serve]
 port = 54321
