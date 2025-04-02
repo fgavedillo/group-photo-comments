@@ -51,20 +51,23 @@ class RealtimeManager {
       console.log(`Creating new realtime channel: ${channelName}`);
       const channel = supabase.channel(channelName);
       
-      // Fix: Use the correct method signature for the Supabase Realtime API
-      channel.on('postgres_changes', {
-        event: event,
-        schema: schema,
-        table: table,
-        filter: filter
-      }, (payload) => {
-        // Call all callbacks registered for this subscription
-        const callbacks = this.callbacks.get(subscriptionKey);
-        if (callbacks) {
-          callbacks.forEach(cb => cb(payload));
+      // Fix: Use the correct syntax for the Supabase Realtime API
+      channel.on(
+        'postgres_changes',
+        {
+          event: event,
+          schema: schema,
+          table: table,
+          filter: filter
+        } as any,
+        (payload) => {
+          // Call all callbacks registered for this subscription
+          const callbacks = this.callbacks.get(subscriptionKey);
+          if (callbacks) {
+            callbacks.forEach(cb => cb(payload));
+          }
         }
-      })
-      .subscribe((status) => {
+      ).subscribe((status) => {
         console.log(`Realtime channel ${channelName} status: ${status}`);
       });
       
