@@ -51,15 +51,15 @@ class RealtimeManager {
       console.log(`Creating new realtime channel: ${channelName}`);
       const channel = supabase.channel(channelName);
       
-      // Correctly subscribing to PostgreSQL changes with proper typing
+      // Use the channel's on method with the correct signature
       channel
         .on(
-          'postgres_changes',
+          'postgres_changes', 
           { 
-            event, 
-            schema, 
-            table, 
-            filter 
+            event: event,  
+            schema: schema, 
+            table: table, 
+            filter: filter 
           },
           (payload) => {
             // Call all callbacks registered for this subscription
