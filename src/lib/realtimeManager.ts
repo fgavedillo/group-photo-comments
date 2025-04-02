@@ -51,15 +51,15 @@ class RealtimeManager {
       console.log(`Creating new realtime channel: ${channelName}`);
       const channel = supabase.channel(channelName);
       
-      // Fix: Use the correct syntax for the Supabase Realtime API
-      channel.on(
-        'postgres_changes',
-        {
-          event: event,
-          schema: schema,
-          table: table,
-          filter: filter
-        } as any,
+      // Solucionando el error de tipos con la API de Supabase Realtime
+      const subscription = channel.on(
+        'postgres_changes' as any, // Usamos type assertion para evitar error de TypeScript
+        { 
+          event: event, 
+          schema: schema, 
+          table: table, 
+          filter: filter 
+        },
         (payload) => {
           // Call all callbacks registered for this subscription
           const callbacks = this.callbacks.get(subscriptionKey);
@@ -67,7 +67,10 @@ class RealtimeManager {
             callbacks.forEach(cb => cb(payload));
           }
         }
-      ).subscribe((status) => {
+      )
+      
+      // Llamamos a subscribe de forma separada
+      subscription.subscribe((status) => {
         console.log(`Realtime channel ${channelName} status: ${status}`);
       });
       
@@ -81,7 +84,7 @@ class RealtimeManager {
       if (callbacks) {
         callbacks.delete(callback);
         
-        // If there are no more callbacks for this subscription, remove the channel
+        // If there are no more callbacks for this subscription, remove it
         if (callbacks.size === 0) {
           this.callbacks.delete(subscriptionKey);
           
