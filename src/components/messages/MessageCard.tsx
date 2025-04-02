@@ -1,4 +1,3 @@
-
 import { Message } from "@/types/message";
 import { Card } from "../ui/card";
 import { format } from "date-fns";
@@ -22,8 +21,8 @@ export const MessageCard = ({ message }: MessageCardProps) => {
             <div className="flex items-center gap-2">
               <span className="font-medium text-primary">
                 {message.username || 
-                ((message.firstName || message.lastName) ? 
-                  `${message.firstName || ''} ${message.lastName || ''}`.trim() : 'Usuario')}
+                ((message.first_name || message.last_name) ? 
+                  `${message.first_name || ''} ${message.last_name || ''}`.trim() : 'Usuario')}
               </span>
               <span className="text-sm text-muted-foreground">
                 {format(new Date(message.timestamp), "dd 'de' MMMM 'a las' HH:mm", { locale: es })}
@@ -41,15 +40,15 @@ export const MessageCard = ({ message }: MessageCardProps) => {
           <p className="text-sm text-foreground">
             <MessageContent content={message.message} />
           </p>
-          {message.imageUrl && (
+          {message.image_url && (
             <div className="mt-2">
               <img 
-                src={message.imageUrl} 
+                src={message.image_url} 
                 alt="Imagen adjunta" 
                 className="max-w-[150px] h-auto rounded-md cursor-pointer hover:opacity-90 transition-opacity"
-                onClick={() => setSelectedImage(message.imageUrl)}
+                onClick={() => setSelectedImage(message.image_url)}
                 onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  console.error('Error loading image:', message.imageUrl);
+                  console.error('Error loading image:', message.image_url);
                   e.currentTarget.src = '/placeholder.svg';
                 }}
               />

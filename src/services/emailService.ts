@@ -1,162 +1,283 @@
-
 import { Resend } from 'resend';
 import { Issue } from '@/types/issue';
+import { EmailError, EmailOptions, EmailResponse } from '@/types/email';
+import { generateIssuesSummaryHtml } from './emailTemplates';
+import { EmailQueueService } from './emailQueue';
+import { supabase } from '@/lib/supabase';
 
-// Usar una variable de entorno para la API key de Resend
+// Configuración
 const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
+const DEFAULT_FROM = 'PRLconecta <onboarding@resend.dev>';
 
 if (!RESEND_API_KEY) {
   throw new Error('La API key de Resend no está configurada en las variables de entorno');
 }
 
-// Inicializar Resend con mejor manejo de errores
 const resend = new Resend(RESEND_API_KEY);
+const queueService = EmailQueueService.getInstance();
 
-/**
- * Genera el HTML para el resumen de incidencias
- */
-const generateIssuesSummaryHtml = (issues: Issue[]): string => {
-  const issuesList = issues
-    .map(
-      (issue) => {
-        // Verificar si existe una URL de imagen válida
-        const hasImage = issue.imageUrl && typeof issue.imageUrl === 'string' && 
-                      (issue.imageUrl.startsWith('http://') || issue.imageUrl.startsWith('https://'));
-        
-        // Celda de imagen con tamaño consistente
-        const imageCell = hasImage ? 
-          `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; width: 100px;">
-            <img src="${issue.imageUrl}" alt="Imagen de incidencia" 
-              style="max-width: 80px; max-height: 80px; width: auto; height: auto; object-fit: contain; border-radius: 4px;" />
-          </td>` : 
-          `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; width: 100px;">-</td>`;
-        
-        return `
-        <tr>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.id}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.message}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.status}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.area || '-'}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.responsable || '-'}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.assignedEmail || '-'}</td>
-          ${imageCell}
-        </tr>
-      `;
-      }
-    )
-    .join('');
-
-  return `
-    <html>
-      <body style="font-family: Arial, sans-serif;">
-        <h1>Resumen de Incidencias Asignadas</h1>
-        <p>Este es un resumen de las incidencias que están actualmente en estudio o en curso y requieren su atención:</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-          <thead>
-            <tr style="background-color: #f3f4f6;">
-              <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Descripción</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Estado</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Área</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Responsable</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Email Asignado</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Imagen</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${issuesList}
-          </tbody>
-        </table>
-        
-        <p style="margin-top: 20px; color: #666;">
-          Este es un email automático del sistema de gestión de incidencias de PRLconecta.
-          Por favor, no responda a este email.
-        </p>
-      </body>
-    </html>
-  `;
+// Validación de email mejorada
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
 };
 
-/**
- * Función auxiliar para comprobar la conexión a Internet
- */
-const checkInternetConnection = async (): Promise<boolean> => {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+// Función para procesar imágenes en el HTML
+const processImages = async (html: string): Promise<string> => {
+  // Buscar todas las imágenes en el HTML
+  const imgRegex = /<img[^>]+src="([^">]+)"/g;
+  let match;
+  let processedHtml = html;
+
+  while ((match = imgRegex.exec(html)) !== null) {
+    const imgUrl = match[1];
     
-    const response = await fetch('https://api.resend.com', { 
-      method: 'HEAD',
-      signal: controller.signal 
+    try {
+      // Verificar si la URL es accesible
+      const response = await fetch(imgUrl, { method: 'HEAD' });
+      if (!response.ok) {
+        // Si la imagen no es accesible, reemplazar con un mensaje
+        processedHtml = processedHtml.replace(
+          new RegExp(`src="${imgUrl}"`),
+          'src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48dGV4dCB4PSI1MCIgeT0iNTAiIGR5PSIuM2VtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij5JbWFnZW4gbm8gZGlzcG9uaWJsZTwvdGV4dD48L3N2Zz4="'
+        );
+      }
+    } catch (error) {
+      // Si hay un error al verificar la imagen, reemplazar con un mensaje
+      processedHtml = processedHtml.replace(
+        new RegExp(`src="${imgUrl}"`),
+        'src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTAwIDEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNlZWUiLz48dGV4dCB4PSI1MCIgeT0iNTAiIGR5PSIuM2VtIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij5FcnJvciBhbCBjYXJnYXIgaW1hZ2VuPC90ZXh0Pjwvc3ZnPg=="'
+      );
+    }
+  }
+
+  return processedHtml;
+};
+
+// Función principal de envío de email
+export const sendEmail = async (
+  to: string[],
+  subject: string,
+  html: string,
+  options: EmailOptions = {}
+): Promise<EmailResponse> => {
+  try {
+    // Validar emails
+    const validEmails = to.filter(validateEmail);
+    if (validEmails.length === 0) {
+      throw new EmailError(
+        'No hay direcciones de email válidas para enviar',
+        'INVALID_EMAILS'
+      );
+    }
+
+    // Procesar imágenes en el HTML
+    const processedHtml = await processImages(html);
+
+    // Configuración por defecto
+    const defaultOptions = {
+      from: DEFAULT_FROM,
+      ...options
+    };
+
+    // Añadir a la cola
+    const queueId = await queueService.addToQueue(
+      validEmails,
+      subject,
+      processedHtml,
+      defaultOptions
+    );
+
+    return {
+      id: queueId,
+      status: 'success',
+      message: 'Email añadido a la cola de envío',
+      timestamp: new Date()
+    };
+  } catch (error) {
+    console.error('Error al enviar el email:', error);
+    throw error instanceof EmailError ? error : new EmailError(
+      'Error al enviar el email',
+      'SEND_ERROR',
+      error
+    );
+  }
+};
+
+// Función específica para enviar resumen de incidencias
+export const sendIssuesSummary = async (issues: Issue[]): Promise<EmailResponse> => {
+  try {
+    if (!Array.isArray(issues)) {
+      throw new EmailError(
+        'El parámetro issues debe ser un array',
+        'INVALID_ISSUES'
+      );
+    }
+
+    if (issues.length === 0) {
+      throw new EmailError(
+        'No hay incidencias para enviar',
+        'NO_ISSUES'
+      );
+    }
+
+    // Agrupar incidencias por email asignado
+    const issuesByEmail: Record<string, Issue[]> = {};
+    
+    issues.forEach(issue => {
+      if (issue.assigned_email) {
+        if (!issuesByEmail[issue.assigned_email]) {
+          issuesByEmail[issue.assigned_email] = [];
+        }
+        issuesByEmail[issue.assigned_email].push(issue);
+      }
     });
     
-    clearTimeout(timeoutId);
-    return response.ok;
+    const emails = Object.keys(issuesByEmail);
+    console.log('Emails encontrados para enviar resumen:', emails);
+
+    if (emails.length === 0) {
+      throw new EmailError(
+        'No hay destinatarios válidos para enviar el resumen',
+        'NO_VALID_RECIPIENTS'
+      );
+    }
+
+    // Enviar un email a cada responsable con sus incidencias asignadas
+    const results = await Promise.allSettled(
+      emails.map(async (email) => {
+        const userIssues = issuesByEmail[email];
+        
+        // Generar HTML personalizado para cada responsable
+        const customHtml = generateIssuesSummaryHtml(userIssues);
+        
+        // Usar la Edge Function para enviar el email
+        return await supabase.functions.invoke('send-email-v2', {
+          body: {
+            email,
+            custom_html: customHtml,
+            subject: `Resumen de Incidencias Asignadas (${userIssues.length}) - PRLconecta`
+          }
+        });
+      })
+    );
+    
+    // Comprobar resultados
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    
+    if (failed > 0) {
+      console.warn(`${failed} emails no pudieron ser enviados`);
+    }
+    
+    if (successful === 0) {
+      throw new EmailError(
+        'No se pudo enviar ningún email',
+        'ALL_EMAILS_FAILED'
+      );
+    }
+    
+    return {
+      id: 'batch_' + Date.now(),
+      status: 'success',
+      message: `${successful} de ${emails.length} emails enviados correctamente`,
+      timestamp: new Date()
+    };
   } catch (error) {
-    console.warn('Error al comprobar la conexión a Internet:', error);
-    return false;
+    console.error('Error al enviar el email de resumen:', error);
+    throw error instanceof EmailError ? error : new EmailError(
+      'Error al enviar el email de resumen',
+      'SUMMARY_SEND_ERROR',
+      error
+    );
   }
 };
 
 /**
- * Envía un resumen de las incidencias abiertas por email a los responsables asignados
- * @param issues - Lista de incidencias a incluir en el resumen
+ * Envía un email con la información detallada de una incidencia específica
+ * al responsable asignado
  */
-export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
+export const sendSingleIssueEmail = async (issue: Issue): Promise<EmailResponse> => {
   try {
-    if (!Array.isArray(issues)) {
-      throw new Error('El parámetro issues debe ser un array');
+    console.log('Iniciando envío de email para incidencia:', issue);
+    
+    // Validación más robusta de la incidencia
+    if (!issue) {
+      console.error('La incidencia es null o undefined');
+      throw new EmailError('No se ha proporcionado una incidencia válida', 'INVALID_ISSUE');
     }
-
-    // Validar que hay incidencias
-    if (issues.length === 0) {
-      throw new Error('No hay incidencias para enviar');
+    
+    // Comprobar si la incidencia tiene una estructura anidada (problemas con array/objeto)
+    if (typeof issue === 'object' && '0' in issue && typeof (issue as any)[0] === 'object') {
+      console.warn('Estructura de incidencia anidada detectada, intentando corregir');
+      issue = {
+        ...(issue as any)[0],
+        image_url: (issue as any).image_url || (issue as any)[0].image_url || null
+      } as Issue;
+      console.log('Incidencia corregida:', issue);
     }
-
-    // Comprobar conexión a Internet
-    const isConnected = await checkInternetConnection();
-    if (!isConnected) {
-      throw new Error('No hay conexión a Internet o el servicio Resend no está disponible');
+    
+    if (!issue.id) {
+      console.error('La incidencia no tiene ID:', issue);
+      throw new EmailError('La incidencia no tiene un ID válido', 'INVALID_ISSUE_ID');
     }
-
-    // Obtener emails únicos de las incidencias
-    const uniqueEmails = [...new Set(issues
-      .map(issue => issue.assignedEmail)
-      .filter(email => email && email.includes('@')))];
-
-    if (uniqueEmails.length === 0) {
-      throw new Error('No hay destinatarios válidos para enviar el resumen. Asegúrese de que las incidencias tienen emails asignados.');
+    
+    // Verificar si hay email asignado
+    if (!issue.assigned_email) {
+      console.error('Incidencia sin email asignado:', issue);
+      throw new EmailError('La incidencia no tiene un email asignado', 'NO_EMAIL');
     }
+    
+    const email = issue.assigned_email;
+    console.log('Email destinatario:', email);
 
-    const html = generateIssuesSummaryHtml(issues);
-
-    try {
-      console.log('Intentando enviar email con Resend a:', uniqueEmails);
-      console.log('API Key presente:', !!RESEND_API_KEY);
-      console.log('API Key (primeros 5 caracteres):', RESEND_API_KEY?.substring(0, 5));
-      
-      // Intentar el envío con mejor diagnóstico
-      const { data, error } = await resend.emails.send({
-        from: 'PRLconecta <onboarding@resend.dev>', // Cambiamos el remitente a una dirección verificada
-        to: uniqueEmails,
-        subject: 'Resumen de Incidencias Asignadas - PRLconecta',
-        html: html,
-      });
-
-      if (error) {
-        console.error('Error detallado de Resend:', error);
-        throw error;
+    // Usar la Edge Function de Supabase para enviar el email
+    console.log('Enviando email a través de Edge Function send-email-v2');
+    
+    const { data, error } = await supabase.functions.invoke('send-email-v2', {
+      body: {
+        issue_id: issue.id,
+        email: email
       }
+    });
 
-      console.log('Respuesta de Resend:', data);
-      console.log('Email de resumen enviado correctamente a:', uniqueEmails);
-    } catch (resendError) {
-      console.error('Error detallado de Resend:', resendError);
-      throw new Error('Error al enviar el email a través de Resend: ' + (resendError.message || 'Error desconocido'));
+    if (error) {
+      console.error('Error en la Edge Function:', error);
+      throw new EmailError(
+        'Error al enviar el email a través de la Edge Function',
+        'EDGE_FUNCTION_ERROR',
+        error
+      );
     }
+
+    console.log('Respuesta de la Edge Function:', data);
+    
+    return {
+      id: data?.id || 'unknown',
+      status: 'success',
+      message: 'Email con detalle de incidencia enviado correctamente',
+      timestamp: new Date()
+    };
   } catch (error) {
-    console.error('Error detallado al enviar el email:', error);
-    throw error instanceof Error ? error : new Error('Error desconocido al enviar el email');
+    console.error('Error general al enviar el email de incidencia:', error);
+    
+    // Crear un mensaje de error más descriptivo para el usuario
+    let userMessage = 'Error al enviar el email de incidencia';
+    
+    if (error instanceof EmailError) {
+      if (error.code === 'NO_EMAIL') {
+        userMessage = 'La incidencia no tiene un email asignado. Por favor, asigna un email válido.';
+      } else if (error.code === 'INVALID_ISSUE') {
+        userMessage = 'Los datos de la incidencia no son válidos. Contacta con soporte.';
+      } else if (error.code === 'EDGE_FUNCTION_ERROR') {
+        userMessage = 'Error al conectar con el servicio de email. Inténtalo de nuevo más tarde.';
+      }
+    }
+    
+    throw new EmailError(
+      userMessage,
+      error instanceof EmailError ? error.code : 'UNKNOWN_ERROR',
+      error
+    );
   }
 };

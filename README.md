@@ -1,8 +1,34 @@
-# Welcome to your Lovable project
+# Welcome to your PRLconecta project
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/15ec66d6-6812-4bdb-aee9-7936d3c1744c
+
+## Changelog
+
+### 2025-04-02: Mejoras en chat y servicio de correos
+
+- **Funcionalidad de chat**:
+  - Solucionado problema de envío de mensajes en el chat
+  - Corregido el manejo de imágenes adjuntas en mensajes
+  - Mejorado el sistema para mostrar errores
+
+- **Servicio de correos**:
+  - Creada nueva Edge Function `send-email-v2` para manejo robusto de correos
+  - Implementado sistema de envío de correos individuales por incidencia
+  - Implementado sistema de resumen agrupado de incidencias
+  - Mejorada la plantilla HTML para correos
+
+- **Mejoras técnicas**:
+  - Robustez en manejo de sesiones de usuario
+  - Mejor manejo de errores en el cliente
+  - Logs detallados para facilitar depuración
+
+## Funcionalidades principales
+
+1. **Chat interactivo**: Sistema de mensajería con soporte para imágenes.
+2. **Gestión de incidencias**: Seguimiento y resolución de problemas reportados.
+3. **Notificaciones por email**: Alertas automáticas sobre incidencias.
 
 ## How can I edit this code?
 
@@ -52,13 +78,15 @@ npm run dev
 
 ## What technologies are used for this project?
 
-This project is built with .
+This project is built with:
 
 - Vite
 - TypeScript
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (base de datos, autenticación y funciones serverless)
+- Resend (servicio de envío de correos)
 
 ## How can I deploy this project?
 
