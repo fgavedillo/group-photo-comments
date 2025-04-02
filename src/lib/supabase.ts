@@ -19,6 +19,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
   global: {
     // Configure headers for all requests to include API key
     fetch: (url, options = {}) => {
@@ -28,6 +33,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
         headers: {
           ...(options as any).headers || {},
           apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
         },
       };
       return fetch(url, fetchOptions);
