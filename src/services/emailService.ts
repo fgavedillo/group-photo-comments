@@ -1,162 +1,537 @@
+import { callApi, ApiResponse } from './api/apiClient';
+import emailjs from '@emailjs/browser';
+import { getResponsibleEmails } from '@/utils/emailUtils';
+import { supabase } from '@/lib/supabase';
+import { useEmailJS, EmailJSTemplateParams } from '@/hooks/useEmailJS';
+import { sendReportWithResend } from './resendService';
 
-import { Resend } from 'resend';
-import { Issue } from '@/types/issue';
-
-// Usar una variable de entorno para la API key de Resend
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-
-if (!RESEND_API_KEY) {
-  throw new Error('La API key de Resend no está configurada en las variables de entorno');
+/**
+ * Interfaz para la respuesta del envío de email
+ */
+interface EmailSendResponse {
+  success: boolean;
+  message?: string;
+  recipients?: string[];
+  elapsedTime?: string;
+  requestId?: string;
+  processingTime?: string;
+  messageId?: string;
 }
 
-// Inicializar Resend con mejor manejo de errores
-const resend = new Resend(RESEND_API_KEY);
-
 /**
- * Genera el HTML para el resumen de incidencias
+ * Constantes para URLs
  */
-const generateIssuesSummaryHtml = (issues: Issue[]): string => {
-  const issuesList = issues
-    .map(
-      (issue) => {
-        // Verificar si existe una URL de imagen válida
-        const hasImage = issue.imageUrl && typeof issue.imageUrl === 'string' && 
-                      (issue.imageUrl.startsWith('http://') || issue.imageUrl.startsWith('https://'));
-        
-        // Celda de imagen con tamaño consistente
-        const imageCell = hasImage ? 
-          `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; vertical-align: middle; width: 100px;">
-            <img src="${issue.imageUrl}" alt="Imagen de incidencia" 
-              style="max-width: 80px; max-height: 80px; width: auto; height: auto; object-fit: contain; border-radius: 4px;" />
-          </td>` : 
-          `<td style="padding: 10px; border: 1px solid #ddd; text-align: center; width: 100px;">-</td>`;
-        
-        return `
-        <tr>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.id}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.message}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.status}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.area || '-'}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.responsable || '-'}</td>
-          <td style="padding: 10px; border: 1px solid #ddd;">${issue.assignedEmail || '-'}</td>
-          ${imageCell}
-        </tr>
-      `;
-      }
-    )
-    .join('');
+const FUNCTIONS_BASE_URL = "https://jzmzmjvtxcrxljnhhrjo.supabase.co/functions/v1";
+const DAILY_REPORT_FUNCTION = `${FUNCTIONS_BASE_URL}/send-daily-report`;
+const EMAIL_FUNCTION = `${FUNCTIONS_BASE_URL}/send-email`;
 
-  return `
-    <html>
-      <body style="font-family: Arial, sans-serif;">
-        <h1>Resumen de Incidencias Asignadas</h1>
-        <p>Este es un resumen de las incidencias que están actualmente en estudio o en curso y requieren su atención:</p>
-        
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-          <thead>
-            <tr style="background-color: #f3f4f6;">
-              <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Descripción</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Estado</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Área</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Responsable</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Email Asignado</th>
-              <th style="padding: 10px; border: 1px solid #ddd;">Imagen</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${issuesList}
-          </tbody>
-        </table>
-        
-        <p style="margin-top: 20px; color: #666;">
-          Este es un email automático del sistema de gestión de incidencias de PRLconecta.
-          Por favor, no responda a este email.
-        </p>
-      </body>
-    </html>
-  `;
+// Configuración de EmailJS
+// IMPORTANTE: Verifica que estos valores coincidan exactamente con tu cuenta de EmailJS
+// Puedes encontrarlos en: https://dashboard.emailjs.com/admin
+// SERVICE_ID: En la sección "Email Services"
+// TEMPLATE_ID: En la sección "Email Templates"
+// PUBLIC_KEY: En la sección "Account" -> "API Keys"
+const SERVICE_ID = 'service_yz5opji';
+const TEMPLATE_ID = 'template_ddq6b3h';
+const PUBLIC_KEY = 'RKDqUO9tTPGJrGKLQ';
+
+const CONFIG = {
+  serviceId: SERVICE_ID,
+  templateId: TEMPLATE_ID,
+  publicKey: PUBLIC_KEY,
+};
+
+interface IssueData {
+  id: string;
+  title: string;
+  status: string;
+  responsable: string;
+  assigned_email: string;
+  created_at: string;
+}
+
+// Inicializar EmailJS con la clave pública
+console.log('Inicializando EmailJS con PUBLIC_KEY:', PUBLIC_KEY);
+emailjs.init(PUBLIC_KEY);
+
+// Email validation function
+const validateEmail = (email: string): boolean => {
+  if (!email || typeof email !== 'string') return false;
+  email = email.trim();
+  if (email === '') return false;
+  
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
 };
 
 /**
- * Función auxiliar para comprobar la conexión a Internet
+ * Envía un reporte por correo manual (filtrado o completo)
  */
-const checkInternetConnection = async (): Promise<boolean> => {
+export async function sendManualEmail(filtered: boolean = false, useResend: boolean = false) {
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    console.log(`Enviando email manual (${filtered ? 'filtrado' : 'completo'}) usando ${useResend ? 'Resend' : 'EmailJS'}`);
     
-    const response = await fetch('https://api.resend.com', { 
-      method: 'HEAD',
-      signal: controller.signal 
+    // Usar el servicio seleccionado
+    const result = useResend 
+      ? await sendReportWithResend(filtered)
+      : await sendReportWithEmailJS(filtered);
+    
+    return {
+      success: true,
+      data: {
+        ...result,
+        service: useResend ? 'resend' : 'emailjs'
+      }
+    };
+  } catch (error) {
+    console.error('Error en sendManualEmail:', error);
+    return {
+      success: false,
+      error: {
+        message: error.message || 'Error al enviar email',
+        details: error.toString()
+      }
+    };
+  }
+}
+
+/**
+ * Prueba la conexión con el servidor de correo
+ */
+export const testEmailConnection = async (): Promise<ApiResponse<{success: boolean, details?: string}>> => {
+  try {
+    console.log("Probando conexión con el servidor de correo...");
+    
+    // Realizar una solicitud OPTIONS para verificar que el servidor responde
+    const response = await fetch(EMAIL_FUNCTION, {
+      method: 'OPTIONS',
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
     
-    clearTimeout(timeoutId);
-    return response.ok;
+    if (response.ok) {
+      return {
+        success: true,
+        data: {
+          success: true,
+          details: `El servidor respondió correctamente con estado ${response.status}`
+        }
+      };
+    } else {
+      return {
+        success: false,
+        error: {
+          message: `Error de conexión: El servidor respondió con estado ${response.status}`,
+          code: 'CONNECTION_ERROR',
+          details: `La función de correo respondió con estado ${response.status} ${response.statusText}`
+        }
+      };
+    }
   } catch (error) {
-    console.warn('Error al comprobar la conexión a Internet:', error);
-    return false;
-  }
-};
-
-/**
- * Envía un resumen de las incidencias abiertas por email a los responsables asignados
- * @param issues - Lista de incidencias a incluir en el resumen
- */
-export const sendIssuesSummary = async (issues: Issue[]): Promise<void> => {
-  try {
-    if (!Array.isArray(issues)) {
-      throw new Error('El parámetro issues debe ser un array');
-    }
-
-    // Validar que hay incidencias
-    if (issues.length === 0) {
-      throw new Error('No hay incidencias para enviar');
-    }
-
-    // Comprobar conexión a Internet
-    const isConnected = await checkInternetConnection();
-    if (!isConnected) {
-      throw new Error('No hay conexión a Internet o el servicio Resend no está disponible');
-    }
-
-    // Obtener emails únicos de las incidencias
-    const uniqueEmails = [...new Set(issues
-      .map(issue => issue.assignedEmail)
-      .filter(email => email && email.includes('@')))];
-
-    if (uniqueEmails.length === 0) {
-      throw new Error('No hay destinatarios válidos para enviar el resumen. Asegúrese de que las incidencias tienen emails asignados.');
-    }
-
-    const html = generateIssuesSummaryHtml(issues);
-
-    try {
-      console.log('Intentando enviar email con Resend a:', uniqueEmails);
-      console.log('API Key presente:', !!RESEND_API_KEY);
-      console.log('API Key (primeros 5 caracteres):', RESEND_API_KEY?.substring(0, 5));
-      
-      // Intentar el envío con mejor diagnóstico
-      const { data, error } = await resend.emails.send({
-        from: 'PRLconecta <onboarding@resend.dev>', // Cambiamos el remitente a una dirección verificada
-        to: uniqueEmails,
-        subject: 'Resumen de Incidencias Asignadas - PRLconecta',
-        html: html,
-      });
-
-      if (error) {
-        console.error('Error detallado de Resend:', error);
-        throw error;
+    console.error("Error probando la conexión:", error);
+    
+    return {
+      success: false,
+      error: {
+        message: "No se pudo establecer conexión con el servidor de correo",
+        code: 'CONNECTION_ERROR',
+        details: `Error: ${error.message || 'Error desconocido'}`
       }
-
-      console.log('Respuesta de Resend:', data);
-      console.log('Email de resumen enviado correctamente a:', uniqueEmails);
-    } catch (resendError) {
-      console.error('Error detallado de Resend:', resendError);
-      throw new Error('Error al enviar el email a través de Resend: ' + (resendError.message || 'Error desconocido'));
-    }
-  } catch (error) {
-    console.error('Error detallado al enviar el email:', error);
-    throw error instanceof Error ? error : new Error('Error desconocido al enviar el email');
+    };
   }
 };
+
+export async function sendReportWithEmailJS(filtered: boolean = false) {
+  try {
+    // Obtener emails de responsables
+    const emails = await getResponsibleEmails();
+    console.log('Emails encontrados:', emails);
+    
+    if (!emails || emails.length === 0) {
+      throw new Error("No se encontraron incidencias con responsable y correo electrónico válidos");
+    }
+
+    // Validar emails antes de continuar
+    const validEmails = emails.filter(email => email && email.trim() !== '');
+    console.log('Emails válidos:', validEmails);
+    
+    if (validEmails.length === 0) {
+      throw new Error("Todos los correos encontrados son inválidos o están vacíos");
+    }
+
+    // Obtener incidencias pendientes
+    const { data: issues, error: issuesError } = await supabase
+      .from('issues')
+      .select('*')
+      .in('status', ['en-estudio', 'en-curso']);
+
+    if (issuesError) throw issuesError;
+    console.log('Incidencias encontradas:', issues?.length || 0);
+
+    if (!issues || issues.length === 0) {
+      throw new Error("No hay incidencias pendientes para reportar");
+    }
+
+    // Filtrar y agrupar incidencias por responsable si es necesario
+    const issuesByEmail = filtered
+      ? groupIssuesByEmail(issues as IssueData[])
+      : { all: issues as IssueData[] };
+    
+    // Verificar que hay destinatarios después de agrupar (solo si es modo personalizado)
+    if (filtered && Object.keys(issuesByEmail).length === 0) {
+      throw new Error("No hay destinatarios con incidencias asignadas para enviar el reporte personalizado");
+    }
+    
+    console.log('Preparando envío de correos...');
+
+    // Enviar emails
+    const results = await sendEmails(issuesByEmail, filtered, validEmails);
+    console.log('Resultados del envío:', results);
+
+    return {
+      success: true,
+      stats: results,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('Error en sendReportWithEmailJS:', error);
+    throw error;
+  }
+}
+
+function groupIssuesByEmail(issues: IssueData[]) {
+  return issues.reduce((acc, issue) => {
+    if (issue.assigned_email && issue.assigned_email.trim() !== '') {
+      const email = issue.assigned_email.trim();
+      if (!acc[email]) {
+        acc[email] = [];
+      }
+      acc[email].push(issue);
+    }
+    return acc;
+  }, {} as Record<string, IssueData[]>);
+}
+
+async function sendEmails(
+  issuesByEmail: Record<string, IssueData[]>,
+  filtered: boolean,
+  allEmails: string[]
+) {
+  let successCount = 0;
+  let failureCount = 0;
+
+  // Filtra y valida los correos antes de enviar
+  const validEmails = allEmails.filter(email => email && email.trim() !== '');
+  
+  if (validEmails.length === 0) {
+    throw new Error("No hay destinatarios válidos para enviar el reporte");
+  }
+
+  if (filtered) {
+    // Enviar a cada responsable sus incidencias específicas
+    for (const [email, issues] of Object.entries(issuesByEmail)) {
+      try {
+        if (email && email.trim() !== '') {
+          await sendEmail(
+            [email.trim()], 
+            'Reporte de Incidencias Asignadas - PRL Conecta',
+            generateEmailTemplate(issues, true)
+          );
+          successCount++;
+        } else {
+          console.warn(`Saltando destinatario con correo vacío`);
+          failureCount++;
+        }
+      } catch (error) {
+        console.error(`Error enviando a ${email}:`, error);
+        failureCount++;
+      }
+    }
+  } else {
+    // Enviar reporte completo a todos
+    const allIssues = issuesByEmail.all || [];
+    
+    for (const email of validEmails) {
+      try {
+        await sendEmail(
+          [email],
+          'Reporte Completo de Incidencias - PRL Conecta',
+          generateEmailTemplate(allIssues, false)
+        );
+        successCount++;
+      } catch (error) {
+        console.error(`Error enviando a ${email}:`, error);
+        failureCount++;
+      }
+    }
+  }
+
+  return {
+    successCount,
+    failureCount,
+    totalEmails: successCount + failureCount
+  };
+}
+
+// Función de diagnóstico para probar un envío simple
+export async function testEmailJS() {
+  try {
+    console.log('Iniciando prueba de EmailJS...');
+    
+    // Email de prueba que puede modificarse
+    const testEmail = "test@example.com"; // Cámbialo por tu correo real
+    
+    // Formatear la fecha correctamente
+    const fechaFormateada = new Date().toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    // Parámetros completos para prueba
+    const templateParams = {
+      email_to: testEmail,
+      name: 'PRL Conecta',
+      date: fechaFormateada,
+      message: "Este es un mensaje de prueba simple.",
+      subject: "Prueba diagnóstico EmailJS",
+      title: "Prueba diagnóstico EmailJS"
+    };
+    
+    console.log('Parámetros de prueba:', JSON.stringify(templateParams, null, 2));
+    
+    const response = await emailjs.send(
+      CONFIG.serviceId,
+      CONFIG.templateId,
+      templateParams
+    );
+    
+    console.log('Prueba exitosa:', response);
+    return response;
+  } catch (error) {
+    if (error.text) {
+      console.error(`Error detallado: ${error.text}`);
+    }
+    
+    if (error.status) {
+      console.error(`Estado del error: ${error.status}`);
+    }
+    
+    console.error('Error completo en prueba:', error);
+    throw error;
+  }
+}
+
+// Función para enviar un correo de prueba utilizando la misma lógica que las incidencias
+export async function sendTestEmail(toEmail: string) {
+  try {
+    console.log(`Enviando correo de prueba a ${toEmail}...`);
+    
+    // Validar email
+    if (!validateEmail(toEmail)) {
+      throw new Error(`El email del destinatario '${toEmail}' no es válido o está vacío`);
+    }
+    
+    // Formatear la fecha correctamente
+    const fechaFormateada = new Date().toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    // Obtener el nombre del destinatario para el saludo
+    const nombreDestinatario = toEmail.split('@')[0];
+    
+    // Crear un mensaje de prueba con texto plano
+    const mensajePrueba = `
+Hola ${nombreDestinatario},
+    
+Este es un mensaje de prueba enviado desde PRL Conecta.
+
+Información del sistema:
+- Fecha de envío: ${fechaFormateada}
+- Remitente: PRL Conecta
+- Estado: Funcionando correctamente
+
+Saludos cordiales,
+Equipo PRL Conecta
+    `;
+    
+    // Parámetros usando los nombres de variables que espera el template
+    const templateParams = {
+      email_to: toEmail.trim(),
+      name: 'PRL Conecta',
+      date: fechaFormateada,
+      message: mensajePrueba,
+      subject: 'Prueba de Template EmailJS',
+      title: 'Prueba de Template EmailJS'
+    };
+    
+    console.log('Enviando correo de prueba...');
+    
+    // Enviar directamente con emailjs
+    const response = await emailjs.send(
+      CONFIG.serviceId,
+      CONFIG.templateId,
+      templateParams
+    );
+    
+    console.log('Correo de prueba enviado exitosamente:', response);
+    return response;
+  } catch (error) {
+    // Mostrar detalles completos del error
+    if (error.text) {
+      console.error(`Error detallado de EmailJS: ${error.text}`);
+    }
+    
+    if (error.status) {
+      console.error(`Estado del error: ${error.status}`);
+    }
+    
+    console.error('Error completo al enviar correo de prueba:', error);
+    throw error;
+  }
+}
+
+// Actualizar la función sendEmail para que use la misma lógica que funciona en incidencias
+async function sendEmail(to: string[], subject: string, reportText: string) {
+  try {
+    const [toEmail] = to;
+    
+    // Validar email
+    if (!toEmail || !validateEmail(toEmail)) {
+      throw new Error(`El email del destinatario '${toEmail}' no es válido o está vacío`);
+    }
+    
+    console.log(`Enviando email a: ${toEmail}`);
+    
+    // Formatear la fecha para el título
+    const fechaFormateada = new Date().toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
+    
+    // Generar el mensaje completo como texto preformateado
+    const mensajeCompleto = `
+Estimado/a usuario,
+    
+A continuación se detalla el reporte de incidencias:
+
+${reportText}
+
+Para más detalles, acceda al sistema de gestión de incidencias.
+
+Saludos,
+Equipo PRL Conecta
+    `;
+    
+    // Parámetros para el template de EmailJS
+    const templateParams = {
+      email_to: toEmail.trim(),
+      name: 'PRL Conecta',
+      date: fechaFormateada,
+      message: mensajeCompleto,
+      subject: subject,
+      title: subject
+    };
+    
+    console.log('Enviando email...');
+    
+    // Enviar directamente con emailjs, sin usar el hook
+    const response = await emailjs.send(
+      CONFIG.serviceId,
+      CONFIG.templateId,
+      templateParams
+    );
+    
+    console.log('Email enviado correctamente:', response);
+    return response;
+  } catch (error) {
+    // Manejo de errores similar al de useEmailJS
+    if (error.status === 422) {
+      if (error.text?.includes("recipients address is empty")) {
+        console.error(`Error: La dirección de correo no fue reconocida por EmailJS.`);
+      } else if (error.text?.includes("no template")) {
+        console.error(`La plantilla '${CONFIG.templateId}' no existe o no es accesible.`);
+      } else {
+        console.error(`EmailJS rechazó la solicitud: ${error.text}`);
+      }
+    } else if (error.status === 401 || error.status === 403) {
+      console.error(`Error de autenticación en EmailJS. Verifique su clave pública.`);
+    } else if (error.status === 429) {
+      console.error(`Se ha excedido el límite de solicitudes a EmailJS.`);
+    }
+    
+    console.error('Error completo al enviar email con EmailJS:', error);
+    throw error;
+  }
+}
+
+function generateEmailTemplate(issues: IssueData[], isPersonalized: boolean): string {
+  // Usamos texto plano en lugar de HTML
+  const title = isPersonalized ? 'Reporte de Incidencias Asignadas' : 'Reporte Completo de Incidencias';
+  
+  // Texto plano simple
+  let message = '';
+  
+  // Si no hay incidencias
+  if (!issues || issues.length === 0) {
+    message += 'No hay incidencias pendientes en este momento.';
+  } else {
+    // Añadimos cada incidencia como texto plano
+    issues.forEach((issue, index) => {
+      // Comprobamos que los campos existan o usamos valores por defecto
+      const issueTitle = issue.title || 'Incidencia sin título';
+      const issueStatus = issue.status || 'Sin estado';
+      const responsable = issue.responsable || 'No asignado';
+      
+      // Formatear fecha correctamente
+      let fechaCreacion = 'Fecha desconocida';
+      try {
+        if (issue.created_at) {
+          const fecha = new Date(issue.created_at);
+          if (!isNaN(fecha.getTime())) {
+            fechaCreacion = fecha.toLocaleDateString('es-ES', {
+              day: '2-digit',
+              month: 'long',
+              year: 'numeric'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error al formatear fecha:', error);
+      }
+      
+      // Formato simple de una sola línea para cada campo
+      message += `- INCIDENCIA: ${issueTitle}\n`;
+      message += `  Estado: ${issueStatus}\n`;
+      message += `  Responsable: ${responsable}\n`;
+      message += `  Fecha: ${fechaCreacion}\n`;
+      
+      // Espacio adicional entre incidencias
+      if (index < issues.length - 1) {
+        message += '\n';
+      }
+    });
+  }
+  
+  return message;
+}
+
+// Función para verificar la configuración de EmailJS
+export function verifyEmailJSConfig() {
+  const info = {
+    serviceId: SERVICE_ID,
+    templateId: TEMPLATE_ID,
+    publicKey: PUBLIC_KEY ? PUBLIC_KEY.substring(0, 4) + '...' : 'No definido',
+    initialized: !!emailjs.init
+  };
+  
+  console.log('Configuración de EmailJS:', info);
+  console.log('Verifique que estos valores coincidan con su cuenta de EmailJS en dashboard.emailjs.com');
+  
+  return info;
+}
