@@ -1,167 +1,233 @@
 
-import { serve } from "https://deno.land/std@0.170.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.198.0/http/server.ts";
+import { Resend } from "npm:resend@2.0.0";
 import { corsHeaders, handleCors } from "./cors.ts";
-import { Resend } from "https://esm.sh/@resend/node@0.5.0";
 
-// Use explicitly info@prlconecta.es as sender, with the proper domain validation
-const FROM_EMAIL = "Sistema de Gestión <info@prlconecta.es>";
-
-// Initialize Resend with API key from environment
-const resendApiKey = Deno.env.get("RESEND_API_KEY");
-
-if (!resendApiKey) {
-  console.error("RESEND_API_KEY environment variable is not set");
-  throw new Error("RESEND_API_KEY environment variable is not set");
-}
-
-const resend = new Resend(resendApiKey);
-
-// Function to log information about request and configuration
-const logInfo = (message: string, data?: any, requestId?: string) => {
-  const timestamp = new Date().toISOString();
-  const logPrefix = requestId ? `[${timestamp}] [${requestId}]` : `[${timestamp}]`;
-  console.log(`${logPrefix} ${message}`, data || "");
-};
-
-console.log(`[${new Date().toISOString()}] Loading send-resend-report function`);
-
-// Validate configuration
-if (resendApiKey?.length >= 20) {
-  console.log(`[${new Date().toISOString()}] Configuration validated successfully`);
-  console.log(`[${new Date().toISOString()}] Using FROM address: ${FROM_EMAIL}`);
-  console.log(`[${new Date().toISOString()}] API Key length: ${resendApiKey.length}`);
-} else {
-  console.error(`[${new Date().toISOString()}] Invalid RESEND_API_KEY configuration`);
-}
+const resend = new Resend(Deno.env.get("RESEND_API_KEY") || 're_2TqHgv5B_62eNDe38YRyhnXfzSjmp2ShP');
 
 serve(async (req) => {
-  const startTime = Date.now();
-  const requestId = `req-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-  
-  logInfo(`Received ${req.method} request from ${req.headers.get("origin") || "unknown origin"}`, null, requestId);
-  
-  // Handle CORS preflight requests first
+  // Handle CORS preflight requests
   const corsResponse = handleCors(req);
   if (corsResponse) {
     return corsResponse;
   }
 
   try {
-    // Parse the request body
-    const requestData = await req.json();
-    logInfo("Request data:", JSON.stringify(requestData), requestId);
+    console.log("Recibida solicitud para enviar reporte");
     
-    // Extract email data
-    const { to, subject, html, clientRequestId } = requestData;
+    // Parsear el body
+    const body = await req.json();
+    const { filtered = false } = body;
     
-    // Use client-provided request ID if available for easier tracking
-    const logId = clientRequestId || requestId;
+    console.log(`Generando reporte ${filtered ? 'filtrado' : 'completo'}`);
     
-    // Validate required fields
-    if (!to || !Array.isArray(to) || to.length === 0) {
-      throw new Error("Recipients (to) are required and must be an array");
+    // Obtener todos los responsables con sus emails asignados
+    // Utilizamos directamente el cliente de supabase en el edge function
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || 'https://jzmzmjvtxcrxljnhhrjo.supabase.co';
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || Deno.env.get("SUPABASE_ANON_KEY");
+    
+    if (!supabaseKey) {
+      throw new Error("No se encontró la clave de Supabase");
     }
     
-    if (!subject) {
-      throw new Error("Subject is required");
-    }
-    
-    // Ensure we always have an initial HTML for the email
-    if (!html || html.trim() === '') {
-      throw new Error("HTML content is required");
-    }
-    
-    // Prepare email data for Resend with explicit options to force the from address
-    const emailData = {
-      from: FROM_EMAIL,
-      to: to,
-      subject: subject,
-      html: html,
-      // Use required settings according to Resend docs to ensure proper sender
+    // Obtener todas las incidencias pendientes
+    const issuesResponse = await fetch(`${supabaseUrl}/rest/v1/issues?status=in.(en-estudio,en-curso)`, {
       headers: {
-        "X-Entity-Ref-ID": logId
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
       },
-      // Add tags to ensure we don't use the Resend default account
-      tags: [
-        { name: "source", value: "prlconecta" },
-        { name: "category", value: "transactional" },
-        { name: "force_from", value: "true" }
-      ]
-    };
+    });
     
-    logInfo("Attempting to send email to:", to, requestId);
-    console.log("Email configuration:", JSON.stringify(emailData, null, 2));
-    console.log("FROM address being used:", FROM_EMAIL);
+    if (!issuesResponse.ok) {
+      throw new Error(`Error al obtener las incidencias: ${await issuesResponse.text()}`);
+    }
     
-    // Send email via Resend
-    try {
-      const result = await resend.emails.send(emailData);
-      
-      const elapsedTime = Date.now() - startTime;
-      logInfo(`Email sent successfully via Resend in ${elapsedTime}ms:`, result, logId);
-      
-      // Log more details about the response
-      console.log("Full Resend response:", JSON.stringify(result));
-      
-      // Check if Resend used a different sender
-      if (result && result.from && result.from !== FROM_EMAIL) {
-        console.error(`WARNING: Resend used a different sender (${result.from}) than requested (${FROM_EMAIL})`);
-      }
-      
+    const issues = await issuesResponse.json();
+    console.log(`Obtenidas ${issues.length} incidencias pendientes`);
+    
+    if (!issues || issues.length === 0) {
       return new Response(
         JSON.stringify({
           success: true,
-          data: { 
-            message: "Email enviado correctamente con Resend",
-            id: result.id,
-            recipients: to,
-            emailSent: true,
-            mode: "all recipients",
-            requestId: logId,
-            elapsedTime: `${elapsedTime}ms`,
-            resendResponse: result,
-            fromEmail: FROM_EMAIL, // Para debugging
-            actualFromEmail: result.from, // Para verificar el remitente real
-            stats: {
-              successCount: 1,
-              failureCount: 0
-            }
+          data: {
+            stats: { successCount: 0, failureCount: 0, totalEmails: 0 },
+            timestamp: new Date().toISOString(),
+            message: "No hay incidencias pendientes para reportar"
           }
         }),
-        {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json",
-            ...corsHeaders
-          }
-        }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } catch (resendError) {
-      logInfo(`Error received FROM Resend API:`, resendError, requestId);
-      console.error("Detailed Resend error:", JSON.stringify(resendError));
-      throw new Error(`Error al enviar email con Resend: ${JSON.stringify(resendError)}`);
     }
+    
+    // Filtrar incidencias con responsable y email asignado
+    const validIssues = issues.filter((issue: any) => 
+      issue.responsable && 
+      issue.responsable.trim() !== '' && 
+      issue.assigned_email && 
+      issue.assigned_email.trim() !== ''
+    );
+    
+    console.log(`Filtradas ${validIssues.length} incidencias con responsable y email asignado`);
+    
+    if (validIssues.length === 0) {
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            stats: { successCount: 0, failureCount: 0, totalEmails: 0 },
+            timestamp: new Date().toISOString(),
+            message: "No hay incidencias con responsable y email asignados para reportar"
+          }
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Obtener emails únicos
+    const uniqueEmails = [...new Set(validIssues.map((issue: any) => issue.assigned_email))].filter(Boolean);
+    console.log(`Emails únicos encontrados: ${uniqueEmails.join(', ')}`);
+    
+    // Generar HTML para el reporte
+    const reportHtml = generateReportHtml(validIssues, filtered);
+    
+    let successCount = 0;
+    let failureCount = 0;
+    
+    if (filtered) {
+      // Agrupar incidencias por email asignado
+      const issuesByEmail: Record<string, any[]> = {};
+      
+      validIssues.forEach((issue: any) => {
+        if (issue.assigned_email) {
+          if (!issuesByEmail[issue.assigned_email]) {
+            issuesByEmail[issue.assigned_email] = [];
+          }
+          issuesByEmail[issue.assigned_email].push(issue);
+        }
+      });
+      
+      // Enviar a cada responsable sus incidencias
+      for (const [email, userIssues] of Object.entries(issuesByEmail)) {
+        try {
+          const personalHtml = generateReportHtml(userIssues, true);
+          
+          console.log(`Enviando reporte personalizado a ${email}`);
+          
+          const result = await resend.emails.send({
+            from: 'PRL Conecta <onboarding@resend.dev>',
+            to: [email],
+            subject: `Reporte de Incidencias Asignadas (${new Date().toLocaleDateString('es-ES')})`,
+            html: personalHtml,
+          });
+          
+          console.log(`Resultado del envío a ${email}:`, result);
+          
+          if (!result.error) {
+            successCount++;
+          } else {
+            console.error(`Error al enviar a ${email}:`, result.error);
+            failureCount++;
+          }
+        } catch (error) {
+          console.error(`Error al enviar email a ${email}:`, error);
+          failureCount++;
+        }
+      }
+    } else {
+      // Enviar el mismo reporte a todos
+      try {
+        const result = await resend.emails.send({
+          from: 'PRL Conecta <onboarding@resend.dev>',
+          to: uniqueEmails,
+          subject: `Reporte de Incidencias (${new Date().toLocaleDateString('es-ES')})`,
+          html: reportHtml,
+        });
+        
+        console.log(`Resultado del envío global:`, result);
+        
+        if (!result.error) {
+          successCount = uniqueEmails.length;
+        } else {
+          console.error(`Error al enviar reporte global:`, result.error);
+          failureCount = uniqueEmails.length;
+        }
+      } catch (error) {
+        console.error(`Error al enviar email global:`, error);
+        failureCount = uniqueEmails.length;
+      }
+    }
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        data: {
+          stats: {
+            successCount,
+            failureCount,
+            totalEmails: successCount + failureCount
+          },
+          timestamp: new Date().toISOString(),
+          service: "resend"
+        }
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+    
   } catch (error) {
-    const elapsedTime = Date.now() - startTime;
-    logInfo(`Error DURING Resend API call:`, error, requestId);
-    console.error(`[${requestId}] Error in send-resend-report (${elapsedTime}ms):`, error.message);
+    console.error("Error en la función send-resend-report:", error);
     
     return new Response(
       JSON.stringify({
         success: false,
         error: {
-          message: error.message || "Internal Server Error",
-          requestId: requestId,
-          elapsedTime: `${elapsedTime}ms`
+          message: error.message || "Error desconocido al enviar el reporte",
+          details: String(error)
         }
       }),
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          ...corsHeaders
-        }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
   }
 });
+
+function generateReportHtml(issues: any[], isPersonalized: boolean): string {
+  const date = new Date().toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+
+  return `
+    <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; }
+          .header { background: #f8f9fa; padding: 20px; margin-bottom: 20px; }
+          .issue { border: 1px solid #ddd; padding: 15px; margin-bottom: 10px; border-radius: 4px; }
+          .status { display: inline-block; padding: 3px 8px; border-radius: 3px; font-size: 12px; }
+          .en-estudio { background: #fff3cd; color: #856404; }
+          .en-curso { background: #cce5ff; color: #004085; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>Reporte de Incidencias${isPersonalized ? ' Asignadas' : ''}</h1>
+          <p>Fecha: ${date}</p>
+        </div>
+        
+        ${issues.length === 0 
+          ? '<p>No hay incidencias pendientes en este momento.</p>'
+          : issues.map(issue => `
+            <div class="issue">
+              <h3>${issue.title || issue.message || 'Incidencia sin título'}</h3>
+              <p><strong>Estado:</strong> <span class="status ${issue.status}">${issue.status}</span></p>
+              <p><strong>Responsable:</strong> ${issue.responsable || 'No asignado'}</p>
+              <p><strong>Fecha de creación:</strong> ${new Date(issue.created_at || issue.timestamp || Date.now()).toLocaleDateString('es-ES')}</p>
+            </div>
+          `).join('')}
+      </body>
+    </html>
+  `;
+}

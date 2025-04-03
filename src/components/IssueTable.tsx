@@ -130,7 +130,7 @@ export const IssueTable = ({ issues, onIssuesUpdate }: IssueTableProps) => {
                   <img 
                     src={issue.imageUrl} 
                     alt="Incidencia" 
-                    className="w-20 h-20 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
+                    className="w-16 h-16 object-cover rounded-md cursor-pointer hover:opacity-90 transition-opacity"
                     onClick={() => setSelectedImage(issue.imageUrl)}
                     onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                       console.error('Error loading image:', issue.imageUrl);

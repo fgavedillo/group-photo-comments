@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useReportSender } from "@/hooks/useReportSender";
-import { FileText, RefreshCw, Filter, AlertCircle, CheckCircle, Mail } from "lucide-react";
+import { FileImage, RefreshCw, Filter, AlertCircle, CheckCircle, Mail } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReportMethodSelector } from "./ReportMethodSelector";
 
@@ -20,11 +20,11 @@ export const ReportSenderButton = () => {
   
   const handleSendReport = async () => {
     try {
-      console.log(`Sending ${filtered ? 'personalized' : 'complete'} report with ${useResend ? 'Resend' : 'EmailJS'}...`);
+      console.log(`Enviando reporte ${filtered ? 'personalizado' : 'completo'} con ${useResend ? 'Resend' : 'EmailJS'}...`);
       await sendReport(filtered);
     } catch (err) {
-      // Error is already handled in the hook
-      console.error("Error handled in button:", err);
+      // El error ya está manejado en el hook
+      console.error("Error manejado en el botón:", err);
     }
   };
   
@@ -41,7 +41,7 @@ export const ReportSenderButton = () => {
           onClick={handleSendReport}
           disabled={isLoading}
           className={filtered ? "border-green-600 text-green-700" : ""}
-          title={filtered ? "Send to each person only their assigned incidents" : "Send all incidents to all configured contacts"}
+          title={filtered ? "Envía a cada responsable solo sus incidencias asignadas" : "Envía todas las incidencias a todos los responsables configurados"}
         >
           {isLoading ? (
             <>
@@ -50,10 +50,10 @@ export const ReportSenderButton = () => {
             </>
           ) : (
             <>
-              <FileText className="mr-2 h-4 w-4" />
+              <FileImage className="mr-2 h-4 w-4" />
               {filtered 
-                ? "Enviar Reporte Individual" 
-                : "Enviar Reporte Completo"}
+                ? "Enviar Reporte a Responsables Individuales" 
+                : "Enviar Reporte a Todos los Responsables"}
             </>
           )}
         </Button>
@@ -63,7 +63,7 @@ export const ReportSenderButton = () => {
           size="sm"
           onClick={toggleFilter}
           className="text-xs"
-          title={filtered ? "Change to global sending mode" : "Change to personalized sending mode"}
+          title={filtered ? "Cambiar a modo de envío a todos los responsables" : "Cambiar a modo de envío personalizado por responsable"}
         >
           <Filter className={`h-4 w-4 mr-2 ${filtered ? 'text-green-600' : ''}`} />
           {filtered ? "Modo Global" : "Modo Individual"}
@@ -83,18 +83,18 @@ export const ReportSenderButton = () => {
       {error ? (
         <Alert variant="destructive" className="bg-red-50 border-red-200">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error al enviar</AlertTitle>
+          <AlertTitle>Error de envío</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
-      ) : lastResponse?.success ? (
+      ) : lastResponse?.success && lastResponse.data?.stats?.successCount > 0 ? (
         <Alert variant="default" className="bg-green-50 border-green-200">
           <CheckCircle className="h-4 w-4 text-green-500" />
           <AlertTitle>Envío exitoso</AlertTitle>
           <AlertDescription>
-            El reporte se ha enviado correctamente con {useResend ? 'Resend' : 'EmailJS'}.
+            Se envió el reporte con {useResend ? 'Resend' : 'EmailJS'} a {lastResponse.data?.stats?.successCount || 0} destinatario(s) exitosamente.
             {lastResponse.data?.stats && (
               <div className="text-xs mt-1 text-gray-500">
-                {lastResponse.data.stats.successCount || 0} envíos exitosos, {lastResponse.data.stats.failureCount || 0} fallidos.
+                {lastResponse.data.stats.successCount} envíos exitosos, {lastResponse.data.stats.failureCount} fallidos.
               </div>
             )}
           </AlertDescription>

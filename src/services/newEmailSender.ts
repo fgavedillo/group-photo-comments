@@ -1,17 +1,12 @@
-
 console.log('LOADED: newEmailSender.ts');
 
 export const sendEmailDirectly = async (recipients: string[], subject: string, reportHtml: string) => {
   console.log('EXECUTING: sendEmailDirectly', { recipients });
   
   try {
-    // Fix: Remove Deno.env since it's not available in browser context
-    const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-    const FROM_EMAIL = 'Sistema de Gestión <info@prlconecta.es>';
+    const RESEND_API_KEY = 're_aTq2dBeF_FXKGPGc3ViQGpRm7stAY3iJ9';
     
-    console.log('Using FROM email address:', FROM_EMAIL);
-    
-    // Llamada directa a Resend API con configuración explícita del remitente
+    // Llamada directa a Resend API
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -19,19 +14,10 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: FROM_EMAIL,
+        from: 'Sistema de Gestión <onboarding@resend.dev>',
         to: recipients,
         subject: subject,
         html: reportHtml,
-        // Establecer un ID de referencia único para esta solicitud
-        headers: {
-          "X-Entity-Ref-ID": `direct-${Date.now()}`
-        },
-        tags: [
-          { name: "source", value: "prlconecta" },
-          { name: "category", value: "transactional" },
-          { name: "force_from", value: "true" }
-        ]
       }),
     });
 
@@ -39,7 +25,6 @@ export const sendEmailDirectly = async (recipients: string[], subject: string, r
     console.log('Respuesta Resend:', data);
     
     if (!response.ok) {
-      console.error('Error detallado de Resend:', JSON.stringify(data));
       throw new Error(`Error Resend: ${JSON.stringify(data)}`);
     }
 
